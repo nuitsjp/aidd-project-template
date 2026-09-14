@@ -87,15 +87,25 @@ def anchors_of(text):
     return ids
 
 
+def heading_key(line):
+    """見出しを (レベル, 節番号を除いた題) に正規化する。既存プロジェクトの節番号の違いを吸収する。"""
+    head = line.strip()
+    level = len(head) - len(head.lstrip("#"))
+    return level, re.sub(r"^\d+\.\s*", "", head.lstrip("#").strip())
+
+
 def section_body(text, heading):
-    """見出し文字列の完全一致で節本文を [(行番号, 行)] として返す。見出しが無ければ None。"""
+    """見出し（節番号は無視、題は前方一致）で節本文を [(行番号, 行)] として返す。無ければ None。"""
     lines = text.split("\n")
+    want_level, want_title = heading_key(heading)
     start, level = None, 0
     for i, line in enumerate(lines, 1):
         head = line.strip()
         if start is None:
-            if head == heading:
-                start, level = i, len(head) - len(head.lstrip("#"))
+            if head.startswith("#"):
+                got_level, got_title = heading_key(head)
+                if got_level == want_level and got_title.startswith(want_title):
+                    start, level = i, got_level
         elif head.startswith("#") and len(head) - len(head.lstrip("#")) <= level:
             return list(enumerate(lines[start:i - 1], start + 1))
     return None if start is None else list(enumerate(lines[start:], start + 1))
