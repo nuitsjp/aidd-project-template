@@ -1,6 +1,6 @@
 # AIDD Project Template
 
-配布版: **5**
+配布版: **6**
 
 過剰な設計や文書作成を抑え、動作するモックで仕様合意を形成してから実処理へ接続する「モック駆動開発」のテンプレートです。
 
@@ -11,16 +11,16 @@
 | ファイル | 役割 |
 | --- | --- |
 | [README.md](template/README.md) | プロジェクトの概要と実行手順への案内 |
-| [AGENTS.md](template/AGENTS.md) | AIエージェントが参照する行動規範。現在地、停止点、文書の扱い、完了報告 |
-| [PLAN.md](template/PLAN.md) | 現在地、未決事項、ユースケースの進捗（状態語）、再開情報 |
+| [AGENTS.md](template/AGENTS.md) | AIエージェントの行動規範（現在地、停止点、文書管理、完了報告） |
+| [PLAN.md](template/PLAN.md) | 現在地、未決事項、ユースケース進捗（状態語）、再開情報 |
 | [docs/document-policy.md](template/docs/document-policy.md) | 採用記録、モック適用範囲、正本の配置、保護する合意 |
 | [docs/project.md](template/docs/project.md) | 目的・制約、ユースケースと合意記録、確認した事実、実行手順、合否表 |
-| [docs/architecture.md](template/docs/architecture.md) | 全体設計の合意、システムコンテキスト、コンテナ、実現パターン、設計判断 |
-| [docs/standards/design-and-documentation.md](template/docs/standards/design-and-documentation.md) | 設計と文書化の基準、先行してよい成果物、完了基準、変更手続き |
-| [docs/standards/mock-driven-development.md](template/docs/standards/mock-driven-development.md) | ユースケースごとの段階とゲート条件、仕掛かりの上限、モックの境界 |
-| [scripts/doc_check.py](template/scripts/doc_check.py) | 文書整合の判定 7 件（リンク、済みチェック、絶対パス、仕掛かりと合意記録、UC ID、標準のハッシュ、証跡と行数の報告）。Python 3 標準ライブラリのみ |
+| [docs/architecture.md](template/docs/architecture.md) | 全体設計の合意、システム構成、実現パターン、設計判断 |
+| [docs/standards/design-and-documentation.md](template/docs/standards/design-and-documentation.md) | 設計と文書化の基準、先行成果物の範囲、完了基準、変更手続き |
+| [docs/standards/mock-driven-development.md](template/docs/standards/mock-driven-development.md) | ユースケースごとの段階とゲート条件、仕掛かり上限、モックの境界 |
+| [scripts/doc_check.py](template/scripts/doc_check.py) | 文書整合の判定7件（リンク、済みチェック、絶対パス、仕掛かり・合意記録、UC ID、標準ハッシュ、証跡・行数報告）。Python 3 標準ライブラリのみ |
 
-ユースケースや確認した事実は `docs/project.md`、全体構造と設計判断は `docs/architecture.md` を正本とします。これら以外の規約・方針文書は新設しません。`docs/standards/` は配布元からの輸入物として編集せず、差分は `docs/document-policy.md` 第1節に記録します。
+ユースケースや確認した事実は `docs/project.md`、全体構造と設計判断は `docs/architecture.md` を正本とします。規約・方針文書は新設しません。`docs/standards/` は配布元からの輸入物として編集せず、差分は `docs/document-policy.md` 第1節に記録します。
 
 `scripts/doc_check.py` の実行には Python 3 が必要です。Python を使わない構成では導入を見送り、その旨を `docs/document-policy.md` 第1節の差分欄に記録します。本テンプレートは [MIT ライセンス](LICENSE) で配布しているため、コピー時も著作権表示と許諾文を保持してください。
 
@@ -58,7 +58,7 @@ AIエージェントを利用する場合は、プロジェクト側の `AGENTS.
 
 ## 3. 初期セットアップと最初のユースケース
 
-以下の順序で、最初のユースケース 1 件を実処理まで通します。未着手ユースケースの画面や系列を先行して準備する必要はありません。
+以下の順序で、最初のユースケース1件を実処理まで通します。未着手ユースケースの画面や系列を先行して準備する必要はありません。
 
 | 順序 | 作業内容 | 完了条件 |
 | --- | --- | --- |
@@ -66,21 +66,21 @@ AIエージェントを利用する場合は、プロジェクト側の `AGENTS.
 | 2 | `README.md`（概要）、`docs/project.md` 第1・2節（目的、対象、制約、受け入れ条件）、第3節のカタログ表（UC ID、主アクター、目的、実装順序）を記入 | 解決する問題と対象外を説明でき、UC-1 が決まっている |
 | 3 | アーキテクチャを決定づける外部依存の実測を行い、事実を `docs/project.md` 第4節と `docs/reference/` に記録 | 情報源・対象版・確認日が記録されている（該当する外部依存がなければ省略） |
 | 4 | `docs/architecture.md` 第1・2節、パターンの名称と適用条件、第4節の決定を記入し、全体設計の合意欄を埋める | 合意欄に提示コミットと利用者の応答の原文がある |
-| 5 | UC-1 を [モック標準第2節](template/docs/standards/mock-driven-development.md#workflow) の段階1〜5で通す。パターン本体はここで書く | `docs/project.md` 第6節の合否表と `PLAN.md` が更新され、UC-1 が完了 |
-| 6 | 次のユースケースへ順序5を繰り返す。`docs/architecture.md` は構造が変わるときのみ再訪 | 段階1〜3にあるユースケースが常に1件以下 |
+| 5 | UC-1 を [モック標準第2節](template/docs/standards/mock-driven-development.md#workflow) の段階1〜5で通す（パターン本体はここで記述） | `docs/project.md` 第6節の合否表と `PLAN.md` が更新され、UC-1 が完了 |
+| 6 | 次のユースケースへ順序5を繰り返す（`docs/architecture.md` は構造変更時のみ再訪） | 段階1〜3にあるユースケースが常に1件以下 |
 
 ### 補足事項
-- **モック対象外の変更**: 段階2・3を省略し、段階4・5（実装と検証）を実施します。文書のみの変更は `scripts/doc_check.py` の実行で整合性を確認します。
+- **モック対象外の変更**: 段階2・3を省略し、段階4・5（実装と検証）を実施します。文書のみの変更は `scripts/doc_check.py` で整合性を確認します。
 - **記入欄 `{{...}}` の扱い**: 初期段階ですべて埋める必要はありません。未確定事項は推測で埋めず、`PLAN.md` で管理します。
 
 ## 4. 既存プロジェクトへの導入
 
 既存の構成や要件に合わせて、必要な要素を段階的に取り込みます。
 
-1. **正本の対応付け**: 既存文書の役割を確認し、テンプレートの各責務に対応付けます（既存文書がある場合、`docs/project.md` への転記は不要です）。
-2. **標準の差分管理**: 既存の規約と競合する場合は理由と影響を確認し、合意済みの差分のみを `docs/document-policy.md` 第1節に記録します。`docs/standards/` の本文は書き換えません。
-3. **文書方針への記録**: `docs/document-policy.md` に採用した版や適用日、差分を記録します。テンプレートの構成に全面的に合わせる必要はありません。
-4. **段階的な適用**: 直近で変更する小さなユースケース 1 件から第3節の順序5を適用します。既存機能の遡及的なユースケース化やモック化、不要なリファクタリングは行いません。
+1. **正本の対応付け**: 既存文書の役割を確認し、テンプレートの各責務に対応付けます（既存文書がある場合、`docs/project.md` への転記は不要）。
+2. **標準の差分管理**: 既存の規約と競合する場合は理由と影響を確認し、合意済みの差分のみを `docs/document-policy.md` 第1節に記録します（`docs/standards/` の本文は書き換えない）。
+3. **文書方針への記録**: `docs/document-policy.md` に採用した版や適用日、差分を記録します（テンプレート構成への全面的な統一は不要）。
+4. **段階的な適用**: 直近で変更する小さなユースケース1件から第3節の順序5を適用します。既存機能の遡及的なユースケース化やモック化、不要なリファクタリングは行いません。
 
 ## 5. 配布版の更新取り込み
 
@@ -98,6 +98,24 @@ AIエージェントを利用する場合は、プロジェクト側の `AGENTS.
 ## 7. 変更履歴
 
 配布版は `template/` の内容が変わるたびに上がります。標準の版は、その標準自体に変更があった場合のみ上がります。
+
+### 版6
+
+全文書の表現を整理し、過剰な重複や自明な記述を削減して平易・簡潔なビジネス日本語へ改訂しました。ユースケースの分割条件、設計・検証要件、モックの制約は維持しています。
+
+- 変更したファイル: 全 Markdown 文書（10ファイル）および `template/scripts/doc_check.py`。
+- `AGENTS.md`（ルート・テンプレート共）: 語調の統一と停止点・完了基準の重複表現を整理。
+- `PLAN.md`: 冒頭および各節の説明を平易・簡潔に集約。
+- `README.md`（ルート・テンプレート共）: 正本配置や参照案内の重複表現を整理。
+- `docs/architecture.md`: 説明文の表現を平易化し、重複記述を整理。
+- `docs/document-policy.md`: 配布元・標準の版を更新（配布版6、標準各版5）。正本表直下の補足や保護対象の記述を整理。
+- `docs/project.md`: ユースケース定義（主成功系列・拡張系列の制約）および各節の注釈を集約。
+- `docs/standards/design-and-documentation.md`（版5）: 適用原則、抑止基準、先行成果物の表現を平易・簡潔に整理。
+- `docs/standards/mock-driven-development.md`（版5）: ワークフロー表と補足箇条書き（合意条件、仕掛かり上限、合意待ち作業など）の重複記述を集約。
+- `scripts/doc_check.py`: 標準文書改訂に伴い、正規化ハッシュの期待値を更新。
+- 簡潔化で失われた適用条件、先行設計・モックの制約、合意の保護範囲、判断・検証の根拠、文書の省略・保存条件を復元しました。
+- 標準の版: 設計・文書標準 5、モック標準 5。
+- 採用側への影響: 規則や判定仕様の変更はありません。既存プロジェクトへ取り込む場合は、第5節に従って必要な差分を反映します。標準文書を更新する場合は、対応する `scripts/doc_check.py` の期待ハッシュも更新し、`docs/document-policy.md` に採用版を記録します。配布物の総行数は Markdown 388 行（版5 は 388 行）、スクリプト 406 行です。
 
 ### 版5
 
