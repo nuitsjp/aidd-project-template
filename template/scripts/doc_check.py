@@ -295,14 +295,27 @@ def check_uc_ids(table, project_text):
         if dups:
             ng = True
             emit("NG", "UC ID: %s に重複 ID がある: %s" % (name, "、".join(dups)))
-    union = sorted({i for _, ids, _ in present for i in ids}, key=lambda x: int(x[3:]))
-    for uc_id in union:
-        missing = [name for name, ids, _ in present if uc_id not in ids]
-        if missing:
+    # 進捗表とカタログ表は一致。本文見出しはカタログの部分集合でよく（未着手の UC は本文がなくてよい）、
+    # 未着手でない UC には本文が要る。
+    plan_set, catalog_set, head_set = set(sources[0][1]), set(sources[2][1]), set(head_ids)
+    if table is not None and catalog is not None:
+        for uc_id in sorted(plan_set ^ catalog_set, key=lambda x: int(x[3:])):
             ng = True
-            emit("NG", "UC ID: %s が %s にない" % (uc_id, "、".join(missing)))
+            where = "docs/project.md カタログ表" if uc_id in plan_set else "PLAN.md 進捗表"
+            emit("NG", "UC ID: %s が %s にない" % (uc_id, where))
+    if project_text is not None and catalog is not None:
+        for uc_id in sorted(head_set - catalog_set, key=lambda x: int(x[3:])):
+            ng = True
+            emit("NG", "UC ID: %s の本文があるが docs/project.md カタログ表にない" % uc_id)
+    if table is not None and project_text is not None:
+        for _, cells in table[1]:
+            uc_id, status = uc_of(cell(table[0], cells, "UC ID")), cell(table[0], cells, "状態")
+            if uc_id and status != "未着手" and uc_id not in head_set:
+                ng = True
+                emit("NG", "UC ID: %s は %s だが docs/project.md に `### %s.` の本文がない" % (uc_id, status, uc_id))
     if not ng:
-        emit("OK", "UC ID: %d 件の UC ID が一致している" % len(union))
+        known = sorted(plan_set | catalog_set | head_set, key=lambda x: int(x[3:]))
+        emit("OK", "UC ID: %d 件の UC ID が一致している（本文あり %d 件）" % (len(known), len(head_set)))
 
 
 def check_hashes(root):
