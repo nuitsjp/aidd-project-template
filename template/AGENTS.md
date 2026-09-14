@@ -1,21 +1,22 @@
 # エージェント行動指針
 
-作業着手前に [採用状態・差分](docs/document-policy.md#adoption)、[モックの適用範囲](docs/document-policy.md#mock-scope)、[PLAN.md](PLAN.md) を確認してください。テンプレート初期の記入欄や例示は確定仕様や検証実績ではないため、前提として扱わないよう注意します。
+作業の現在地は [PLAN.md](PLAN.md) 第1節が唯一の正本です。着手前に現在のユースケースと段階を確認し、段階を自分の判断で進めません。テンプレート初期の記入欄や例示は確定仕様や検証実績ではないため、前提として扱いません。
 
 作業時は下表の正本を参照します。
 
 | 作業 | 参照する正本 |
 | --- | --- |
 | すべての変更 | [プロジェクト定義](docs/project.md)、[保護する合意](docs/document-policy.md#agreements)、[変更手続き](docs/standards/design-and-documentation.md#agreement-changes) |
-| 仕様・設計・実装・テストの作成・変更・レビュー | [設計・実装の原則](docs/standards/design-and-documentation.md#implementation-principles)、対象機能の仕様・設計・検証条件 |
+| 仕様・設計・実装・テストの作成・変更・レビュー | [設計・実装の原則](docs/standards/design-and-documentation.md#implementation-principles)、対象ユースケースの本文と受け入れ条件 |
+| 全体構造・実現パターン・設計判断の参照と変更 | [アーキテクチャ](docs/architecture.md)、[全体設計と先行してよい成果物](docs/standards/design-and-documentation.md#architecture-method) |
 | 層・抽象化・依存関係などの追加 | [仕組みの追加基準](docs/standards/design-and-documentation.md#design-decisions) |
-| モック対象となる機能の変更 | [適用範囲](docs/document-policy.md#mock-scope)、[モック駆動開発の標準](docs/standards/mock-driven-development.md) |
+| モック対象となるユースケースの変更、次のユースケースへ進む判断 | [適用範囲](docs/document-policy.md#mock-scope)、[モック駆動開発の標準](docs/standards/mock-driven-development.md#workflow)、[PLAN.md](PLAN.md) 第3節の状態語 |
 | 文書の作成・変更・移動・削除 | [文書と記録の基準](docs/standards/design-and-documentation.md#document-roles) |
-| 導入、規約・正本配置の変更 | [文書方針](docs/document-policy.md) |
+| 導入、規約・標準・文書方針の改訂 | [文書方針](docs/document-policy.md)、[標準の扱い](docs/standards/design-and-documentation.md) |
 
 ## 作業原則
 
+- **停止点**: 人の確認を待つのは、全体設計の合意と、ユースケースごとの動作合意（段階3）の2箇所です。停止点では作業を止めて応答を待ち、応答の原文を合意記録に引用します。質問は未確定事項に限り、合意済み事項の再確認は求めません。合意待ちの間に進めてよい作業は [モック標準第2節](docs/standards/mock-driven-development.md#workflow) に従います。
 - **スコープの遵守**: 依頼範囲に必要な作業のみを進め、推測による機能追加や無関係なリファクタリングは行いません。調査や評価の依頼では所見を成果物とし、実装は変更しません。
-- **確認と自律進行**: ユーザー確認が必要な場合は、確認済みの事実と論点を整理したうえで未確定事項のみを質問します。合意済み事項の再確認は求めず、未決事項に依存しない作業は先行して進めます。
-- **完了基準と報告**: 完了前に [完了基準](docs/standards/design-and-documentation.md#completion) に照らし、依頼との差分、検証結果、リンク整合性、未決事項の状態を確認します。結果は事実に基づき報告し、失敗時はエラー出力を提示し、未実施の検証は「未検証」と明記します。
-
+- **文書**: `docs/standards/` は編集しません。文書には現在の状態だけを書き、経緯は git、証跡はテストと CI に置きます。規約・標準・文書方針の改訂は実装作業と別の変更にします。
+- **完了基準と報告**: 完了前に `scripts/doc_check.py` を実行して出力を報告に含め、[完了基準](docs/standards/design-and-documentation.md#completion) に照らします。未実施の検証は「未検証」と明記し、未検証のまま状態語を進めません。失敗時はエラー出力を提示します。
