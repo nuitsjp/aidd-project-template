@@ -24,14 +24,14 @@ LINE_LIMITS = {"PLAN.md": 100, "docs/project.md": 300,
 PLACEHOLDER_HASH = "sha256:" + "0" * 64
 # 配布元が `--print-hashes` の出力で更新する。
 EXPECTED_HASHES = {
-    "docs/standards/design-and-documentation.md": "sha256:4f0c8b267045bdd8f35e3d64eace279b809872a72fd6af0885126c2d9261fc92",
-    "docs/standards/mock-driven-development.md": "sha256:74257e85167602c594f1a0aa09c8fc4c5451929b26a6ee1df2b40ae07c4699fe",
+    "docs/standards/design-and-documentation.md": "sha256:74b85372aab4466b9581ae0d966b4fbc8cd5d1a07ff476d5e360b10329c993db",
+    "docs/standards/mock-driven-development.md": "sha256:b0bb13bd37c6f3702fef90cb802b1984f9d87617ef1bfac9aeb997736e7ff2a7",
 }
 
 HEX_RE = re.compile(r"(?<![0-9A-Za-z])[0-9a-fA-F]{7,40}(?![0-9A-Za-z])")
 QUOTE_RE = re.compile(r"^\s*>\s*\S")
 UC_HEAD_RE = re.compile(r"^###\s+UC-(\d+)\.")
-P_HEAD_RE = re.compile(r"^###\s+P-(\d+)\.")
+P_HEAD_RE = re.compile(r"^###\s+UCP-(\d+)\.")
 UC_ID_RE = re.compile(r"UC-\d+")
 SERIES_RE = re.compile(r"UC-(\d+)-(?:M|X\d+)")
 EXT_RE = re.compile(r"UC-\d+-X\d+")
