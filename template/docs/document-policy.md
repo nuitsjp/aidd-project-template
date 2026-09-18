@@ -9,9 +9,9 @@
 
 | 項目 | 内容 |
 | --- | --- |
-| 配布元・版 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版10 |
+| 配布元・版 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版11 |
 | 設計・文書標準 | [project-template-design-and-documentation / 版8](standards/design-and-documentation.md) |
-| モック標準 | [project-template-mock-driven-development / 版8](standards/mock-driven-development.md) |
+| モック標準 | [project-template-mock-driven-development / 版9](standards/mock-driven-development.md) |
 | 採用日・判断者・合意の根拠 | {{ADOPTION_RECORD}} |
 | プロジェクト固有の差分と理由 | {{LOCAL_RULE_DIFFERENCES}} |
 
@@ -31,7 +31,8 @@
 | --- | --- |
 | 本書 | 標準の採用記録、モック適用範囲、正本の配置、保護する合意 |
 | `standards/` 各標準 | プロジェクト非依存の開発・文書基準（配布元からの輸入物） |
-| [project.md](project.md) | プロジェクトの目的・制約、ユースケースと合意記録、確認した事実、手順、検証結果 |
+| [project.md](project.md) | プロジェクトの目的・制約、ユースケース一覧、確認した事実、手順、検証結果 |
+| `usecases/UC-n.md` | ユースケースごとの定義、シナリオ、受け入れ条件、合意記録 |
 | [architecture.md](architecture.md) | 全体設計の合意、システム構成、実現パターン、設計判断、テーブル設計と合意記録 |
 | `reference/` | 外部システムの実測応答（取得日時・方法・対象版を記録。利用時のみ） |
 | [README.md](../README.md) | プロジェクト概要と参照案内 |
@@ -44,6 +45,6 @@
 <a id="agreements"></a>
 ## 4. 保護する合意
 
-採用規則、適用範囲、正本の責務、[プロジェクト定義](project.md) で合意済みの要件・制約・仕様・完了条件、および [アーキテクチャ](architecture.md) の全体設計合意欄、設計判断 ID、合意済みのテーブル設計と合意記録を保護対象とします。これらを変更・緩和する場合は [変更手続き](standards/design-and-documentation.md#agreement-changes) に従います。設計判断は、実装の破棄や文書再編時も維持します。
+採用規則、適用範囲、正本の責務、[プロジェクト定義](project.md) と `usecases/UC-n.md` で合意済みの要件・制約・仕様・完了条件、および [アーキテクチャ](architecture.md) の全体設計合意欄、設計判断 ID、合意済みのテーブル設計と合意記録を保護対象とします。これらを変更・緩和する場合は [変更手続き](standards/design-and-documentation.md#agreement-changes) に従います。設計判断は、実装の破棄や文書再編時も維持します。
 
 初期の記入欄、検討中の案、モック上の仮定は合意とみなしません。判断に必要な未確定事項は停止点で利用者に確認し、確定するまで仕様・設計として記録しません。

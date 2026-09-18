@@ -20,12 +20,12 @@ PLACEHOLDER_HASH = "sha256:" + "0" * 64
 # 配布元が `--print-hashes` の出力で更新する。
 EXPECTED_HASHES = {
     "docs/standards/design-and-documentation.md": "sha256:6c7328e34e38d0cd10f5a03d0a3ab3ec50ce16f4d3e484bb492fc3a138b07daa",
-    "docs/standards/mock-driven-development.md": "sha256:4c817c04ff41df55abda4017a5b4a8749787de75d67d9c42ed7a8d88d10c5af4",
+    "docs/standards/mock-driven-development.md": "sha256:ac1d94ffca2a55aed3bd36515954d7e669ac1cbb9926d2b54e673003c6ccc836",
 }
 
 HEX_RE = re.compile(r"(?<![0-9A-Za-z])[0-9a-fA-F]{7,40}(?![0-9A-Za-z])")
 QUOTE_RE = re.compile(r"^\s*>\s*\S")
-UC_HEAD_RE = re.compile(r"^###\s+UC-(\d+)\.")
+UC_HEAD_RE = re.compile(r"^#\s+UC-(\d+)\.")
 P_HEAD_RE = re.compile(r"^###\s+UCP-(\d+)\.")
 UC_ID_RE = re.compile(r"UC-\d+")
 SERIES_RE = re.compile(r"UC-(\d+)-(?:M|X\d+)")
@@ -133,21 +133,15 @@ def uc_of(text):
     return found.group(0) if found else ""
 
 
-def uc_bodies(text):
-    """`### UC-n.` の本文を UC ID ごとに返す（次の `###` または `##` まで）。"""
-    bodies, current, buf = {}, None, []
-    for line in text.split("\n"):
-        matched = UC_HEAD_RE.match(line)
-        if matched:
-            if current:
-                bodies[current] = "\n".join(buf)
-            current, buf = "UC-" + matched.group(1), []
-        elif current and line.startswith("##"):
-            bodies[current], current, buf = "\n".join(buf), None, []
-        elif current is not None:
-            buf.append(line)
-    if current:
-        bodies[current] = "\n".join(buf)
+def uc_bodies(uc_docs):
+    """各 UC ファイルの `# UC-n.` と本文を返す。見出しの不備は判定4で報告する。"""
+    bodies = []
+    for path, text in sorted(uc_docs.items()):
+        heads = [(i, m) for i, line in enumerate(text.splitlines())
+                 if (m := UC_HEAD_RE.match(line))]
+        if len(heads) == 1:
+            i, matched = heads[0]
+            bodies.append(("UC-" + matched.group(1), "\n".join(text.splitlines()[i + 1:])))
     return bodies
 
 
@@ -241,17 +235,17 @@ def verified_series(project_text):
     return done
 
 
-def check_progress(project_text, arch_text):
+def check_progress(project_text, arch_text, uc_docs):
     """判定 3: 合意記録の完全性と、同時に進める系列が1本を超えていないか。"""
     if project_text is None:
         emit("対象なし", "仕掛かり: docs/project.md がない")
         return
-    bodies = uc_bodies(project_text)
+    bodies = uc_bodies(uc_docs)
     if not bodies:
-        emit("対象なし", "仕掛かり: docs/project.md に `### UC-n.` の本文がない")
+        emit("対象なし", "仕掛かり: docs/usecases/ に `# UC-n.` の本文がない")
         return
     described, agreed = set(), set()
-    for uc_id, body in sorted(bodies.items(), key=lambda kv: int(kv[0][3:])):
+    for uc_id, body in sorted(bodies, key=lambda kv: int(kv[0][3:])):
         described |= {m.group(0) for m in SERIES_RE.finditer(body)}
         for series, commit, quoted in agreements_of(body):
             if not series.startswith(uc_id + "-"):
@@ -275,21 +269,42 @@ def check_progress(project_text, arch_text):
          % (len(described), len(agreed), "%d 本" % len(done) if done is not None else "対象なし"))
 
 
-def check_uc_ids(project_text):
-    """判定 4: docs/project.md の本文見出しとカタログ表で UC ID が一致するか。"""
+def check_uc_ids(project_text, uc_docs):
+    """判定 4: UC ファイル名・本文見出しと project.md のカタログ表が整合するか。"""
     if project_text is None:
         emit("対象なし", "UC ID: docs/project.md がない")
         return
-    head_ids = ["UC-" + m.group(1) for m in
-                (UC_HEAD_RE.match(line) for line in project_text.splitlines()) if m]
-    body = section_body(project_text, "## 3. ユースケースと合意")
+    head_ids, ng = [], False
+    for path, text in sorted(uc_docs.items()):
+        ids = ["UC-" + m.group(1) for line in text.splitlines()
+               if (m := UC_HEAD_RE.match(line))]
+        head_ids.extend(ids)
+        if len(ids) != 1:
+            ng = True
+            emit("NG", "UC ID: docs/usecases/%s の `# UC-n.` 見出しは1件必要（実測 %d 件）"
+                 % (path.name, len(ids)))
+        elif path.stem != ids[0]:
+            ng = True
+            emit("NG", "UC ID: docs/usecases/%s のファイル名と本文 ID %s が一致しない"
+                 % (path.name, ids[0]))
+    body = section_body(project_text, "## 3. ユースケース一覧")
     catalog = parse_table(body) if body else None
     if catalog is None:
         emit("対象なし", "UC ID: docs/project.md にカタログ表がない")
         return
-    catalog_ids = [i for i in (uc_of(cell(catalog[0], c, "UC ID")) for _, c in catalog[1]) if i]
-    ng = False
-    for name, ids in (("docs/project.md 見出し", head_ids),
+    catalog_ids = []
+    for lineno, cells in catalog[1]:
+        value = cell(catalog[0], cells, "UC ID")
+        uc_id = uc_of(value)
+        if not uc_id:
+            continue
+        catalog_ids.append(uc_id)
+        targets = LINK_RE.findall(value)
+        if targets and targets != ["usecases/%s.md" % uc_id]:
+            ng = True
+            emit("NG", "UC ID: docs/project.md:%d の %s のリンク先は usecases/%s.md が必要"
+                 % (lineno, uc_id, uc_id))
+    for name, ids in (("docs/usecases/ 見出し", head_ids),
                       ("docs/project.md カタログ表", catalog_ids)):
         dups = sorted({i for i in ids if ids.count(i) > 1})
         if dups:
@@ -320,7 +335,7 @@ def check_hashes(root):
     emit("報告", "標準のハッシュ: このスクリプト自身の正規化ハッシュは %s" % norm_hash(Path(__file__)))
 
 
-def check_reports(root, project_text, arch_text):
+def check_reports(root, project_text, arch_text, uc_docs):
     """判定 6: 証跡ファイル、行数、ユースケースと実現パターンの数の報告。"""
     count, total, verification = 0, 0, []
     for here, dirnames, filenames in walk(root, EVIDENCE_EXTRA_EXCLUDE):
@@ -342,7 +357,7 @@ def check_reports(root, project_text, arch_text):
         else:
             emit("報告", "行数: %s は %d 行（上限 %d 行）" % (relpath, lines, limit))
     if project_text is not None:
-        bodies = sorted(uc_bodies(project_text).items(), key=lambda kv: int(kv[0][3:]))
+        bodies = sorted(uc_bodies(uc_docs), key=lambda kv: int(kv[0][3:]))
         detail = "、".join("%s 拡張 %d 本" % (uc, len(set(EXT_RE.findall(body)))) for uc, body in bodies)
         emit("報告", "ユースケース: %d 件%s" % (len(bodies), "（%s）" % detail if bodies else ""))
     if arch_text is not None:
@@ -375,12 +390,14 @@ def main():
                 docs[(here / name).resolve()] = read_text(here / name)
     project_text = docs.get((root / "docs" / "project.md").resolve())
     arch_text = docs.get((root / "docs" / "architecture.md").resolve())
+    uc_docs = {path: text for path, text in docs.items()
+               if path.parent == root / "docs" / "usecases"}
     check_links(root, docs)
     check_abs_paths(root, docs)
-    check_progress(project_text, arch_text)
-    check_uc_ids(project_text)
+    check_progress(project_text, arch_text, uc_docs)
+    check_uc_ids(project_text, uc_docs)
     check_hashes(root)
-    check_reports(root, project_text, arch_text)
+    check_reports(root, project_text, arch_text, uc_docs)
     print("NG %d 件" % NG_COUNT)
     return 1 if NG_COUNT else 0
 

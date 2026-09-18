@@ -1,6 +1,6 @@
 # AIDD Project Template
 
-配布版: **10**
+配布版: **11**
 
 過剰な設計や文書作成を抑え、動作するモックで仕様合意を形成してから実処理へ接続する「モック駆動開発」のテンプレートです。
 
@@ -13,13 +13,14 @@
 | [README.md](template/README.md) | プロジェクトの概要と実行手順への案内 |
 | [AGENTS.md](template/AGENTS.md) | AIエージェントの行動規範（現在地、停止点、文書管理、完了報告） |
 | [docs/document-policy.md](template/docs/document-policy.md) | 採用記録、モック適用範囲、正本の配置、保護する合意 |
-| [docs/project.md](template/docs/project.md) | 目的・制約、ユースケースと合意記録、確認した事実、実行手順、合否表 |
+| [docs/project.md](template/docs/project.md) | 目的・制約、ユースケース一覧、確認した事実、実行手順、合否表 |
+| [docs/usecases/UC-1.md](template/docs/usecases/UC-1.md) | ユースケースごとの定義、シナリオ、受け入れ条件、合意記録 |
 | [docs/architecture.md](template/docs/architecture.md) | 全体設計の合意、システム構成、実現パターン、設計判断、テーブル設計と合意記録 |
 | [docs/standards/design-and-documentation.md](template/docs/standards/design-and-documentation.md) | 設計と文書化の基準、先行成果物の範囲、完了基準、変更手続き |
 | [docs/standards/mock-driven-development.md](template/docs/standards/mock-driven-development.md) | 系列ごとの段階とゲート条件、仕掛かり上限、モックの境界 |
 | [scripts/doc_check.py](template/scripts/doc_check.py) | 文書整合の判定6件（リンク、絶対パス、合意記録・仕掛かり、UC ID、標準ハッシュ、証跡・行数報告）。Python 3 標準ライブラリのみ |
 
-ユースケースや確認した事実は `docs/project.md`、全体構造と設計判断は `docs/architecture.md` を正本とします。規約・方針文書は新設しません。`docs/standards/` は配布元からの輸入物として編集せず、差分は `docs/document-policy.md` 第1節に記録します。
+ユースケースの本文・シナリオ・合意記録は `docs/usecases/UC-n.md`、一覧や確認した事実は `docs/project.md`、全体構造と設計判断は `docs/architecture.md` を正本とします。規約・方針文書は新設しません。`docs/standards/` は配布元からの輸入物として編集せず、差分は `docs/document-policy.md` 第1節に記録します。
 
 `scripts/doc_check.py` の実行には Python 3 が必要です。Python を使わない構成では導入を見送り、その旨を `docs/document-policy.md` 第1節の差分欄に記録します。本テンプレートは [MIT ライセンス](LICENSE) で配布しているため、コピー時も著作権表示と許諾文を保持してください。
 
@@ -65,7 +66,7 @@ AIエージェントを利用する場合は、プロジェクト側の `AGENTS.
 | 2 | `README.md`（概要）、`docs/project.md` 第1・2節（目的、対象、制約、受け入れ条件）、第3節のカタログ表（UC ID、主アクター、目的、実装順序）を記入 | 解決する問題と対象外を説明でき、UC-1 が決まっている |
 | 3 | アーキテクチャを決定づける外部依存の実測を行い、事実を `docs/project.md` 第4節と `docs/reference/` に記録 | 情報源・対象版・確認日が記録されている（該当する外部依存がなければ省略） |
 | 4 | `docs/architecture.md` 第1・2節、パターンの名称と適用条件、第4節の決定を記入し、全体設計の合意欄を埋める | 合意欄に提示コミットと利用者の応答の原文がある |
-| 5 | UC-1 を [モック標準第2節](template/docs/standards/mock-driven-development.md#workflow) の段階1〜5で系列ごとに通す（主成功系列 UC-1-M から着手し、拡張は1本ずつ追加。パターン本体はここで記述し、テーブルの追加・変更があれば段階4開始前に設計を合意） | 記述した全系列で `docs/project.md` 第6節の合否表が更新され、UC-1 が完了 |
+| 5 | `docs/usecases/UC-1.md` に本文と合意記録を記載し、UC-1 を [モック標準第2節](template/docs/standards/mock-driven-development.md#workflow) の段階1〜5で系列ごとに通す（主成功系列 UC-1-M から着手し、拡張は1本ずつ追加。パターン本体はここで記述し、テーブルの追加・変更があれば段階4開始前に設計を合意） | 記述した全系列で `docs/project.md` 第6節の合否表が更新され、UC-1 が完了 |
 | 6 | 次のユースケースへ順序5を繰り返す（`docs/architecture.md` は構造やテーブル設計の変更時に再訪） | 進行中の系列が常に1本以下 |
 
 ### 補足事項
@@ -99,6 +100,14 @@ AIエージェントを利用する場合は、プロジェクト側の `AGENTS.
 ## 7. 変更履歴
 
 配布版は `template/` の内容が変わるたびに上がります。標準の版は、その標準自体に変更があった場合のみ上がります。
+
+### 版11
+
+- 変更したファイル: ルートの `README.md`、配布物の `README.md`・`AGENTS.md`・`docs/project.md`・`docs/usecases/UC-1.md`（新設）・`docs/architecture.md`・`docs/document-policy.md`・`docs/standards/mock-driven-development.md`・`scripts/doc_check.py`。
+- 変更点: ユースケースの定義、主成功・拡張シナリオ、受け入れ条件、合意記録を `docs/usecases/UC-n.md` に分離しました。ユースケースごとのフォルダは作らず、`docs/project.md` 第3節には一覧と本文へのリンクを残します。検証結果は引き続き第6節に記録します。
+- 検査: 各ユースケースファイルから合意記録・仕掛かり・件数を確認し、ファイル名・本文の UC ID・カタログ表の整合性を検査します。
+- 標準の版: 設計・文書標準 8（変更なし）、モック標準 9（合意記録の参照先を変更）。
+- 採用側への影響: `docs/project.md` のユースケース本文を `docs/usecases/UC-n.md` に移し、見出しを `# UC-n.` に変更して相対リンクを更新します。第3節の見出しを「ユースケース一覧」に変更し、カタログ表から本文へリンクします。未着手の UC ID にはリンクを付けません。関連文書とモック標準・検証スクリプトも併せて更新し、採用版を更新してください。配布物の総行数は Markdown 388 行、スクリプト 406 行、合計 794 行です。
 
 ### 版10
 
