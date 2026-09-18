@@ -16,7 +16,7 @@
 
 - 受け入れ条件: {{ACCEPTANCE}}
 - 実現パターンと逸脱: [UCP-1](../architecture.md#patterns) / 逸脱: なし
-- 合意記録（系列ごとに1件。段階3、UI 確認が不要な系列は段階1で記録）:
+- 合意記録（系列ごとに1件。段階3、UI 確認が不要な系列は段階1の確認・本文保存後に記録。「提示コミット」は [モック標準](../standards/mock-driven-development.md#discussion) に従う）:
   - UC-1-M / 提示コミット: {{COMMIT_HASH}} / 論点と回答: {{DECISIONS}}
     > {{USER_RESPONSE}}
 
