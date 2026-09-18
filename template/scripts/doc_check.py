@@ -19,8 +19,8 @@ LINE_LIMITS = {"docs/project.md": 300, "docs/architecture.md": 200,
 PLACEHOLDER_HASH = "sha256:" + "0" * 64
 # 配布元が `--print-hashes` の出力で更新する。
 EXPECTED_HASHES = {
-    "docs/standards/design-and-documentation.md": "sha256:73acc3cd9a25bdca2daa59ff352fdd7f248a574b046287d6322e474e13cab7c1",
-    "docs/standards/mock-driven-development.md": "sha256:9fc5655bfa201e6ebcd7923e7069bae444f6ea30fb39c43f81e83763847f670a",
+    "docs/standards/design-and-documentation.md": "sha256:29c25b3fe50ffc4d45fb4a4b7b052ed847182bb0725f9a0e36ebfcf069243ceb",
+    "docs/standards/mock-driven-development.md": "sha256:91583a76139125a2aaedfad1ce665deac9687eb224dba5610a6a72e0f2e8d23c",
 }
 
 HEX_RE = re.compile(r"(?<![0-9A-Za-z])[0-9a-fA-F]{7,40}(?![0-9A-Za-z])")
