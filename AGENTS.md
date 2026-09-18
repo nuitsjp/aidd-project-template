@@ -16,7 +16,7 @@
 
 ## 変更時の確認
 
-- `python template/scripts/doc_check.py template` を実行し、判定 1〜3、6、7 が NG なく通ること（未記入のテンプレートでは判定 4・5 は対象外または OK）。
+- `python template/scripts/doc_check.py template` を実行し、全6判定が NG なく通ること（未記入のテンプレートの合意記録は0件でよい）。テーブル設計の合意条件と記録先の整合性は文書レビューで確認する。
 - ルート README 第2節の導入手順（PowerShell と bash の両方）を一時ディレクトリで実行し、`template/` の全ファイルと LICENSE が正しく配置されること。
 - `template/` 配下の Markdown 合計行数が 410 行以下であること。
 - テンプレート全文に、他ユースケースへの横展開を許可する記述（「独立した機能」「先行して進め」等）が含まれていないこと。
