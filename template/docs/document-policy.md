@@ -9,7 +9,7 @@
 
 | 項目 | 内容 |
 | --- | --- |
-| 配布元・版 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版9 |
+| 配布元・版 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版10 |
 | 設計・文書標準 | [project-template-design-and-documentation / 版8](standards/design-and-documentation.md) |
 | モック標準 | [project-template-mock-driven-development / 版8](standards/mock-driven-development.md) |
 | 採用日・判断者・合意の根拠 | {{ADOPTION_RECORD}} |
