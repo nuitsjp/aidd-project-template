@@ -1,3 +1,7 @@
 [tasks."init:wails"]
 description = "共通テンプレートとWails差分を新しいディレクトリへ配置する"
-run = "node scripts/init-wails.mjs"
+run = "node scripts/init-template.mjs wails"
+
+[tasks."init:react"]
+description = "共通テンプレートとReact差分を新しいディレクトリへ配置する"
+run = "node scripts/init-template.mjs react"

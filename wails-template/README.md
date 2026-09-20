@@ -1,12 +1,12 @@
 # Wails Template
 
-Windows用のユースケース駆動参照アプリ。対話をReact、機能と保存をGoに配置し、メモ編集・CSV取り込み・アプリ内更新を実装しています。
+Windows用のユースケース駆動参照アプリです。対話制御を React、機能と保存を Go に配置し、メモ編集・CSV取り込み・アプリ内更新を実装しています。
 
-**検証状況:** Goの独立パッケージのテストは実行済みですが、提供環境の外部通信制限により依存取得、Wails全体ビルド、Reactの型検査・E2E、Windowsでの起動・NSIS更新は未検証です。詳細は[検証結果](docs/project.md#verification)に集約しています。コンパイル済み配布物ではなく、ビルド対象のソース一式です。
+**検証状況:** Go の独立パッケージテストは実行済みですが、提供環境の外部接続制限により依存取得、Wails全体ビルド、React型検査・E2E、Windows実機での起動・NSIS更新は未検証です（詳細は [検証結果](docs/project.md#verification) 参照）。コンパイル済み配布物ではなく、ビルド対象のソース一式です。
 
 ## 配置
 
-`wails-template/` は、同じチェックアウトにある `template/` を土台へ重ねるWails差分です。単独で実行せず、リポジトリのルートから次を実行して新規プロジェクトを生成します。生成時は `template/` を先にコピーし、`wails-template/` の内容で上書きし、ルートの `LICENSE` を配置します。
+`wails-template/` は、同一チェックアウトの `template/` に重ねるWails固有の差分です。単独実行せず、リポジトリのルートから以下を実行して新規プロジェクトを生成します（`template/` を先にコピーし、`wails-template/` の内容で上書きしてルートの `LICENSE` を配置します）。
 
 ```text
 aidd-project-template/
@@ -20,9 +20,7 @@ mise run init:wails ../my-wails-app
 
 ## Windowsで開始
 
-生成されたプロジェクトのルートでコマンドを実行します。事前にGo 1.25以上、Node.js 22.16以上、Python 3.9以上、WebView2 Evergreen Runtimeを導入し、`go`・`node`・`npm`・`python`がPATH上で使えるようにします。NSIS 3.11以上はインストーラー作成時だけ必要です。Goの自動ツールチェーン取得を禁止する環境では、依存モジュールが要求するGo版も事前に導入してください。
-
-PowerShellで次を実行します。
+生成されたプロジェクトのルートでコマンドを実行します。事前に Go 1.25以上、Node.js 22.16以上、Python 3.9以上、WebView2 Evergreen Runtime を導入し、`go`・`node`・`npm`・`python` が PATH 上で使えるようにしてください。NSIS 3.11以上はインストーラー作成時のみ必要です。Go の自動ツールチェーン取得を禁止する環境では、依存モジュールが要求する Go 版も事前に導入してください。
 
 ```powershell
 cd ../my-wails-app
@@ -30,23 +28,23 @@ node scripts/run.mjs setup
 node scripts/run.mjs dev
 ```
 
-`setup`は指定版のWails CLIをローカルの`.tools/`に導入し、Go/npm依存、実際のGoバインディング、ルートツリーを生成します。初回は外部ネットワークが必要です。**依存取得できない提供環境で架空のlockfileを作らないため、`go.sum`と`frontend/package-lock.json`は初回生成になります。初回成功後は両方をコミットしてください。以後はnpm ciを使用します。** 直接依存の版は固定済みですが、初回解決前の推移的依存は未固定です。
+`setup` は指定版の Wails CLI をローカルの `.tools/` に導入し、Go/npm 依存、実際の Go バインディング、ルートツリーを生成します。初回は外部ネットワークが必要です。依存取得できない環境で架空の lockfile を作らないため、`go.sum` と `frontend/package-lock.json` は初回生成とし、初回成功後に両方をコミットしてください。以後は `npm ci` を使用します。直接依存の版は固定済みですが、初回解決前の推移的依存は未固定です。
 
-| コマンド（先頭は `node scripts/run.mjs`） | 内容 |
+| コマンド（先頭に `node scripts/run.mjs`） | 内容 |
 | --- | --- |
-| `dev` | Windowsアプリを起動。Go・Reactの変更を監視 |
-| `dev:mock` | 同じアプリを試験用固定データで起動。実データは変更しない |
-| `build` | 本番Windows実行ファイルを `bin/` に生成 |
-| `package` | ビルド後、ユーザー単位の未署名NSISを `bin/` に生成 |
-| `server` | Go実処理を使うブラウザ確認用サーバーをlocalhost:34115で起動 |
-| `verify` | 生成・型検査・Lint・テスト・文書検査・server E2E |
-| `test:core` | Goの機能・保存・更新検証を実行 |
+| `dev` | Windowsアプリを起動し、Go・React の変更を監視 |
+| `dev:mock` | 試験用固定データで起動（実データは変更しない） |
+| `build` | 本番実行ファイルを `bin/` に生成 |
+| `package` | ビルド後、ユーザー単位の未署名 NSIS インストーラーを `bin/` に生成 |
+| `server` | Go 実処理を使うブラウザ確認用サーバーを localhost:34115 で起動 |
+| `verify` | 生成・型検査・Lint・テスト・文書検査・server E2E を一括実行 |
+| `test:core` | Go の機能・保存・更新検証を実行 |
 
-初めてE2Eを行う前に、`cd frontend; npx playwright install chromium; cd ..` を実行します。`server`は開発・検証用であり、LANへ公開しません。終了はCtrl+Cです。
+初回の E2E 実行前に `cd frontend; npx playwright install chromium; cd ..` を実行してください。`server` は開発・検証用であり、LAN へ公開しません。終了は Ctrl+C です。
 
 ## 確認できる実装
 
-メモの作成・選択・編集・保存、入力エラーと未保存確認、CSV入力と確認画面をまたぐ下書き、Goによる一括保存・進捗通知・中止要求を含みます。CSVの列は `title,body` です。入力例は次のとおりです。
+メモの作成・選択・編集・保存、入力エラーと未保存確認、CSV 入力と確認画面をまたぐ下書き、Go による一括保存・進捗通知・中止要求を含みます。CSV は `title,body` 列形式です。
 
 ```csv
 title,body
@@ -56,24 +54,25 @@ title,body
 
 進捗は実処理から通知し、見せるための待ち時間は入れていません。
 
-初回起動時のメモは空です。保存先はOSのユーザー設定領域内のアプリID配下です。別の試験データを使う場合だけ、環境変数 `WAILS_DATA_DIR` に絶対パスを指定します。アプリの更新・アンインストールではこのデータを消しません。
+初回起動時のメモは空です。データは OS のユーザー設定領域（アプリ ID 配下）に保存されます。別の試験データを使う場合だけ、環境変数 `WAILS_DATA_DIR` に絶対パスを指定します。更新やアンインストールでデータは削除されません。
 
 ## 配布と更新の設定
 
-アプリ名・識別子・版・実行ファイル名・更新元・更新用公開鍵は [`build/app.json`](build/app.json) で設定します。初期値の更新元と鍵は空です。存在しない公開リリースや共通秘密鍵は同梱しません。更新コードと画面は実装済みで、配布者が一度設定すると利用できます。
+アプリ名・識別子・版・実行ファイル名・更新元・更新用公開鍵は [`build/app.json`](build/app.json) で設定します。初期状態の更新元と鍵は空で、存在しない公開リリースや共通秘密鍵は同梱しません。更新コードと画面は実装済みで、配布者が設定すると利用できます。
 
-[更新元と署名の設定手順](docs/project.md#release)に従って、初回インストーラーを作る**前に**公開鍵と更新元を埋め込みます。共有フォルダと公開GitHub Releasesに対応します。privateリポジトリの認証・鍵ローテーション・差分更新は含めません。
+[更新元と署名の設定手順](docs/project.md#release) に従い、初回インストーラー作成前に公開鍵と更新元を設定してください。共有フォルダと公開 GitHub Releases に対応し、private リポジトリの認証・鍵ローテーション・差分更新は含めません。
 
-NSISはアプリ本体、スタートメニュー、アンインストール情報を管理します。アプリ内更新では、取得物の検証と利用者の確認後にNSISへ引き渡し、旧PIDの終了を最大60秒待って適用・再起動します。適用失敗時の自動ロールバックはありません。
+NSIS はアプリ本体、スタートメニュー、アンインストール情報を管理します。アプリ内更新では、取得物の検証と利用者の確認後に NSIS へ引き渡し、旧 PID の終了を最大60秒待って適用・再起動します。適用失敗時の自動ロールバックはありません。
 
-この版のNSISはWebView2の既存導入を検査し、未導入なら導入を案内して停止します。Runtimeのオンライン自動取得は組み込んでいません。[Microsoft公式のEvergreen Installer](https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/distribution)を先に導入してください。未署名による実行制限は、更新用Ed25519署名では解除されません。
+この版の NSIS は WebView2 の既存導入を検査し、未導入なら案内して停止します。Runtime のオンライン自動取得は組み込んでいません。[Microsoft公式のEvergreen Installer](https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/distribution) を先に導入してください。未署名による実行制限は、更新用 Ed25519 署名では解除されません。
 
 ## 設計・規則・採用
 
-[アーキテクチャ](docs/architecture.md) / [Wails補足](docs/architecture-wails.md) / [プロジェクト定義と検証](docs/project.md) / [採用記録](docs/document-policy.md)
+- [アーキテクチャ](docs/architecture.md)
+- [Wails補足](docs/architecture-wails.md)
+- [プロジェクト定義と検証](docs/project.md)
+- [採用記録](docs/document-policy.md)
 
-サンプルを製品へ持ち込む際は、`usecases/`・`features/notes`・`internal/notes`と対応するルート・テストを置き換えます。製品固有のUC・データ設計・合意記録は改めて定義し、参照実装の記録を製品の合意済み仕様に転用しません。
+サンプルの UI やデータ設計は参照用です。製品開発時は `usecases/`・`features/notes`・`internal/notes` と対応するルート・テストを製品固有の実装へ置き換え、製品固有の UC・データ設計・合意記録を改めて定義してください。参照実装の記録を製品の合意済み仕様に転用しません。
 
-`.github/workflows/windows.yml`は、`mise run init:wails`で生成したプロジェクトのルートに置いて実行するCI例です。`setup`・`verify`・`build`・`package`を生成後のルートで実行し、`SOURCE_DIR`は`.`のまま使います。`wails-template/`をチェックアウト上で単独実行するCIではありません。
-
-ライセンスは [MIT](LICENSE) です。
+`.github/workflows/windows.yml` は生成プロジェクト用の CI 例です。生成後のルートで `setup`・`verify`・`build`・`package` を実行し、`SOURCE_DIR` は `.` のまま使用します。`wails-template/` をチェックアウト上で単独実行する CI ではありません。ライセンスは [MIT](LICENSE) です。

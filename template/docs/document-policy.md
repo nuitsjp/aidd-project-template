@@ -1,6 +1,6 @@
 # 文書方針
 
-本書は、標準の採用記録、モック駆動開発の適用範囲、正本の配置、および保護する合意を定義します。
+標準の採用記録、モック駆動開発の適用範囲、正本の配置、および保護する合意を定義します。
 
 <a id="adoption"></a>
 ## 1. 採用記録
@@ -9,13 +9,13 @@
 
 | 項目 | 内容 |
 | --- | --- |
-| 配布元・版 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版13 |
-| 設計・文書標準 | [project-template-design-and-documentation / 版10](standards/design-and-documentation.md) |
-| モック標準 | [project-template-mock-driven-development / 版11](standards/mock-driven-development.md) |
+| 配布元・版 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版14 |
+| 設計・文書標準 | [project-template-design-and-documentation / 版11](standards/design-and-documentation.md) |
+| モック標準 | [project-template-mock-driven-development / 版12](standards/mock-driven-development.md) |
 | 採用日・判断者・合意の根拠 | {{ADOPTION_RECORD}} |
 | プロジェクト固有の差分と理由 | {{LOCAL_RULE_DIFFERENCES}} |
 
-採用後、設計・文書標準はすべての変更に適用し、モック標準の適用範囲は第2節で定めます。`standards/` は編集せず、プロジェクト固有の差分（`scripts/doc_check.py` を実行できない環境を含む）は上表に理由とともに記録します（差分がない場合は「なし」と明記）。新版のテンプレートは自動適用しません。
+採用後、設計・文書標準はすべての変更に適用し、モック標準の適用範囲は第2節で定めます。`standards/` は編集せず、固有差分（`scripts/doc_check.py` を実行できない環境を含む）は上表に理由とともに記録します（差分がない場合は「なし」と明記）。新版のテンプレートは自動適用しません。
 
 <a id="mock-scope"></a>
 ## 2. モック駆動開発の適用範囲
@@ -38,7 +38,7 @@
 | [README.md](../README.md) | プロジェクト概要と参照案内 |
 | [AGENTS.md](../AGENTS.md) | AIエージェントの作業規範 |
 
-- **新設の禁止**: 本表にない規約・方針・プロセス文書は新設しません。固有の規則は第1節の差分欄、[project.md](project.md) 第2節の制約、または実現パターン内に記述します。作業は1回のセッションで1本の系列を通す単位とし、進捗・現在地・未決事項の管理文書は置きません。複数セッションにまたがる長期計画が必要な場合は、課題管理システム等の外部で扱います。
+- **新設の禁止**: 本表にない規約・方針・プロセス文書は新設しません。固有の規則は第1節の差分欄、[project.md](project.md) 第2節の制約、または実現パターン内に記述します。作業は1回のセッションで1本の系列を通す単位とし、進捗・現在地・未決事項の管理文書は置きません。複数セッションにまたがる長期計画は外部の課題管理システム等で扱います。
 - **文書の分割基準**: 単独参照の必要性や更新頻度の違いにより管理が困難な場合のみ分割を認めます。分割時は元の記述を参照リンクへ置き換え、本表と関連リンクを更新します。
 - **図の形式**: Mermaid を使用します（コンテキスト・コンテナは flowchart または C4 構文、系列は sequenceDiagram、ER図は erDiagram）。
 
@@ -47,4 +47,4 @@
 
 採用規則、適用範囲、正本の責務、[プロジェクト定義](project.md) と `usecases/UC-n.md` で合意済みの要件・制約・仕様・完了条件、および [アーキテクチャ](architecture.md) の全体設計合意欄、設計判断 ID、合意済みのテーブル設計と合意記録を保護対象とします。これらを変更・緩和する場合は [変更手続き](standards/design-and-documentation.md#agreement-changes) に従います。設計判断は、実装の破棄や文書再編時も維持します。
 
-初期の記入欄、検討中の案、モック上の仮定は合意とみなしません。判断に必要な未確定事項は停止点で利用者に確認し、確定するまで仕様・設計として記録しません。
+初期記入欄、検討中の案、モック上の仮定は合意とみなしません。判断に必要な未確定事項は停止点で利用者に確認し、確定するまで仕様・設計として記録しません。
