@@ -15,7 +15,7 @@ export function configureIdentity(app: FastifyInstance, db: DatabaseSync, config
         if (config.authMode === 'proxy') {
             // 信頼済み同一ホストのリバースプロキシが認証して設定する。任意クライアントのヘッダーは信頼しない。
             const id = req.headers['x-authenticated-user'];
-            if (typeof id !== 'string' || !/^[a-zA-Z0-9@._:+\/-]{1,128}$/.test(id))
+            if (typeof id !== 'string' || !/^[a-zA-Z0-9@._:+/-]{1,128}$/.test(id))
                 return null;
             return ensureUser(db, { id, name: id });
         }

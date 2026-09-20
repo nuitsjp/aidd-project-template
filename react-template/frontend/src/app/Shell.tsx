@@ -46,8 +46,8 @@ function Application() {
     <Title order={2} size="h4">React Template</Title>
     <Text size="sm" c="gray.4" mt={8}>ユースケース駆動の参照実装</Text>
     <nav className={classes.nav}>
-    <Link to="/notes" activeProps={{ className: classes.active }}>01　メモを編集</Link>
-    <Link to="/import/" activeProps={{ className: classes.active }}>02　一括登録</Link>
+    <Link to="/notes" activeProps={{ className: classes.active }}>01 メモを編集</Link>
+    <Link to="/import" activeProps={{ className: classes.active }}>02 一括登録</Link>
     </nav>
     <div className={classes.sidebarBottom}>
     <Badge variant="outline" color="teal.2">SQLite / WAL</Badge>
@@ -57,7 +57,7 @@ function Application() {
     <div className={classes.workspace}>
     <header className={classes.header}>
     <Group gap="xs">
-    <Badge variant="light">参照実装 0.1.0</Badge>{__MOCK__ && <Badge color="red">モック</Badge>}<Text size="sm" c="dimmed" role="status" aria-label="通知接続">{ready ? '変更通知 接続済み' : '変更通知 再接続中'}</Text>
+    <Badge variant="light">参照実装</Badge>{__MOCK__ && <Badge color="red">モック</Badge>}<Text size="sm" c="dimmed" role="status" aria-label="通知接続">{ready ? '変更通知 接続済み' : '変更通知 再接続中'}</Text>
     </Group>
     <Group>
     <Text size="sm">{session.data.user.name}</Text>{session.data.mode === 'demo' && <Button size="xs" variant="subtle" disabled={busy} onClick={() => {

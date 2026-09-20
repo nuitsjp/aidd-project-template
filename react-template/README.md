@@ -2,7 +2,7 @@
 
 Reactの対話制御からNode.jsの機能、SQLiteへの確定までを通す参照実装です。
 
-**検証状態:** 実SQLiteによる機能・並列分離テスト21件は合格。作成環境の外部接続制約により、依存解決・全体ビルド・Playwright E2Eは未検証です（詳細は [検証結果](docs/project.md#verification) 参照）。
+**検証状態:** 生成先で `npm run verify`（依存解決後の型検査・Lint・文書検査、実SQLiteによる機能・並列分離テスト21件、単体テスト3件、本番ビルド、本番Node + Chromium + SQLite の E2E 14件）と4並列×3回の E2E 反復に合格しました（詳細は [検証結果](docs/project.md#verification) 参照）。同梱サンプルの系列ごとの利用者合意と完成系監査は未実施です。
 
 ## 配置
 
@@ -69,7 +69,7 @@ worker数変更時は `npx playwright test --workers=8`（事前ビルド要）�
 | [project.md](docs/project.md) | サンプルの範囲、認証・配備・DB運用、検証結果 |
 | [document-policy.md](docs/document-policy.md) | 輸入標準と今回の提供範囲・合意状態 |
 
-サンプルのUIやタイトル一意制約、文字数制限は参照用仕様です。製品開発時は `backend/features/notes/`・`frontend/src/usecases/` とE2Eを製品のユースケースに置き換えます。
+サンプルのUIやタイトル一意制約、文字数制限は参照用仕様です。製品開発時は `backend/features/notes/`・`frontend/src/usecases/` とE2Eを製品のユースケースに置き換えます。テンプレート名が残る箇所（`package.json` の名前、`frontend/index.html` のタイトル、`frontend/src/app/Shell.tsx` の表示名、`backend/http/auth.ts` の Cookie 名、`.github/workflows/react-template.yml` のファイル名）も製品名へ置き換えます。
 
 サンプルの仕様・合意は採用先へ引き継がず、採用時は [導入開始手順](https://github.com/nuitsjp/aidd-project-template#3-初期セットアップと最初のユースケース) を確認して製品固有の仕様と合意を定義します。
 

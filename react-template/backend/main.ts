@@ -32,7 +32,7 @@ process.once('disconnect', () => {
 });
 try {
     const address = await app.listen({ host: config.host, port: config.port });
-    app.log.info({ version: '0.1.0', auth: config.authMode }, 'React Templateを起動しました');
+    app.log.info({ auth: config.authMode }, 'サーバーを起動しました');
     if (config.authMode === 'demo')
         app.log.warn('ローカル参照用ユーザー選択です。認証機能ではありません。');
     process.send?.({ type: 'ready', url: address, pid: process.pid });
