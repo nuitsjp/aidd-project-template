@@ -36,22 +36,22 @@ type Status struct {
 	Total      int64  `json:"total"`
 }
 type Service struct {
-	cfg      Config
-	mu       sync.Mutex
-	busy     bool
-	manifest *Manifest
-	staged   string
-	status   Status
-	client   *http.Client
-	state    *appstate.State
-	logger   *slog.Logger
-	publish  func(string, any)
-	launch   func(string) error
-	quit     func()
+	cfg         Config
+	mu          sync.Mutex
+	busy        bool
+	manifest    *Manifest
+	staged      string
+	status      Status
+	client      *http.Client
+	state       *appstate.State
+	logger      *slog.Logger
+	publish     func(string, any)
+	launch      func(string) error
+	approveQuit func()
 }
 
-func New(cfg Config, state *appstate.State, logger *slog.Logger, publish func(string, any), launch func(string) error, quit func()) *Service {
-	return &Service{cfg: cfg, state: state, logger: logger, publish: publish, launch: launch, quit: quit, client: newHTTPClient(), status: Status{Configured: cfg.Source != "" && cfg.PublicKey != "", Phase: "idle"}}
+func New(cfg Config, state *appstate.State, logger *slog.Logger, publish func(string, any), launch func(string) error, approveQuit func()) *Service {
+	return &Service{cfg: cfg, state: state, logger: logger, publish: publish, launch: launch, approveQuit: approveQuit, client: newHTTPClient(), status: Status{Configured: cfg.Source != "" && cfg.PublicKey != "", Phase: "idle"}}
 }
 func (s *Service) GetStatus() Status { s.mu.Lock(); defer s.mu.Unlock(); return s.status }
 func (s *Service) acquire() (func(), error) {
@@ -270,6 +270,6 @@ func (s *Service) Apply() (err error) {
 		return fmt.Errorf("could not launch installer: %w", err)
 	}
 	s.report("handed-off", m.Size, m.Size)
-	s.quit()
+	s.approveQuit()
 	return nil
 }

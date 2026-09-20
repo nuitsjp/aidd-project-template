@@ -22,11 +22,11 @@ Windows デスクトップを主対象とします（ブラウザ server build �
 <a id="design"></a>
 ## 4. 確認した事実
 
-参照実装の作成時に、配布元の版13・コミット `88b31b40c65a2ce35201eeda34358e2d103bac23` を確認しました。採用する共通資材は、生成に使う同一チェックアウトの `template/`（現在の配布版16）に従います。標準2文書と検査スクリプトは Git blob の一致を確認して複製します。
+参照実装の作成時に、配布元の版13・コミット `88b31b40c65a2ce35201eeda34358e2d103bac23` を確認しました。採用する共通資材は、生成に使う同一チェックアウトの `template/`（現在の配布版17）に従います。標準2文書と検査スクリプトは Git blob の一致を確認して複製します。
 
 Wails 本体・CLI・npm ランタイムは `v3.0.0-beta.23` / `3.0.0-beta.23`、Go 1.25以上を前提とします。生成 API・Service 登録・ライフサイクル・runtime Vite plugin は [固定版ソース](https://github.com/wailsapp/wails/tree/v3.0.0-beta.23/v3) および [CLI資料](https://v3.wails.io/guides/cli/)（2026-09-20確認）に基づきます。
 
-外部依存を取得できないため、npm 依存の解決・相互の型整合・生成バインディングの検証は未完了です。主要な仕様判断と、実際に実行できた検証を区別します。
+生成先で依存取得、Wailsバインディング生成、TypeScript型検査、実Goサービスを使うE2Eを確認しました。主要な仕様判断と、実際に実行できた検証を区別します（[検証結果](#verification) 参照）。
 
 <a id="commands"></a>
 ## 5. 実行・切り替え・検証手順
@@ -66,14 +66,16 @@ node scripts/run.mjs release manifest -key "$env:USERPROFILE/wails-release-priva
 
 完了報告では `node scripts/run.mjs verify` の結果と、Windows 実機確認の範囲を分けて記録します。Wails server build・Playwright・Go テストの結果は、Windows 実機の起動・インストール・更新確認の代わりにしません。
 
-| UC・系列 ID | 構成 | 実行日 | コマンド | 合否 | 対象コミットまたは CI 参照 |
-| --- | --- | --- | --- | --- | --- |
-| UC-1-M / UC-1-X1 | Wails server + Playwright | — | `node scripts/run.mjs verify` | 未検証 | — |
-| UC-2-M | Wails server + Playwright | — | `node scripts/run.mjs verify` | 未検証 | — |
-| UC-3-M | Windows + NSIS | — | READMEと本節の更新手順 | 未検証 | — |
+| UC・系列 ID | 段階 | 構成 | 実行日 | コマンド | 合否 | 対象コミットまたは CI 参照 |
+| --- | --- | --- | --- | --- | --- | --- |
+| UC-1-M / UC-1-X1 | — | Wails server + Playwright | — | `node scripts/run.mjs verify` | 未検証 | — |
+| UC-2-M | — | Wails server + Playwright | — | `node scripts/run.mjs verify` | 未検証 | — |
+| UC-3-M | — | Windows + NSIS | — | READMEと本節の更新手順 | 未検証 | — |
 
-作成環境での限定検証（2026-09-20）: Go の `internal/`・`cmd/` を変更せず、一時 Go 1.23 モジュールへコピーし、`GOTOOLCHAIN=local GOPROXY=off go test -race ./internal/... ./cmd/...` を実行して合格しました。公開 Go モジュールは Wails のため1.25以上のままです。この結果は機能単位であり、Wails ブリッジや画面の検証ではありません。
+合否を記入するときは [モック標準](standards/mock-driven-development.md#workflow) の段階番号（1〜6）も記録します。段階6の結果には対象系列の合意記録と完成系監査記録が必要であり、一部構成の合格のみで完了とは扱いません。
 
-全体検証を妨げた事実: GitHub・proxy.golang.org・registry.npmjs.org を提供環境から DNS 解決できず、Go ツールチェーン・Wails・npm 依存を取得できませんでした。Windows 環境と NSIS もないため、全体ビルド・ネイティブ起動・更新は未検証です。生成物の代わりに手書きバインディングや架空の成功結果は置いていません。
+参照実装の保守検証（2026-09-20、Wails拡張0.1.1、Windows amd64、Go 1.25.13・Node.js 24.20.0）: 生成先で `node scripts/run.mjs verify` と `node scripts/run.mjs build` に合格しました。型検査・Lint・Vitest 7件・Go全パッケージテスト・go vet・文書検査（NG 0件）・実Goサービスのserver E2E 3件・Windows向け本番ビルドを確認しました。
 
-追加の限定検証（2026-09-20）: Go テスト21本（サブケースを除く）・race 検査・go vet に合格しました。独立した Go 機能群とリリース CLI は Windows amd64/arm64 向けクロスビルドに合格しました。TypeScript/TSX 30ファイルの構文・相対参照、JSON/YAML/XML の構文、文書検査（NG 0件）も確認しました。TypeScript の依存型検査、Wails バインディング生成、Windows 実行の代用にはしていません。
+保守検証では新規保存・再保存の成功表示、履歴移動や再選択時の表示解除、下書き保持、一括取り込みを確認しました。通常終了・更新適用ではGo応答前や失敗時にruntime終了要求を出さないことを単体テストで確認しています。本番CSPはインラインスクリプトを許可せず、開発モードのみ許可します。
+
+WebView2のWindows実機起動・終了操作、NSISのインストール・更新・再起動、未署名実行制御は未検証です。上表は系列ごとの利用者合意と完成系監査を経た検証用であり、この保守検証の合格を段階6完了や製品の合意記録には転用しません。

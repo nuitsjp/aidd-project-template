@@ -8,11 +8,10 @@
 | --- | --- | --- |
 | 1 | {{ACTOR}} | {{STEP}} |
 
-- 拡張（系列 ID は UC-1-X1 から。着手した系列のみ記載）:
+- 拡張（系列 ID の末尾は -X1 から。着手した系列のみ記載）:
 
 | 系列 ID | 分岐点 | 条件 | 動作 | UI 確認 | 理由 |
 | --- | --- | --- | --- | --- | --- |
-| UC-1-X1 | 手順 {{N}} | {{CONDITION}} | {{BEHAVIOR}} | {{UI_CHECK}} | {{UI_CHECK_REASON}} |
 
 - 受け入れ条件: {{ACCEPTANCE}}
 - 実現パターンと逸脱: [UCP-1](../architecture.md#patterns) / 逸脱: なし

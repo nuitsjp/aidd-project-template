@@ -28,9 +28,9 @@ function Content() {
       <Title order={3} mt="xs">ユースケースから<br />実装へ。</Title>
       <Text size="sm" c="dimmed" mt="md">対話はReact、機能はGo。境界を確認できる参照アプリ。</Text>
       <nav className={styles.navigation} aria-label="メインナビゲーション">
-        <Link to="/notes" activeProps={{ className: styles.active }}>01　メモの編集</Link>
-        <Link to="/import" activeProps={{ className: styles.active }}>02　一括取り込み</Link>
-        <Link to="/updates" activeProps={{ className: styles.active }}>03　アプリの更新</Link>
+        <Link to="/notes" activeProps={{ className: styles.active }}>{'01　メモの編集'}</Link>
+        <Link to="/import" activeProps={{ className: styles.active }}>{'02　一括取り込み'}</Link>
+        <Link to="/updates" activeProps={{ className: styles.active }}>{'03　アプリの更新'}</Link>
       </nav>
       <div className={styles.footer}><Badge variant="light">{info.data?.server ? 'Server / 検証用' : 'Windows Desktop'}</Badge><Text size="xs" c="dimmed" mt="sm">v{info.data?.version ?? '—'}</Text></div>
     </aside>

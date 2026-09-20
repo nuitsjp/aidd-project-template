@@ -6,6 +6,8 @@
 
 環境構築、起動、モック再現、実処理切り替え、および検証の手順は [プロジェクト定義の実行手順](docs/project.md#commands) を参照します。
 
+文書方針が未適用の場合は、[採用後の導入開始手順](https://github.com/nuitsjp/aidd-project-template#3-初期セットアップと最初のユースケース) を確認して開始します。
+
 ## 関連文書
 
 - `docs/usecases/UC-n.md`: ユースケースごとの定義、シナリオ、合意記録

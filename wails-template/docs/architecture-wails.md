@@ -11,7 +11,7 @@ Windows 専用の Wails v3 アプリとし、単一リポジトリ・単一 Go �
 | 配置 | 責務 |
 | --- | --- |
 | `main.go` | 依存関係の生成・接続、Service 登録、アプリ起動 |
-| `frontend/src/app/` | Provider・Router の組み立て |
+| `frontend/src/app/` | Provider・Router の組み立て、アプリ全体の終了確認と診断表示 |
 | `frontend/src/routes/` | ルート定義とユースケースの配置（loader による事前取得） |
 | `frontend/src/usecases/<目的>/` | 対話進行、入力途中の状態、機能の組み合わせ、専用 UI |
 | `frontend/src/features/<機能領域>/` | Query 定義、更新要求、変更イベント購読 |

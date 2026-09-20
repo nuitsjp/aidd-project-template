@@ -2,7 +2,7 @@
 
 Windows用のユースケース駆動参照アプリです。対話制御を React、機能と保存を Go に配置し、メモ編集・CSV取り込み・アプリ内更新を実装しています。
 
-**検証状況:** Go の独立パッケージテストは実行済みですが、提供環境の外部接続制限により依存取得、Wails全体ビルド、React型検査・E2E、Windows実機での起動・NSIS更新は未検証です（詳細は [検証結果](docs/project.md#verification) 参照）。コンパイル済み配布物ではなく、ビルド対象のソース一式です。
+**検証状況:** 生成先で依存取得、Wailsバインディング生成、型検査・Lint・Go/Vitestテスト、server E2E、Windows向け本番ビルドに合格しました。Windows実機でのWebView2の起動・終了操作・NSIS更新は未検証です（詳細は [検証結果](docs/project.md#verification) 参照）。配布物はビルド対象のソース一式です。
 
 ## 配置
 
@@ -74,5 +74,7 @@ NSIS はアプリ本体、スタートメニュー、アンインストール情
 - [採用記録](docs/document-policy.md)
 
 サンプルの UI やデータ設計は参照用です。製品開発時は `usecases/`・`features/notes`・`internal/notes` と対応するルート・テストを製品固有の実装へ置き換え、製品固有の UC・データ設計・合意記録を改めて定義してください。参照実装の記録を製品の合意済み仕様に転用しません。
+
+採用時は [導入開始手順](https://github.com/nuitsjp/aidd-project-template#3-初期セットアップと最初のユースケース) を確認し、サンプルの仕様・合意を引き継がずに製品固有の内容を定義します。
 
 `.github/workflows/windows.yml` は生成プロジェクト用の CI 例です。生成後のルートで `setup`・`verify`・`build`・`package` を実行し、`SOURCE_DIR` は `.` のまま使用します。`wails-template/` をチェックアウト上で単独実行する CI ではありません。ライセンスは [MIT](LICENSE) です。

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Events } from '@wailsio/runtime';
+import { Application as RuntimeApplication, Events } from '@wailsio/runtime';
 import * as Updates from '@bindings/wailstemplate/internal/updates/service';
 const key = ['updates', 'status'] as const;
 export function useUpdates() {
@@ -15,6 +15,9 @@ export function useUpdates() {
     const call = Updates.Download(); active.current = call;
     return call.finally(() => { active.current = null; });
   }, onSuccess: value => { client.setQueryData(key, value); } });
-  const apply = useMutation({ mutationKey: ['updates'], mutationFn: () => Updates.Apply() });
+  const apply = useMutation({ mutationKey: ['updates'], mutationFn: async () => {
+    await Updates.Apply();
+    await RuntimeApplication.Quit();
+  } });
   return { status, check, download, apply, cancel: () => active.current?.cancel() };
 }

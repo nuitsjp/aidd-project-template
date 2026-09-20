@@ -29,8 +29,6 @@ var webAssets embed.FS
 //go:embed build/app.json
 var configJSON []byte
 
-var production = "false"
-
 type appConfig struct {
 	ID              string `json:"id"`
 	Name            string `json:"name"`
@@ -69,7 +67,7 @@ func run() error {
 	if !filepath.IsAbs(dir) {
 		return fmt.Errorf("WAILS_DATA_DIR must be absolute")
 	}
-	logger, logs, err := diagnostics.Open(filepath.Join(dir, "logs"), production == "true")
+	logger, logs, err := diagnostics.Open(filepath.Join(dir, "logs"), production)
 	diagnosticsAvailable := err == nil
 	if err != nil {
 		// Diagnostics must not prevent useful operation. This fallback is
@@ -96,7 +94,7 @@ func run() error {
 			app.Event.Emit(name, data)
 		}
 	}
-	controls := &desktop.Controls{Emit: emit, Quit: func() { app.Quit() }}
+	controls := &desktop.Controls{Emit: emit}
 	noteService, err := notes.New(dir, logger, state, emit)
 	if err != nil {
 		return err

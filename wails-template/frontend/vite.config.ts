@@ -11,7 +11,7 @@ export default defineConfig(({ command, mode }) => {
   }
   return {
     define: { __MOCK__: JSON.stringify(mock) },
-    plugins: [{ name: 'app-csp', transformIndexHtml: (html: string) => html.replace('__CONNECT_SRC__', mode === 'production' ? "'self'" : "'self' ws://127.0.0.1:* http://127.0.0.1:*") }, tanstackRouter({ target: 'react', autoCodeSplitting: false }), react(), wails('./bindings')],
+    plugins: [{ name: 'app-csp', transformIndexHtml: (html: string) => html.replace('__SCRIPT_SRC__', mode === 'production' ? "'self'" : "'self' 'unsafe-inline'").replace('__CONNECT_SRC__', mode === 'production' ? "'self'" : "'self' ws://127.0.0.1:* http://127.0.0.1:*") }, tanstackRouter({ target: 'react', autoCodeSplitting: false }), react(), wails('./bindings')],
     resolve: { alias: [
       { find: '@notes-service', replacement: fileURLToPath(new URL(mock
         ? './tests/fixtures/notes.ts' : './bindings/wailstemplate/internal/notes/service.ts', import.meta.url)) },

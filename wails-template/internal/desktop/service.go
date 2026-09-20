@@ -4,7 +4,6 @@ package desktop
 import (
 	"log/slog"
 	"sync/atomic"
-	"time"
 	"wailstemplate/internal/appstate"
 	"wailstemplate/internal/fault"
 )
@@ -32,7 +31,6 @@ type Controls struct {
 	Ready    atomic.Bool
 	Approved atomic.Bool
 	Emit     func(string, any)
-	Quit     func()
 }
 
 func New(info Info, state *appstate.State, controls *Controls, logger *slog.Logger) *Service {
@@ -59,8 +57,6 @@ func (c *Controls) ShouldQuit() bool {
 }
 func (c *Controls) ApproveQuit() {
 	c.Approved.Store(true)
-	// Allow the bridge to deliver its response before the webview disappears.
-	time.AfterFunc(100*time.Millisecond, c.Quit)
 }
 func (s *Service) ReportFrontendError(message string) {
 	if len(message) > 2000 {

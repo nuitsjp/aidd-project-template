@@ -4,12 +4,10 @@ import { Alert, Badge, Button, Group, Modal, Paper, Progress, Stack, Text, Title
 import { appInfo } from '../../features/application/queries';
 import { useUpdates } from '../../features/updates/queries';
 import { ErrorNotice } from '../../shared/ErrorNotice';
-import { useExit } from '../../shared/ExitContext';
 
 export function UpdateApp() {
   const info = useQuery(appInfo());
   const update = useUpdates();
-  const { dirty } = useExit();
   const [confirm, setConfirm] = useState(false);
   const busy = update.check.isPending || update.download.isPending || update.apply.isPending;
   const status = update.status.data;
@@ -31,7 +29,7 @@ export function UpdateApp() {
       </Group>
     </Stack></Paper>
     <Modal opened={confirm} onClose={() => setConfirm(false)} title="更新を適用しますか？" centered><Stack>
-      <Text>{dirty ? '未保存の入力を破棄し、' : ''}アプリを終了して更新します。Windowsの警告が表示される場合があります。</Text>
+      <Text>アプリを終了して更新します。Windowsの警告が表示される場合があります。</Text>
       <Group justify="flex-end"><Button variant="default" disabled={update.apply.isPending} onClick={() => setConfirm(false)}>戻る</Button><Button loading={update.apply.isPending} onClick={() => void apply()}>適用して再起動</Button></Group>
     </Stack></Modal>
   </Stack>;

@@ -9,13 +9,13 @@
 
 | 項目 | 内容 |
 | --- | --- |
-| 配布元・版 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版16 |
-| 設計・文書標準 | [project-template-design-and-documentation / 版12](standards/design-and-documentation.md) |
-| モック標準 | [project-template-mock-driven-development / 版14](standards/mock-driven-development.md) |
+| 配布元・版 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版17 |
+| 設計・文書標準 | [project-template-design-and-documentation / 版13](standards/design-and-documentation.md) |
+| モック標準 | [project-template-mock-driven-development / 版15](standards/mock-driven-development.md) |
 | 採用日・判断者・合意の根拠 | {{ADOPTION_RECORD}} |
 | プロジェクト固有の差分と理由 | {{LOCAL_RULE_DIFFERENCES}} |
 
-採用後、設計・文書標準はすべての変更に適用し、モック標準の適用範囲は第2節で定めます。`standards/` は編集せず、固有差分（`scripts/doc_check.py` を実行できない環境を含む）は上表に理由とともに記録します（差分がない場合は「なし」と明記）。新版のテンプレートは自動適用しません。
+採用後、設計・文書標準はすべての変更に適用し、モック標準の適用範囲は第2節で定めます。`standards/` は編集せず、固有差分は上表に理由とともに記録します（例: `scripts/doc_check.py` を実行できない環境、Playwright CLI が使えない対象の代替確認手段と適用範囲。差分がなければ「なし」）。確認手段を替えても利用者の承認は省略しません。新版のテンプレートは自動適用しません。
 
 <a id="mock-scope"></a>
 ## 2. モック駆動開発の適用範囲
@@ -38,7 +38,7 @@
 | [README.md](../README.md) | プロジェクト概要と参照案内 |
 | [AGENTS.md](../AGENTS.md) | AIエージェントの作業規範 |
 
-- **新設の禁止**: 本表にない規約・方針・プロセス文書は新設しません。固有の規則は第1節の差分欄、[project.md](project.md) 第2節の制約、または実現パターン内に記述します。作業は1回のセッションで1本の系列を通す単位とし、進捗・現在地・未決事項の管理文書は置きません。複数セッションにまたがる長期計画は外部の課題管理システム等で扱います。
+- **新設の禁止**: 本表にない規約・方針・プロセス文書は新設しません。固有の規則は第1節の差分欄、[project.md](project.md) 第2節の制約、または実現パターン内に記述します。作業単位と再開は [モック標準第2節](standards/mock-driven-development.md#workflow) に従い、進捗・現在地・未決事項の管理文書は置きません。複数セッションにまたがる長期計画は外部の課題管理システム等で扱います。
 - **文書の分割基準**: 単独参照の必要性や更新頻度の違いにより管理が困難な場合のみ分割を認めます。分割時は元の記述を参照リンクへ置き換え、本表と関連リンクを更新します。
 - **図の形式**: Mermaid を使用します（コンテキスト・コンテナは flowchart または C4 構文、系列は sequenceDiagram、ER図は erDiagram）。
 

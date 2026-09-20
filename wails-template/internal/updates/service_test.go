@@ -39,20 +39,25 @@ func fixture(t *testing.T, version string) (Config, ed25519.PrivateKey, Manifest
 	}
 	return Config{AppID: m.AppID, Version: "0.1.0", Arch: m.Arch, Source: dir, PublicKey: base64.StdEncoding.EncodeToString(pub), CacheDir: t.TempDir(), Enabled: true}, key, m
 }
-func testUpdater(cfg Config, state *appstate.State, launch func(string) error, quit func()) *Service {
-	return New(cfg, state, slog.New(slog.NewTextHandler(io.Discard, nil)), func(string, any) {}, launch, quit)
+func testUpdater(cfg Config, state *appstate.State, launch func(string) error, approveQuit func()) *Service {
+	return New(cfg, state, slog.New(slog.NewTextHandler(io.Discard, nil)), func(string, any) {}, launch, approveQuit)
 }
 func TestVerifiedFolderUpdate(t *testing.T) {
 	cfg, _, _ := fixture(t, "0.2.0")
 	state := &appstate.State{}
-	launched, quit := false, false
+	launched, approved := false, false
 	s := testUpdater(cfg, state, func(path string) error {
 		launched = true
 		if _, err := os.Stat(path); err != nil {
 			t.Error(err)
 		}
 		return nil
-	}, func() { quit = true })
+	}, func() {
+		if !launched {
+			t.Fatal("quit approved before installer launch")
+		}
+		approved = true
+	})
 	status, err := s.Check(context.Background())
 	if err != nil || !status.Available {
 		t.Fatalf("check %#v %v", status, err)
@@ -64,7 +69,7 @@ func TestVerifiedFolderUpdate(t *testing.T) {
 	if err = s.Apply(); err != nil {
 		t.Fatal(err)
 	}
-	if !launched || !quit {
+	if !launched || !approved {
 		t.Fatal("update did not hand off")
 	}
 	if _, err := state.Begin(); err == nil {
@@ -129,7 +134,7 @@ func TestCorruptDownloadAndRecheckBeforeApply(t *testing.T) {
 func TestLaunchFailureAllowsContinuedUse(t *testing.T) {
 	cfg, _, _ := fixture(t, "0.2.0")
 	state := &appstate.State{}
-	s := testUpdater(cfg, state, func(string) error { return errors.New("blocked") }, func() { t.Fatal("quit after failed launch") })
+	s := testUpdater(cfg, state, func(string) error { return errors.New("blocked") }, func() { t.Fatal("quit approved after failed launch") })
 	if _, err := s.Check(context.Background()); err != nil {
 		t.Fatal(err)
 	}

@@ -19,8 +19,8 @@ LINE_LIMITS = {"docs/project.md": 300, "docs/architecture.md": 200,
 PLACEHOLDER_HASH = "sha256:" + "0" * 64
 # 配布元が `--print-hashes` の出力で更新する。
 EXPECTED_HASHES = {
-    "docs/standards/design-and-documentation.md": "sha256:6725dc3ae179c2b5ecc7618c351a939b3ac939603054c393eda862f29657c6d8",
-    "docs/standards/mock-driven-development.md": "sha256:7b195365b3a2ec101f00f40f2c3f5292cf3fa8770f8484dd56df43e4a0a3036b",
+    "docs/standards/design-and-documentation.md": "sha256:26747160169c6f7ec30c9774342fd6010e0f1be6cc51104565d81ad17dabb0c3",
+    "docs/standards/mock-driven-development.md": "sha256:0f189c865adb71131b77f79a4ef1089532bba4f95841b664cbb45069d7bdcb6b",
 }
 
 HEX_RE = re.compile(r"(?<![0-9A-Za-z])[0-9a-fA-F]{7,40}(?![0-9A-Za-z])")
@@ -202,37 +202,49 @@ def check_overall_agreement(arch_text):
         emit("NG", "仕掛かり: `## 全体設計の合意` に %s がない" % "・".join(missing))
 
 
-def agreements_of(body):
-    """UC 本文の合意記録を [系列 ID, 提示コミット, 引用の有無] で返す。
+def filled(value):
+    return value.strip() not in EMPTY_CELLS and "{{" not in value
 
-    系列 ID と提示コミットのハッシュが同じ行にある行を合意記録の見出しとみなし、
-    次の合意記録までに引用行があれば引用ありとする。
-    """
-    records, current = [], None
+
+def agreement_records(body):
+    """合意記録と完成系監査記録を分け、系列 ID・提示コミット・引用の有無を返す。"""
+    records = {"合意記録": [], "完成系監査記録": []}
+    kind, current = None, None
     for line in body.splitlines():
-        series, found = SERIES_RE.search(line), HEX_RE.search(line)
-        if series and found:
-            current = [series.group(0), found.group(0), False]
-            records.append(current)
-        elif current is not None and QUOTE_RE.match(line):
+        if line.startswith(("- ", "#")):
+            heading = re.match(r"^- (合意記録|完成系監査記録)(?:[（(:：]|$)", line)
+            kind, current = heading.group(1) if heading else None, None
+        if kind is None:
+            continue
+        series = SERIES_RE.search(line)
+        if series and "提示コミット:" in line:
+            commit = line.split("提示コミット:", 1)[1].split("/", 1)[0].strip().strip("`")
+            current = [series.group(0), commit, False]
+            records[kind].append(current)
+        elif current is not None and QUOTE_RE.match(line) and filled(line.split(">", 1)[1]):
             current[2] = True
     return records
 
 
-def verified_series(project_text):
-    """第6節の合否表から、合否が記入済みの系列 ID を返す。表がなければ None。"""
+def verification_results(project_text):
+    """合否表を系列ごとの [(段階, 合否)] にする。表がなければ None。"""
     body = section_body(project_text, "## 6. 検証結果")
     table = parse_table(body) if body else None
     if table is None:
         return None
     header, rows = table
-    done = set()
-    for _, cells in rows:
-        series = SERIES_RE.search(cell(header, cells, "UC・系列 ID"))
+    if "段階" not in header:
+        emit("NG", "仕掛かり: 検証結果の表に `段階` 列がない")
+    results = {}
+    for lineno, cells in rows:
+        series_ids = {m.group(0) for m in SERIES_RE.finditer(cell(header, cells, "UC・系列 ID"))}
+        phase = cell(header, cells, "段階")
         result = cell(header, cells, "合否")
-        if series and result not in EMPTY_CELLS and result != "未検証":
-            done.add(series.group(0))
-    return done
+        if series_ids and filled(result) and result != "未検証" and phase not in {"1", "2", "3", "4", "5", "6"}:
+            emit("NG", "仕掛かり: docs/project.md:%d の記入済み検証結果には段階番号（1〜6）が必要" % lineno)
+        for series in series_ids:
+            results.setdefault(series, []).append((phase, result))
+    return results
 
 
 def check_progress(project_text, arch_text, uc_docs):
@@ -244,29 +256,49 @@ def check_progress(project_text, arch_text, uc_docs):
     if not bodies:
         emit("対象なし", "仕掛かり: docs/usecases/ に `# UC-n.` の本文がない")
         return
-    described, agreed = set(), set()
+    described, agreed, audited = set(), set(), set()
     for uc_id, body in sorted(bodies, key=lambda kv: int(kv[0][3:])):
         described |= {m.group(0) for m in SERIES_RE.finditer(body)}
-        for series, commit, quoted in agreements_of(body):
-            if not series.startswith(uc_id + "-"):
-                emit("NG", "仕掛かり: %s の本文に他のユースケースの合意記録がある: %s" % (uc_id, series))
-            elif not quoted:
-                emit("NG", "仕掛かり: %s の合意記録（提示コミット %s）に利用者の応答の引用行がない"
-                     % (series, commit))
-            else:
-                agreed.add(series)
-    done = verified_series(project_text)
-    if done is None:
+        for kind, records in agreement_records(body).items():
+            for series, commit, quoted in records:
+                if not filled(commit) and not quoted:
+                    continue
+                if not series.startswith(uc_id + "-"):
+                    emit("NG", "仕掛かり: %s の本文に他のユースケースの%sがある: %s" % (uc_id, kind, series))
+                    continue
+                missing = []
+                if not HEX_RE.fullmatch(commit):
+                    missing.append("提示コミットのハッシュ")
+                if not quoted:
+                    missing.append("利用者の応答の引用行")
+                if missing:
+                    emit("NG", "仕掛かり: %s の%sに %s がない" % (series, kind, "・".join(missing)))
+                else:
+                    (agreed if kind == "合意記録" else audited).add(series)
+    results = verification_results(project_text)
+    required, passed = set(), set()
+    if results is None:
         emit("対象なし", "仕掛かり: docs/project.md の `## 6. 検証結果` に表がない")
     else:
-        wip = sorted(agreed - done)
-        if len(wip) > 1:
-            emit("NG", "仕掛かり: 合意済みで合否の記入がない系列が %d 本ある: %s"
-                 % (len(wip), "、".join(wip)))
-    if agreed:
+        for series, rows in results.items():
+            final_results = [result for phase, result in rows if phase == "6"]
+            if any(filled(result) and result != "未検証" for result in final_results):
+                required.add(series)
+            if final_results and all(result == "合格" for result in final_results):
+                passed.add(series)
+        for series in sorted(required - audited):
+            emit("NG", "仕掛かり: %s の段階6の検証結果に対応する完成系監査記録がない" % series)
+    for series in sorted((required | audited) - agreed):
+        emit("NG", "仕掛かり: %s の完成系監査・段階6の検証に先立つ合意記録がない" % series)
+    done = agreed & audited & passed
+    wip = sorted((agreed | audited | required) - done)
+    if len(wip) > 1:
+        emit("NG", "仕掛かり: 合意・監査・段階6の全構成合格が揃っていない着手済み系列が %d 本ある: %s"
+             % (len(wip), "、".join(wip)))
+    if agreed or audited or required:
         check_overall_agreement(arch_text)
-    emit("報告", "仕掛かり: 記述済みの系列 %d 本、合意済み %d 本、合否の記入済み %s"
-         % (len(described), len(agreed), "%d 本" % len(done) if done is not None else "対象なし"))
+    emit("報告", "仕掛かり: 記述済みの系列 %d 本、合意済み %d 本、完成系監査記録あり %d 本、段階6の全構成合格 %d 本"
+         % (len(described), len(agreed), len(audited), len(passed)))
 
 
 def check_uc_ids(project_text, uc_docs):

@@ -21,7 +21,7 @@ SPA、単一 Node.js、同一 origin、SQLite を既定とします。各利用�
 <a id="design"></a>
 ## 4. 確認した事実と採用差分
 
-共通資材は同一チェックアウトの `template/` から取得します（配布版16）。直接依存は `package.json`、Node 推奨版は `.nvmrc` に記載しています。
+共通資材は同一チェックアウトの `template/` から取得します（配布版17）。直接依存は `package.json`、Node 推奨版は `.nvmrc` に記載しています。
 
 - **Node 24 node:sqlite**: Release Candidate 版。実 SQLite を用いる処理・マイグレーション・バックアップを同一ドライバーで検証（[Node API](https://nodejs.org/docs/latest-v24.x/api/sqlite.html)）。並列 E2E の分離は DB ファイルの分離により実現（[SQLite WAL](https://sqlite.org/wal.html)）。
 - **Playwright fixtures**: 環境生成と破棄を一体化し、fullyParallel と複数 worker を利用（[fixtures](https://playwright.dev/docs/test-fixtures)）。
@@ -72,11 +72,13 @@ npm run db:check -- ./backups/manual.sqlite
 
 実装後は `npm run verify` を実行し、結果を報告します（未実施の項目は「未検証」と明記）。
 
-| UC・系列 ID | 構成 | 実行日 | コマンド | 合否 | 対象コミットまたは CI 参照 |
-| --- | --- | --- | --- | --- | --- |
-| UC-1-M | 本番Node + Chromium + SQLite | — | npm run test:e2e | 未検証 | — |
-| UC-1-X1 / UC-1-X2 / UC-1-X3 / UC-1-X4 | 同上 | — | npm run test:e2e | 未検証 | — |
-| UC-2-M / UC-2-X1 | 同上 | — | npm run test:e2e | 未検証 | — |
+| UC・系列 ID | 段階 | 構成 | 実行日 | コマンド | 合否 | 対象コミットまたは CI 参照 |
+| --- | --- | --- | --- | --- | --- | --- |
+| UC-1-M | — | 本番Node + Chromium + SQLite | — | npm run test:e2e | 未検証 | — |
+| UC-1-X1 / UC-1-X2 / UC-1-X3 / UC-1-X4 | — | 同上 | — | npm run test:e2e | 未検証 | — |
+| UC-2-M / UC-2-X1 | — | 同上 | — | npm run test:e2e | 未検証 | — |
+
+合否を記入するときは [モック標準](standards/mock-driven-development.md#workflow) の段階番号（1〜6）も記録します。段階6の結果には対象系列の合意記録と完成系監査記録が必要であり、一部構成の合格のみで完了とは扱いません。
 
 - **限定検証（2026-09-20）**: Node.js 22.16.0 / SQLite 3.49.1 にて `npm run test:core` を実行し21件合格。4つの実 Node プロセスが各専用 DB で更新・検証を実施（マイグレーション、外部キー、競合検出、ロールバック、通知、バックアップを含む。ブラウザ E2E ではない）。
 - **補助検査**: TypeScript strict 型検査、全62ファイルの構文検査、文書検査（NG 0件）を完了。

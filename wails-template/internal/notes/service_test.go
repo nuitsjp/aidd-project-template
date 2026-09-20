@@ -2,11 +2,13 @@ package notes
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -72,7 +74,7 @@ func TestValidationDoesNotSave(t *testing.T) {
 	}
 }
 func TestCorruptionIsNotReset(t *testing.T) {
-	for _, contents := range []string{"invalid", `{"version":2,"notes":[]}`, `{"version":1,"notes":null}`} {
+	for _, contents := range []string{"invalid", `{"version":2,"notes":[]}`, `{"version":1,"notes":null}`, `{"version":1,"notes":[{"id":"id","title":"title","body":"","updatedAt":"invalid"}]}`} {
 		t.Run(contents, func(t *testing.T) {
 			dir := t.TempDir()
 			path := filepath.Join(dir, "notes.json")
@@ -88,6 +90,37 @@ func TestCorruptionIsNotReset(t *testing.T) {
 				t.Fatal("corrupted file was overwritten")
 			}
 		})
+	}
+}
+func TestListSortsByTimestampAndPreservesSavedOrder(t *testing.T) {
+	dir := t.TempDir()
+	document := document{Version: 1, Notes: []Note{
+		{ID: "same-first", Title: "same-first", UpdatedAt: "2025-01-01T00:00:00.5Z"},
+		{ID: "offset-equal", Title: "offset-equal", UpdatedAt: "2025-01-01T01:00:00.5+01:00"},
+		{ID: "same-second", Title: "same-second", UpdatedAt: "2025-01-01T00:00:00.5Z"},
+		{ID: "z-zero", Title: "z-zero", UpdatedAt: "2025-01-01T00:00:00Z"},
+		{ID: "z-51", Title: "z-51", UpdatedAt: "2025-01-01T00:00:00.51Z"},
+		{ID: "offset-later", Title: "offset-later", UpdatedAt: "2025-01-01T02:00:00+01:00"},
+	}}
+	data, err := json.Marshal(document)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "notes.json"), data, 0600); err != nil {
+		t.Fatal(err)
+	}
+	s := testService(t, dir, nil)
+	all, err := s.List(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := make([]string, len(all))
+	for i, note := range all {
+		got[i] = note.ID
+	}
+	want := []string{"offset-later", "z-51", "same-first", "offset-equal", "same-second", "z-zero"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("unexpected order: got %v, want %v", got, want)
 	}
 }
 func TestCSVPreviewAndAtomicImport(t *testing.T) {

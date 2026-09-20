@@ -68,6 +68,11 @@ type document struct {
 	Notes   []Note `json:"notes"`
 }
 
+type noteWithTime struct {
+	note      Note
+	updatedAt time.Time
+}
+
 type Service struct {
 	mu          sync.RWMutex
 	dir         string
@@ -121,6 +126,10 @@ func New(dir string, logger *slog.Logger, state *appstate.State, publish func(st
 			cancel()
 			return nil, errors.New("invalid persisted note")
 		}
+		if _, err = time.Parse(time.RFC3339Nano, n.UpdatedAt); err != nil {
+			cancel()
+			return nil, errors.New("invalid persisted note")
+		}
 		ids[n.ID] = true
 	}
 	s.notes = d.Notes
@@ -134,7 +143,18 @@ func (s *Service) List(ctx context.Context) ([]Note, error) {
 	s.mu.RLock()
 	result := append([]Note{}, s.notes...)
 	s.mu.RUnlock()
-	sort.Slice(result, func(i, j int) bool { return result[i].UpdatedAt > result[j].UpdatedAt })
+	withTimes := make([]noteWithTime, len(result))
+	for i, note := range result {
+		// New validates persisted timestamps; Save and Import generate them.
+		updatedAt, _ := time.Parse(time.RFC3339Nano, note.UpdatedAt)
+		withTimes[i] = noteWithTime{note: note, updatedAt: updatedAt}
+	}
+	sort.SliceStable(withTimes, func(i, j int) bool {
+		return withTimes[i].updatedAt.After(withTimes[j].updatedAt)
+	})
+	for i, item := range withTimes {
+		result[i] = item.note
+	}
 	return result, nil
 }
 func (s *Service) Get(ctx context.Context, id string) (Note, error) {

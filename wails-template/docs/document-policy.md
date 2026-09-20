@@ -5,14 +5,14 @@
 
 | 項目 | 内容 |
 | --- | --- |
-| 共通資材の採用元 | 同一チェックアウトの `template/` を生成時に配置（配布版16） |
+| 共通資材の採用元 | 同一チェックアウトの `template/` を生成時に配置（配布版17） |
 | 作成時の根拠 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版13 / `88b31b40c65a2ce35201eeda34358e2d103bac23`（作成時点の確認値） |
-| Wails拡張の採用版 | 0.1.0 / 参照実装・レビュー用 |
-| 設計・文書標準 | [版12](standards/design-and-documentation.md) 原文維持 |
-| モック標準 | [版14](standards/mock-driven-development.md) 原文維持 |
+| Wails拡張の採用版 | 0.1.1 / 参照実装・レビュー修正 |
+| 設計・文書標準 | [版13](standards/design-and-documentation.md) 原文維持 |
+| モック標準 | [版15](standards/mock-driven-development.md) 原文維持 |
 | 作成依頼 | 2026-09-20、利用者による「ディレクトリ構成や、起動処理、想定される代表的なユースケースパターンは、実装した形で提供されるべき」「それら一式を実際にビルドして起動できる形で作成してzipで提示してください」 |
 | 固有差分 | 実装一式の作成依頼として提供。サンプルの系列ごとの仕様・動作合意と完成系監査は未実施であり、同梱 E2E を標準の段階6完了や製品の合意済み仕様とは扱いません。共通構造の補足を architecture-wails.md に分離しています |
-| 検証上の制約 | 作成環境の外部接続制約により、全体ビルド・実機検証は未完了（[検証結果](project.md#verification) 参照） |
+| 検証上の制約 | 自動検証・Windows向け本番ビルドは合格。WebView2の実機起動・終了操作・NSIS更新は未検証（[検証結果](project.md#verification) 参照） |
 
 生成時は `template/` を先にコピーし、`wails-template/` の内容で上書きします。共通資材（`AGENTS.md`、`docs/standards/`、検査スクリプト、`LICENSE`）は共通側から取得し、`docs/project.md` と本書は Wails 差分側で個別管理します（共通版との部分マージは行いません）。採用先では共通資材と Wails 拡張の採用版を区別して記録し、新版は差分を確認して取り込みます。現在のコードが未検証でも規約の完了条件を緩和しません。
 

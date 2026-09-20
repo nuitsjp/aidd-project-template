@@ -31,7 +31,7 @@ try {
     if (!windows) throw new Error('Windows desktop build must be run on Windows.');
     const production = command === 'desktop';
     run(cli, ['generate', 'syso', '-manifest', 'build/windows/app.manifest', '-icon', 'build/windows/app.ico', '-arch', arch, '-out', `rsrc_windows_${arch}.syso`]);
-    run('go', ['build', '-trimpath', ...(production ? ['-tags', 'production'] : []), '-ldflags', `-H windowsgui -X main.production=${production}`, '-o', target, '.'], { env: { ...process.env, GOOS: 'windows', GOARCH: arch, CGO_ENABLED: '0' } });
+    run('go', ['build', '-trimpath', ...(production ? ['-tags', 'production'] : []), '-ldflags', '-H windowsgui', '-o', target, '.'], { env: { ...process.env, GOOS: 'windows', GOARCH: arch, CGO_ENABLED: '0' } });
   } else if (command === 'server') {
     run('go', ['build', '-trimpath', '-tags', 'server,production', '-o', server, '.'], { env: { ...process.env, CGO_ENABLED: '0' } });
   } else if (command === 'run' || command === 'run-server') {

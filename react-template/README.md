@@ -71,4 +71,6 @@ worker数変更時は `npx playwright test --workers=8`（事前ビルド要）�
 
 サンプルのUIやタイトル一意制約、文字数制限は参照用仕様です。製品開発時は `backend/features/notes/`・`frontend/src/usecases/` とE2Eを製品のユースケースに置き換えます。
 
+サンプルの仕様・合意は採用先へ引き継がず、採用時は [導入開始手順](https://github.com/nuitsjp/aidd-project-template#3-初期セットアップと最初のユースケース) を確認して製品固有の仕様と合意を定義します。
+
 `.github/workflows/react-template.yml` は生成プロジェクト用のCI例です（生成後のルートで実行することを前提としています）。
