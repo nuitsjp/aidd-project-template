@@ -6,22 +6,26 @@ Windows用のユースケース駆動参照アプリ。対話をReact、機能�
 
 ## 配置
 
-このディレクトリを、既存リポジトリの `template/` と同じ階層に置きます。既存の `template/` は変更しません。このディレクトリ内でコマンドを実行します。新規アプリへの採用時は、本ディレクトリの内容を新しいリポジトリのルートへコピーします。
+`wails-template/` は、同じチェックアウトにある `template/` を土台へ重ねるWails差分です。単独で実行せず、リポジトリのルートから次を実行して新規プロジェクトを生成します。生成時は `template/` を先にコピーし、`wails-template/` の内容で上書きし、ルートの `LICENSE` を配置します。
 
 ```text
 aidd-project-template/
 ├── template/
-└── wails-template/       ← このディレクトリ
+└── wails-template/       ← 生成時に重ねる差分（単独実行しない）
+```
+
+```powershell
+mise run init:wails ../my-wails-app
 ```
 
 ## Windowsで開始
 
-事前にGo 1.25以上、Node.js 22.16以上、Python 3.9以上、WebView2 Evergreen Runtimeを導入し、`go`・`node`・`npm`・`python`がPATH上で使えるようにします。NSIS 3.11以上はインストーラー作成時だけ必要です。Goの自動ツールチェーン取得を禁止する環境では、依存モジュールが要求するGo版も事前に導入してください。
+生成されたプロジェクトのルートでコマンドを実行します。事前にGo 1.25以上、Node.js 22.16以上、Python 3.9以上、WebView2 Evergreen Runtimeを導入し、`go`・`node`・`npm`・`python`がPATH上で使えるようにします。NSIS 3.11以上はインストーラー作成時だけ必要です。Goの自動ツールチェーン取得を禁止する環境では、依存モジュールが要求するGo版も事前に導入してください。
 
 PowerShellで次を実行します。
 
 ```powershell
-cd wails-template
+cd ../my-wails-app
 node scripts/run.mjs setup
 node scripts/run.mjs dev
 ```
@@ -70,6 +74,6 @@ NSISはアプリ本体、スタートメニュー、アンインストール情�
 
 サンプルを製品へ持ち込む際は、`usecases/`・`features/notes`・`internal/notes`と対応するルート・テストを置き換えます。製品固有のUC・データ設計・合意記録は改めて定義し、参照実装の記録を製品の合意済み仕様に転用しません。
 
-`.github/workflows/windows.yml`は、このディレクトリを独立リポジトリのルートへコピーした場合に動くCI例です。親リポジトリに並列配置しただけでは有効になりません。親側で利用する場合は、ワークフローを親の`.github/workflows/`へ移し、`SOURCE_DIR`を`wails-template`へ変更します。
+`.github/workflows/windows.yml`は、`mise run init:wails`で生成したプロジェクトのルートに置いて実行するCI例です。`setup`・`verify`・`build`・`package`を生成後のルートで実行し、`SOURCE_DIR`は`.`のまま使います。`wails-template/`をチェックアウト上で単独実行するCIではありません。
 
-本実装の追加だけでは、配布元READMEへのリンク追加や配布版更新は行われません。取り込み時に配布元の保守指針に従って更新してください。ライセンスは [MIT](LICENSE) です。
+ライセンスは [MIT](LICENSE) です。

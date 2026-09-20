@@ -22,7 +22,7 @@ Windowsデスクトップを対象とする。ブラウザserver buildは検証�
 <a id="design"></a>
 ## 4. 確認した事実
 
-配布元は版13・コミット `88b31b40c65a2ce35201eeda34358e2d103bac23`。標準2文書と検査スクリプトはGit blobの一致を確認して複製した。
+参照実装の作成時に、配布元の版13・コミット `88b31b40c65a2ce35201eeda34358e2d103bac23` を確認した。採用する共通資材の版は、生成に使った同一チェックアウトの `template/` に従う。標準2文書と検査スクリプトはGit blobの一致を確認して複製した。
 
 Wails本体・CLI・npmランタイムは `v3.0.0-beta.23` / `3.0.0-beta.23` に合わせる。Go 1.25以上を要求する。生成API・Service登録・ライフサイクル・runtime Vite pluginは [固定版ソース](https://github.com/wailsapp/wails/tree/v3.0.0-beta.23/v3) と [CLI資料](https://v3.wails.io/guides/cli/) を2026-09-20に確認した。
 
@@ -31,7 +31,7 @@ Wails本体・CLI・npmランタイムは `v3.0.0-beta.23` / `3.0.0-beta.23` に
 <a id="commands"></a>
 ## 5. 実行・切り替え・検証手順
 
-起動とビルド入口は [README](../README.md) に集約する。作業ディレクトリはこのテンプレートのルート。`build/app.json`の変更後は再ビルドする。`dev:mock`はWails本体を起動したままメモ機能だけを固定データへ差し替える。画面に「試験用モック」が表示されることを確認する。本番ビルドでモック設定を検出したら失敗する。
+起動とビルド入口は [README](../README.md) に集約する。生成前にリポジトリのルートで `mise run init:wails ../my-wails-app` を実行し、生成後はそのプロジェクトのルートを作業ディレクトリとする。`wails-template/` を単独の作業ディレクトリとして実行しない。`docs/project.md` と `docs/document-policy.md` はWails差分で個別管理する文書であり、生成時は差分側の内容で上書きし、共通版との部分マージは行わない。`build/app.json`の変更後は再ビルドする。`dev:mock`はWails本体を起動したままメモ機能だけを固定データへ差し替える。画面に「試験用モック」が表示されることを確認する。本番ビルドでモック設定を検出したら失敗する。
 
 E2Eは実Goサービスと専用の一時データ領域を使う。`python scripts/doc_check.py .` は文書リンク・UC対応・標準ハッシュ等を確認する。Windows確認では、メモ保存後の再起動、未保存状態からの終了、多重起動、CSV処理中の終了、インストール・更新・アンインストール後のデータ保持を確認する。
 
@@ -61,6 +61,8 @@ node scripts/run.mjs release manifest -key "$env:USERPROFILE/wails-release-priva
 
 <a id="verification"></a>
 ## 6. 検証結果
+
+完了報告では `node scripts/run.mjs verify` の結果と、Windows実機で確認した範囲を分けて記録する。Wails server build・Playwright・Goテストの結果は、Windows実機の起動・インストール・更新確認の代わりにしない。
 
 | UC・系列 ID | 構成 | 実行日 | コマンド | 合否 | 対象コミットまたは CI 参照 |
 | --- | --- | --- | --- | --- | --- |

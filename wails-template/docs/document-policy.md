@@ -5,15 +5,16 @@
 
 | 項目 | 内容 |
 | --- | --- |
-| 配布元 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版13 / `88b31b40c65a2ce35201eeda34358e2d103bac23` |
-| Wails拡張 | 0.1.0 / 参照実装・レビュー用 |
+| 共通資材の採用元 | 同じチェックアウトの `template/` を生成時に先にコピー（配布版13） |
+| 作成時の根拠 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版13 / `88b31b40c65a2ce35201eeda34358e2d103bac23`（参照実装の作成時点で確認した配布元） |
+| Wails拡張の採用版 | 0.1.0 / 参照実装・レビュー用 |
 | 設計・文書標準 | [版10](standards/design-and-documentation.md)・原文のまま |
 | モック標準 | [版11](standards/mock-driven-development.md)・原文のまま |
 | 作成依頼 | 2026-09-20、利用者による「ディレクトリ構成や、起動処理、想定される代表的なユースケースパターンは、実装した形で提供されるべき」「それら一式を実際にビルドして起動できる形で作成してzipで提示してください」 |
 | 固有差分 | サンプルを含む実装一式の作成依頼として提供。サンプルの系列ごとの仕様・モック動作合意は未実施であり、標準の段階5完了や製品の合意済み仕様とは扱わない。文書の役割分割としてarchitecture-wails.mdを追加する |
 | 検証上の制約 | 作成環境から依存配布先へ接続不可。全体ビルド・実機検証は未完了。[検証結果](project.md#verification)参照 |
 
-`standards/` と文書検査スクリプトは固定版から複製する。採用先では配布元とWails拡張の版を区別して記録し、新版は差分を確認して取り込む。現在のコードが未検証でも規約の完了条件を緩和しない。
+生成時は、同じチェックアウトの `template/` を先にコピーし、`wails-template/` の差分で上書きする。`AGENTS.md`・`docs/standards/`・文書検査スクリプト・`LICENSE` などの共通資材は、同じチェックアウトの `template/` とルートから取得する。`docs/project.md` と本書はWails差分で個別管理する文書であり、共通版との部分マージは行わない。採用先では共通資材の採用版とWails拡張の採用版を区別して記録し、新版は差分を確認して取り込む。現在のコードが未検証でも規約の完了条件を緩和しない。
 
 <a id="mock-scope"></a>
 ## 2. モック駆動開発の適用範囲

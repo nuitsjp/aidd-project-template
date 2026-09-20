@@ -1,0 +1,3 @@
+[tasks."init:wails"]
+description = "共通テンプレートとWails差分を新しいディレクトリへ配置する"
+run = "node scripts/init-wails.mjs"

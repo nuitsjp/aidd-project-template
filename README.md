@@ -56,6 +56,21 @@ AIエージェントを利用する場合は、プロジェクト側の `AGENTS.
 @AGENTS.md
 ```
 
+### Wailsアプリの初期状態を生成する
+
+Windows向けのGo・React参照実装は [wails-template/](wails-template/README.md) に差分として管理しています。miseとNode.js 22.16以上を用意し、本リポジトリのルートで実行します。miseから設定の信頼確認を求められた場合は、`mise.toml` の内容を確認して `mise trust` を実行してください。
+
+```powershell
+mise run init:wails ../my-wails-app
+cd ../my-wails-app
+node scripts/run.mjs setup
+node scripts/run.mjs dev
+```
+
+生成は `template/` → `wails-template/` の順にコピーし、同名ファイルをWails側で上書きして、ルートの `LICENSE` を配置します。出力先の親ディレクトリは事前に用意し、既存の出力先は指定しないでください。生成タスクは依存取得・ビルドを行いません。Go・Python・WebView2など、起動に必要な環境は [Wailsの開始手順](wails-template/README.md#windowsで開始) を参照してください。
+
+共通の行動指針・標準・文書検査は `template/` から取得します。`project.md`・`document-policy.md` などの固有文書はWails側の内容を使用し、共通版との部分マージはしません。`wails-template/` 単体をコピー・実行せず、生成先で開発します。共通側の変更を取り込んだ初期状態は新しい出力先へ再生成して確認し、既存プロジェクトへの反映は第5節に従って差分を確認します。
+
 ## 3. 初期セットアップと最初のユースケース
 
 以下の順序で、最初のユースケース1件を実処理まで通します。未着手の系列や画面を先行して準備する必要はありません。系列1本を段階1から段階5まで通す作業を1回のセッションの単位とし、セッションをまたぐ計画文書は作りません。
