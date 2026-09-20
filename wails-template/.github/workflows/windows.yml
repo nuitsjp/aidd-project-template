@@ -1,0 +1,45 @@
+name: Wails template Windows checks
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+permissions:
+  contents: read
+env:
+  SOURCE_DIR: .
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: '${{ env.SOURCE_DIR }}/go.mod'
+          cache: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Dependencies and generated sources
+        working-directory: ${{ env.SOURCE_DIR }}
+        run: node scripts/run.mjs setup
+      - name: Browser
+        working-directory: ${{ env.SOURCE_DIR }}/frontend
+        run: npx playwright install chromium
+      - name: Verify
+        working-directory: ${{ env.SOURCE_DIR }}
+        run: node scripts/run.mjs verify
+      - name: Windows executable
+        working-directory: ${{ env.SOURCE_DIR }}
+        run: node scripts/run.mjs build
+      - name: NSIS
+        run: choco install nsis --yes --no-progress
+      - name: Installer
+        working-directory: ${{ env.SOURCE_DIR }}
+        run: node scripts/run.mjs package
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: '${{ env.SOURCE_DIR }}/bin/*'
