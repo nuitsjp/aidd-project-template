@@ -9,9 +9,9 @@
 
 | 項目 | 内容 |
 | --- | --- |
-| 配布元・版 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版15 |
-| 設計・文書標準 | [project-template-design-and-documentation / 版11](standards/design-and-documentation.md) |
-| モック標準 | [project-template-mock-driven-development / 版13](standards/mock-driven-development.md) |
+| 配布元・版 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版16 |
+| 設計・文書標準 | [project-template-design-and-documentation / 版12](standards/design-and-documentation.md) |
+| モック標準 | [project-template-mock-driven-development / 版14](standards/mock-driven-development.md) |
 | 採用日・判断者・合意の根拠 | {{ADOPTION_RECORD}} |
 | プロジェクト固有の差分と理由 | {{LOCAL_RULE_DIFFERENCES}} |
 
@@ -32,7 +32,7 @@
 | 本書 | 標準の採用記録、モック適用範囲、正本の配置、保護する合意 |
 | `standards/` 各標準 | プロジェクト非依存の開発・文書基準（配布元からの輸入物） |
 | [project.md](project.md) | プロジェクトの目的・制約、ユースケース一覧、確認した事実、手順、検証結果 |
-| `usecases/UC-n.md` | ユースケースごとの定義、シナリオ、受け入れ条件、合意記録 |
+| `usecases/UC-n.md` | ユースケースごとの定義、シナリオ、受け入れ条件、動作合意・完成系監査記録 |
 | [architecture.md](architecture.md) | 全体設計の合意、システム構成、実現パターン、設計判断、テーブル設計と合意記録 |
 | `reference/` | 外部システムの実測応答（取得日時・方法・対象版を記録。利用時のみ） |
 | [README.md](../README.md) | プロジェクト概要と参照案内 |
