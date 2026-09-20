@@ -47,6 +47,17 @@ Query は機能・取得条件ごとに定義し、ユースケース間で共�
 
 仕様合意用モックは画面・対話制御・Query を本番と共用し、Vite のモジュール参照設定（`@notes-service`）で差し替えます。契約は生成型と共有し、既定は実処理とします。固定データの移動・削除とテスト作成時点は [モック標準](standards/mock-driven-development.md) に従います。
 
+合成点は機能領域（Go の Service）ごとに1つの参照名です。新しい機能領域 `<name>` で段階2のモックを作るときは、次の4箇所を揃えます。
+
+| 場所 | 追加内容 |
+| --- | --- |
+| `frontend/vite.config.ts` | `@<name>-service` の alias。`WAILS_FRONTEND_MODE=mock` のとき固定データ、それ以外は `bindings/.../internal/<name>/service.ts` |
+| `frontend/tsconfig.json` | 同名の `paths` を実処理側へ向ける（型検査は常に実契約で行う） |
+| `frontend/eslint.config.mjs` | `usecases/`・`shared/` からの直接 import 禁止対象に `@<name>-service` と `@bindings/**/<name>/service` を追加 |
+| `frontend/tests/fixtures/<name>.ts` | 生成型を import し、`CancellablePromise` を返す同名の関数だけを持つ固定データ。業務ロジックや永続化は再実装しない |
+
+`features/<name>/queries.ts` は `@<name>-service` からのみ Service を import します。合意後の段階4で固定データを削除し、alias の分岐だけを残します。同梱の `tests/fixtures/notes.ts` はこの機構を示す試験用データであり、合意用モックそのものではありません。
+
 検証は Playwright による実処理 E2E を中心とします。ブラウザ確認は Wails server build、ネイティブ操作や環境依存動作は Windows 実機で確認します。Vitest・React Testing Library・Go 標準テストは必要なリスクを補います。
 
 ## 5. 実行とデータ保護

@@ -15,7 +15,6 @@ type Info struct {
 	Name                 string `json:"name"`
 	Version              string `json:"version"`
 	AppID                string `json:"appID"`
-	DataDir              string `json:"dataDir"`
 	Server               bool   `json:"server"`
 	UpdateConfigured     bool   `json:"updateConfigured"`
 }

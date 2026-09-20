@@ -101,7 +101,7 @@ func run() error {
 	}
 	// Also clean up if application construction or startup fails.
 	defer noteService.ServiceShutdown()
-	info := desktop.Info{Name: cfg.Name, Version: cfg.Version, AppID: cfg.ID, DataDir: dir, Server: serverMode, UpdateConfigured: cfg.UpdateSource != "" && cfg.UpdatePublicKey != "", DiagnosticsAvailable: diagnosticsAvailable}
+	info := desktop.Info{Name: cfg.Name, Version: cfg.Version, AppID: cfg.ID, Server: serverMode, UpdateConfigured: cfg.UpdateSource != "" && cfg.UpdatePublicKey != "", DiagnosticsAvailable: diagnosticsAvailable}
 	appService := desktop.New(info, state, controls, logger)
 	updateService := updates.New(updates.Config{
 		AppID: cfg.ID, Version: cfg.Version, Arch: runtime.GOARCH, Source: cfg.UpdateSource, PublicKey: cfg.UpdatePublicKey,

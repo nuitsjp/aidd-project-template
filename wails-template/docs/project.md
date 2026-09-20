@@ -17,12 +17,12 @@ Windows デスクトップを主対象とします（ブラウザ server build �
 | --- | --- | --- | --- | --- | --- |
 | [UC-1](usecases/UC-1.md) | 利用者 | メモを作成・編集して保存する | 1 | [UCP-1](architecture.md#patterns) | 対象 |
 | [UC-2](usecases/UC-2.md) | 利用者 | CSVの内容を確認して一括登録する | 2 | [UCP-2](architecture.md#patterns) | 対象 |
-| [UC-3](usecases/UC-3.md) | 利用者 | 新版を確認してアプリを更新する | 3 | UCP-2の外部プロセス適用 | 対象 |
+| [UC-3](usecases/UC-3.md) | 利用者 | 新版を確認してアプリを更新する | 3 | [UCP-3](architecture.md#patterns) | 対象 |
 
 <a id="design"></a>
 ## 4. 確認した事実
 
-参照実装の作成時に、配布元の版13・コミット `88b31b40c65a2ce35201eeda34358e2d103bac23` を確認しました。採用する共通資材は、生成に使う同一チェックアウトの `template/`（現在の配布版17）に従います。標準2文書と検査スクリプトは Git blob の一致を確認して複製します。
+参照実装の作成時に、配布元の版13・コミット `88b31b40c65a2ce35201eeda34358e2d103bac23` を確認しました。採用する共通資材は、生成に使う同一チェックアウトの `template/`（現在の配布版18）に従います。標準2文書と検査スクリプトは Git blob の一致を確認して複製します。
 
 Wails 本体・CLI・npm ランタイムは `v3.0.0-beta.23` / `3.0.0-beta.23`、Go 1.25以上を前提とします。生成 API・Service 登録・ライフサイクル・runtime Vite plugin は [固定版ソース](https://github.com/wailsapp/wails/tree/v3.0.0-beta.23/v3) および [CLI資料](https://v3.wails.io/guides/cli/)（2026-09-20確認）に基づきます。
 
@@ -74,8 +74,8 @@ node scripts/run.mjs release manifest -key "$env:USERPROFILE/wails-release-priva
 
 合否を記入するときは [モック標準](standards/mock-driven-development.md#workflow) の段階番号（1〜6）も記録します。段階6の結果には対象系列の合意記録と完成系監査記録が必要であり、一部構成の合格のみで完了とは扱いません。
 
-参照実装の保守検証（2026-09-20、Wails拡張0.1.1、Windows amd64、Go 1.25.13・Node.js 24.20.0）: 生成先で `node scripts/run.mjs verify` と `node scripts/run.mjs build` に合格しました。型検査・Lint・Vitest 7件・Go全パッケージテスト・go vet・文書検査（NG 0件）・実Goサービスのserver E2E 3件・Windows向け本番ビルドを確認しました。
+参照実装の保守検証（2026-09-21、Wails拡張0.2.0、Windows 11 Enterprise 24H2 amd64、Go 1.26.5・Node.js 24.16.0・Python 3.14・NSIS 3.12・WebView2 153）: 生成先で `node scripts/run.mjs verify`・`build`・`package` に合格しました。型検査・Lint・Vitest 7件・Go全パッケージテスト・go vet（desktop・server 両構成）・文書検査（NG 0件）・server build・Windows向け本番ビルド・NSISインストーラー作成を確認しました。実Goサービスのserver E2E 3件は、この環境では Playwright の Chromium 取得がプロキシで完了せず未実行です（2026-09-20 の保守検証で合格した記録を最後の結果とします）。
 
-保守検証では新規保存・再保存の成功表示、履歴移動や再選択時の表示解除、下書き保持、一括取り込みを確認しました。通常終了・更新適用ではGo応答前や失敗時にruntime終了要求を出さないことを単体テストで確認しています。本番CSPはインラインスクリプトを許可せず、開発モードのみ許可します。
+Windows 実機では、NSIS による版 0.1.0 のサイレントインストール（配置・レジストリ・スタートメニュー）、WebView2 での起動、多重起動時の2つ目のプロセス終了、ウィンドウ閉鎖時の終了確認（取り消しで継続、確認で終了）、共有フォルダを更新元とした版 0.2.0 への更新（署名済み更新情報の受理、取得とハッシュ検証、NSIS への引き渡し、旧プロセス終了待ち、適用後の新版起動、レジストリの版更新）、サイレントアンインストール後の登録情報削除とユーザーデータ保持を UI Automation による操作で確認しました。
 
-WebView2のWindows実機起動・終了操作、NSISのインストール・更新・再起動、未署名実行制御は未検証です。上表は系列ごとの利用者合意と完成系監査を経た検証用であり、この保守検証の合格を段階6完了や製品の合意記録には転用しません。
+実機では未確認の項目: 画面へのキー入力を伴う保存・取り込み（保存・下書き保持・一括取り込みは server E2E で確認）、CSV 処理中の終了、未署名実行制御（SmartScreen 等）。上表は系列ごとの利用者合意と完成系監査を経た検証用であり、この保守検証の合格を段階6完了や製品の合意記録には転用しません。

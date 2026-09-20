@@ -2,7 +2,7 @@
 
 Windows用のユースケース駆動参照アプリです。対話制御を React、機能と保存を Go に配置し、メモ編集・CSV取り込み・アプリ内更新を実装しています。
 
-**検証状況:** 生成先で依存取得、Wailsバインディング生成、型検査・Lint・Go/Vitestテスト、server E2E、Windows向け本番ビルドに合格しました。Windows実機でのWebView2の起動・終了操作・NSIS更新は未検証です（詳細は [検証結果](docs/project.md#verification) 参照）。配布物はビルド対象のソース一式です。
+**検証状況:** 生成先で依存取得、Wailsバインディング生成、型検査・Lint・Go/Vitestテスト、server E2E、Windows向け本番ビルド、NSISインストーラー作成に合格しました。Windows実機では、インストール、WebView2での起動、多重起動、終了確認、共有フォルダ経由のアプリ内更新（0.1.0→0.2.0）、アンインストール後のデータ保持を確認しました。画面へのキー入力を伴う操作の実機確認と未署名実行制御は未確認です（詳細は [検証結果](docs/project.md#verification) 参照）。配布物はビルド対象のソース一式です。
 
 ## 配置
 
@@ -20,7 +20,7 @@ mise run init:wails ../my-wails-app
 
 ## Windowsで開始
 
-生成されたプロジェクトのルートでコマンドを実行します。事前に Go 1.25以上、Node.js 22.16以上、Python 3.9以上、WebView2 Evergreen Runtime を導入し、`go`・`node`・`npm`・`python` が PATH 上で使えるようにしてください。NSIS 3.11以上はインストーラー作成時のみ必要です。Go の自動ツールチェーン取得を禁止する環境では、依存モジュールが要求する Go 版も事前に導入してください。
+生成されたプロジェクトのルートでコマンドを実行します。事前に Go 1.25以上、Node.js 22.16以上、Python 3、WebView2 Evergreen Runtime を導入し、`go`・`node`・`npm`・`python` が PATH 上で使えるようにしてください。mise を使う場合は同梱の `mise.toml` で検証済みの版を導入できます（`mise install`）。NSIS 3.11以上はインストーラー作成時のみ必要です。Go の自動ツールチェーン取得を禁止する環境では、依存モジュールが要求する Go 版も事前に導入してください。
 
 ```powershell
 cd ../my-wails-app
@@ -28,7 +28,7 @@ node scripts/run.mjs setup
 node scripts/run.mjs dev
 ```
 
-`setup` は指定版の Wails CLI をローカルの `.tools/` に導入し、Go/npm 依存、実際の Go バインディング、ルートツリーを生成します。初回は外部ネットワークが必要です。依存取得できない環境で架空の lockfile を作らないため、`go.sum` と `frontend/package-lock.json` は初回生成とし、初回成功後に両方をコミットしてください。以後は `npm ci` を使用します。直接依存の版は固定済みですが、初回解決前の推移的依存は未固定です。
+`setup` は指定版の Wails CLI をローカルの `.tools/` に導入し、Go/npm 依存、実際の Go バインディング、ルートツリーを生成します。初回は外部ネットワークが必要です。`go.sum` と `frontend/package-lock.json` は検証時に生成したものを同梱しており、npm 依存は `npm ci` で lockfile どおりに導入されます。依存を変更したときは両ファイルを更新してコミットしてください。
 
 | コマンド（先頭に `node scripts/run.mjs`） | 内容 |
 | --- | --- |
@@ -73,8 +73,15 @@ NSIS はアプリ本体、スタートメニュー、アンインストール情
 - [プロジェクト定義と検証](docs/project.md)
 - [採用記録](docs/document-policy.md)
 
-サンプルの UI やデータ設計は参照用です。製品開発時は `usecases/`・`features/notes`・`internal/notes` と対応するルート・テストを製品固有の実装へ置き換え、製品固有の UC・データ設計・合意記録を改めて定義してください。参照実装の記録を製品の合意済み仕様に転用しません。
+サンプルの UI やデータ設計は参照用です。製品開発時は下表の「サンプル」を製品固有の実装へ置き換え、製品固有の UC・データ設計・合意記録を改めて定義してください。参照実装の記録を製品の合意済み仕様に転用しません。
+
+| 区分 | 対象 |
+| --- | --- |
+| 残す基盤 | `main.go`（Service 登録の骨格）、`internal/desktop`・`appstate`・`fault`・`diagnostics`・`updates`、`cmd/release`、`frontend/src/app`・`shared`・`features/application`・`features/updates`、`usecases/update-app`、`routes/__root.tsx`・`routes/updates.tsx`、`build/`、`scripts/`、`Taskfile.yml` |
+| 置き換えるサンプル | `internal/notes`、`frontend/src/features/notes`、`usecases/edit-notes`・`import-notes`、`routes/notes.tsx`・`routes/import*.tsx`・`routes/index.tsx` の遷移先、`Shell.tsx` のナビゲーションと `subscribeNotes` の購読、`tests/fixtures/notes.ts`、`tests/e2e/usecases.spec.ts`、`vite.config.ts`・`tsconfig.json`・`eslint.config.mjs` の `@notes-service` 設定、`docs/usecases/UC-1〜3.md`、`docs/architecture.md` の UCP-1・UCP-2 と第5節 |
+
+新しい機能領域のモック合成点の作り方は [Wails補足第4節](docs/architecture-wails.md#4-モックと検証境界) を参照します。
 
 採用時は [導入開始手順](https://github.com/nuitsjp/aidd-project-template#3-初期セットアップと最初のユースケース) を確認し、サンプルの仕様・合意を引き継がずに製品固有の内容を定義します。
 
-`.github/workflows/windows.yml` は生成プロジェクト用の CI 例です。生成後のルートで `setup`・`verify`・`build`・`package` を実行し、`SOURCE_DIR` は `.` のまま使用します。`wails-template/` をチェックアウト上で単独実行する CI ではありません。ライセンスは [MIT](LICENSE) です。
+`.github/workflows/windows.yml` は生成プロジェクト用の CI 例です。main への push と pull request で `setup`・`verify`・`build`・`package` を実行し、インストーラーを artifact として保存します。`wails-template/` をチェックアウト上で単独実行する CI ではありません。ライセンスは [MIT](LICENSE) です。
