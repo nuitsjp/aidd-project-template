@@ -5,11 +5,11 @@
 
 | 項目 | 内容 |
 | --- | --- |
-| 共通資材の採用元 | 同一チェックアウトの `template/` を生成時に配置（配布版14） |
+| 共通資材の採用元 | 同一チェックアウトの `template/` を生成時に配置（配布版15） |
 | 作成時の根拠 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版13 / `88b31b40c65a2ce35201eeda34358e2d103bac23`（作成時点の確認値） |
 | React拡張 | 0.1.0 / 実処理・並列E2Eの参照実装 |
 | 設計・文書標準 | [版11](standards/design-and-documentation.md) 原文維持 |
-| モック標準 | [版12](standards/mock-driven-development.md) 原文維持 |
+| モック標準 | [版13](standards/mock-driven-development.md) 原文維持 |
 | 作成依頼 | 2026-09-20、利用者による「E2EテストでユーザーからDBの更新まで含めたテストを並列で実行することを加味して、アーキテクチャを設計してください。その上でWails同様にダウンロードできる形で提供してください」 |
 | 固有差分 | サンプル仕様・実装・テストを一式として提供。系列ごとの UI 合意と受け入れ確認は未実施であり、標準の段階5完了とは扱いません。共通構造の補足を architecture-react.md へ分離しています |
 

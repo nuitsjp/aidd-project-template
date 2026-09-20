@@ -5,11 +5,11 @@
 
 | 項目 | 内容 |
 | --- | --- |
-| 共通資材の採用元 | 同一チェックアウトの `template/` を生成時に配置（配布版14） |
+| 共通資材の採用元 | 同一チェックアウトの `template/` を生成時に配置（配布版15） |
 | 作成時の根拠 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版13 / `88b31b40c65a2ce35201eeda34358e2d103bac23`（作成時点の確認値） |
 | Wails拡張の採用版 | 0.1.0 / 参照実装・レビュー用 |
 | 設計・文書標準 | [版11](standards/design-and-documentation.md) 原文維持 |
-| モック標準 | [版12](standards/mock-driven-development.md) 原文維持 |
+| モック標準 | [版13](standards/mock-driven-development.md) 原文維持 |
 | 作成依頼 | 2026-09-20、利用者による「ディレクトリ構成や、起動処理、想定される代表的なユースケースパターンは、実装した形で提供されるべき」「それら一式を実際にビルドして起動できる形で作成してzipで提示してください」 |
 | 固有差分 | 実装一式の作成依頼として提供。サンプルの系列ごとの仕様・動作合意は未実施であり、標準の段階5完了や製品の合意済み仕様とは扱いません。共通構造の補足を architecture-wails.md に分離しています |
 | 検証上の制約 | 作成環境の外部接続制約により、全体ビルド・実機検証は未完了（[検証結果](project.md#verification) 参照） |

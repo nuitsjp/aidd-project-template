@@ -20,7 +20,7 @@ PLACEHOLDER_HASH = "sha256:" + "0" * 64
 # 配布元が `--print-hashes` の出力で更新する。
 EXPECTED_HASHES = {
     "docs/standards/design-and-documentation.md": "sha256:34618ba746c751fd3cd503ee4367c35169fba2d47bcf245bbd5be93f4ef72fad",
-    "docs/standards/mock-driven-development.md": "sha256:c08c95d6557abfc90122e99f9d2ebd0942ffd2549f8cb02243388d05bd7a9658",
+    "docs/standards/mock-driven-development.md": "sha256:e7dedc7a634728f6fe19e596633c482ae4c978f32d3c420133de75f4e883e436",
 }
 
 HEX_RE = re.compile(r"(?<![0-9A-Za-z])[0-9a-fA-F]{7,40}(?![0-9A-Za-z])")
