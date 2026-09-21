@@ -14,4 +14,5 @@ pkg.scripts = { start: 'node --env-file-if-exists=.env dist/backend/main.js' };
 writeFileSync(join(target, 'package.json'), JSON.stringify(pkg, null, 2) + '\n');
 writeFileSync(join(target, 'package-lock.json'), lock);
 cpSync(join(root, '.env.example'), join(target, '.env.example'));
-console.log('release/app を配備しました。npm ci --omit=dev、.env設定、npm start を実行してください。dataは配備領域の外へ置いてください。');
+cpSync(join(root, '.nvmrc'), join(target, '.nvmrc'));
+console.log('release/app を配備しました。.nvmrcの指定版Node.jsを選択し、npm ci --omit=dev、.env設定、npm start を実行してください。dataは配備領域の外へ置いてください。');

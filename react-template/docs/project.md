@@ -21,7 +21,7 @@ SPA、単一 Node.js、同一 origin、SQLite を既定とします。各利用�
 <a id="design"></a>
 ## 4. 確認した事実と採用差分
 
-共通資材は同一チェックアウトの `template/` から取得します（採用版は [文書方針](document-policy.md#adoption) に記録）。直接依存は `package.json`、Node 推奨版は `.nvmrc` に記載しています。
+共通資材は同一チェックアウトの `template/` から取得します（採用版は [文書方針](document-policy.md#adoption) に記録）。直接依存は `package.json`、Node 指定版は `.nvmrc` に記載しています。
 
 - **Node 24 node:sqlite**: Release Candidate 版。実 SQLite を用いる処理・マイグレーション・バックアップを同一ドライバーで検証（[Node API](https://nodejs.org/docs/latest-v24.x/api/sqlite.html)）。並列 E2E の分離は DB ファイルの分離により実現（[SQLite WAL](https://sqlite.org/wal.html)）。
 - **Playwright fixtures**: 環境生成と破棄を一体化し、fullyParallel と複数 worker を利用（[fixtures](https://playwright.dev/docs/test-fixtures)）。
@@ -84,7 +84,7 @@ npm run db:check -- ./backups/manual.sqlite
 
 合否表の記入と完了条件は [検証結果の記録](standards/design-and-documentation.md#verification-records) に従います。
 
-- **保守検証（2026-09-21、React拡張0.2.2、Windows、Node.js 24.16.0 / SQLite 3.53.0 / Playwright 1.63.0）**: 生成先で依存ロックを作成し、同じロックから `npm run setup` の `npm ci` が成功。`npm run verify` の型検査・Lint・機能テスト21件・単体テスト3件・本番ビルド・E2E 14件は、Chrome 153.0.8010.48を `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` で指定し `PLAYWRIGHT_IGNORE_DISABLE_EXTENSIONS=1` を設定した環境で合格。`npm run test:e2e:repeat` も42件（14件×3回）が合格。Playwright headless shell 148.0.7778.96を明示したE2E 14件も合格。`node scripts/package.mjs` が同じロックを配備物へ同梱し、配備先の `npm ci --omit=dev` も成功。
-- **ブラウザ導入の制約**: `npx playwright install --only-shell chromium` は `PLAYWRIGHT_DOWNLOAD_CONNECTION_TIMEOUT=120000` を設定してもCDNへの接続が再試行を含めて120秒でタイムアウトし、今回の環境では新規取得できませんでした。既存のPlaywright headless shellを使ったE2E 14件は合格しています。
-- **起動引数の選択**: `playwright.config.ts` は `headless: true` を明示し、`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` を指定できます。`PLAYWRIGHT_IGNORE_DISABLE_EXTENSIONS=1` のときだけ `--disable-extensions` を除外します。通常Chromeをこの設定で起動したE2E反復42件は合格しました。
+- **保守検証（2026-09-21、React拡張0.2.3、Windows、Node.js 24.21.0 / SQLite 3.53.0 / Playwright 1.63.0）**: 新規生成先で同梱ロックから `npm run setup` の `npm ci` が成功。`npm run verify` の型検査・Lint・機能テスト21件・単体テスト3件・本番ビルド・E2E 14件は、Playwright headless shell 153.0.8010.12を新規導入した既定環境で合格。`npm run test:e2e:repeat` も42件（14件×3回）が合格。`node scripts/package.mjs` が同じロックを配備物へ同梱し、配備先の `npm ci --omit=dev` も成功。Node版固定は `.nvmrc` の24.21.0を正本とし、setupで実行中のNode版を完全一致検査する。
+- **ブラウザ導入の検証**: 端末の既設プロキシを `HTTPS_PROXY` で明示し、空のキャッシュへ `npx playwright install --only-shell chromium` を実行して終了コード0を確認しました。E2Eでは実行ファイルの指定と `PLAYWRIGHT_IGNORE_DISABLE_EXTENSIONS` を解除し、対応版Headless Shellを使用しました。以前の取得失敗はIPv6からIPv4への接続切り替え時のタイムアウト判定によるもので、タイムアウト延長では解消しませんでした。
+- **Node版の検証**: Node.js 24.16.0では `setup` が依存導入前に版の不一致で停止することを確認しました。24.16.0に起因するZIP展開停止を避けるため、指定版をローカルとCIで一致させます。配備物にも `.nvmrc` を同梱し、`package.json` の指定版との一致を確認しました。
 - **未実施**: 同梱サンプルの系列ごとの動作合意と完成系監査。上表の合否は採用先で段階6を経てから記入します。

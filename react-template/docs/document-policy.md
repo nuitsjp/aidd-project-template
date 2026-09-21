@@ -8,7 +8,7 @@
 | 共通資材の採用元 | 同一チェックアウトの `template/` を生成時に配置（配布版19） |
 | 採用元固定コミット | {{SOURCE_COMMIT}}（正式採用時に生成元の40桁SHAを記録） |
 | 作成時の根拠 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版13 / `88b31b40c65a2ce35201eeda34358e2d103bac23`（作成時点の確認値） |
-| React拡張 | 0.2.2 / Playwright headless shell の導入と依存ロックの同梱 |
+| React拡張 | 0.2.3 / Node版固定、Playwright headless shell の導入と依存ロックの同梱 |
 | 設計・文書標準 | [版14](standards/design-and-documentation.md) 原文維持 |
 | モック標準 | [版17](standards/mock-driven-development.md) 原文維持 |
 | 作成依頼 | 2026-09-20、利用者による「E2EテストでユーザーからDBの更新まで含めたテストを並列で実行することを加味して、アーキテクチャを設計してください。その上でWails同様にダウンロードできる形で提供してください」 |

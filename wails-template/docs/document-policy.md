@@ -8,7 +8,7 @@
 | 共通資材の採用元 | 同一チェックアウトの `template/` を生成時に配置（配布版19） |
 | 採用元固定コミット | {{SOURCE_COMMIT}}（正式採用時に生成元の40桁SHAを記録） |
 | 作成時の根拠 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版13 / `88b31b40c65a2ce35201eeda34358e2d103bac23`（作成時点の確認値） |
-| Wails拡張の採用版 | 0.2.2 / E2E用headless shellの導入手順とブラウザーの明示指定を整備 |
+| Wails拡張の採用版 | 0.2.3 / Node.jsの固定版と実行前検査、CI・ブラウザー導入手順を統一 |
 | 設計・文書標準 | [版14](standards/design-and-documentation.md) 原文維持 |
 | モック標準 | [版17](standards/mock-driven-development.md) 原文維持 |
 | 作成依頼 | 2026-09-20、利用者による「ディレクトリ構成や、起動処理、想定される代表的なユースケースパターンは、実装した形で提供されるべき」「それら一式を実際にビルドして起動できる形で作成してzipで提示してください」 |

@@ -2,7 +2,7 @@
 
 Windows用のユースケース駆動参照アプリです。対話制御を React、機能と保存を Go に配置し、メモ編集・CSV取り込み・アプリ内更新を実装しています。
 
-**検証状況:** 生成先で依存取得、Wailsバインディング生成、型検査・Lint・Go/Vitestテスト、server E2E、Windows向け本番ビルド、NSISインストーラー作成に合格しました。Windows実機では、インストール、WebView2での起動、多重起動、終了確認、共有フォルダ経由のアプリ内更新（0.1.0→0.2.0）、アンインストール後のデータ保持を確認しました。画面へのキー入力を伴う操作の実機確認と未署名実行制御は未確認です（詳細は [検証結果](docs/project.md#verification) 参照）。配布物はビルド対象のソース一式です。
+**検証状況:** 拡張0.2.3ではNode.js 24.21.0によるセットアップ、空のキャッシュへのブラウザ自動導入、一括検証と対応版Headless ShellのE2E 3件に合格しました。従来の保守検証では生成先で依存取得、Wailsバインディング生成、型検査・Lint・Go/Vitestテスト、server E2E、Windows向け本番ビルド、NSISインストーラー作成に合格しました。Windows実機では、インストール、WebView2での起動、多重起動、終了確認、共有フォルダ経由のアプリ内更新（0.1.0→0.2.0）、アンインストール後のデータ保持を確認しました。画面へのキー入力を伴う操作の実機確認と未署名実行制御は未確認です（詳細は [検証結果](docs/project.md#verification) 参照）。配布物はビルド対象のソース一式です。
 
 ## 配置
 
@@ -20,17 +20,20 @@ mise run init:wails ../my-wails-app
 
 ## Windowsで開始
 
-生成されたプロジェクトのルートでコマンドを実行します。事前に Go 1.25以上、Node.js 22.16以上、Python 3、WebView2 Evergreen Runtime を導入し、`go`・`node`・`npm`・`python` が PATH 上で使えるようにしてください。mise を使う場合は同梱の `mise.toml` で検証済みの版を導入できます（`mise install`）。NSIS 3.11以上はインストーラー作成時のみ必要です。Go の自動ツールチェーン取得を禁止する環境では、依存モジュールが要求する Go 版も事前に導入してください。
+生成されたプロジェクトのルートでコマンドを実行します。事前に Go 1.25以上、Python 3、WebView2 Evergreen Runtime と nvm-windows を導入し、`go`・`python`・`nvm` が PATH 上で使えるようにしてください。Node.js は `.nvmrc` の指定版を次の手順で導入します。mise を使う場合は `mise install` で Go・Python と Node.js を導入し、`mise exec -- node scripts/run.mjs setup` と `mise exec -- node scripts/run.mjs dev` を実行します。この場合、次の `nvm install`・`nvm use` は不要です。`mise.toml` にも `.nvmrc` と同じ Node.js 版を指定しています。NSIS 3.11以上はインストーラー作成時のみ必要です。Go の自動ツールチェーン取得を禁止する環境では、依存モジュールが要求する Go 版も事前に導入してください。
 
 ```powershell
 cd ../my-wails-app
+$nodeVersion = (Get-Content .nvmrc -Raw).Trim()
+nvm install $nodeVersion
+nvm use $nodeVersion
 node scripts/run.mjs setup
 node scripts/run.mjs dev
 ```
 
 `setup` は指定版の Wails CLI をローカルの `.tools/` に導入し、Go/npm 依存、実際の Go バインディング、ルートツリーを生成します。初回は外部ネットワークが必要です。`go.sum` と `frontend/package-lock.json` は検証時に生成したものを同梱しており、npm 依存は `npm ci` で lockfile どおりに導入されます。依存を変更したときは両ファイルを更新してコミットしてください。
 
-Wails本体・JavaScript Runtimeは検証する組合せで更新し、`setup` でGo依存の版に対応するCLIを入れ直して生成コードを再生成します。`verify` とWindowsビルドを実行し、実機確認の範囲も記録します。採用後の依存定義・ロックは採用先が管理します。最低対応版は上記の前提、検証に使ったツール版は `mise.toml` と [検証結果](docs/project.md#verification) を参照します。
+Wails本体・JavaScript Runtimeは検証する組合せで更新し、`setup` でGo依存の版に対応するCLIを入れ直して生成コードを再生成します。`verify` とWindowsビルドを実行し、実機確認の範囲も記録します。採用後の依存定義・ロックは採用先が管理します。Node.js は `.nvmrc` と完全一致する版を使用し、異なる版では `scripts/run.mjs` が処理開始前に停止します。CIも `.nvmrc` を読みます。Go・Python の版は `mise.toml` と [検証結果](docs/project.md#verification) を参照します。
 
 | コマンド（先頭に `node scripts/run.mjs`） | 内容 |
 | --- | --- |
@@ -43,6 +46,8 @@ Wails本体・JavaScript Runtimeは検証する組合せで更新し、`setup` �
 | `test:core` | Go の機能・保存・更新検証を実行 |
 
 初回の E2E 実行前に `cd frontend; npx playwright install --only-shell chromium; cd ..` を実行し、導入済み Playwright に対応する headless shell を取得してください。E2E はヘッドレスで実行します。`server` は開発・検証用であり、LAN へ公開しません。終了は Ctrl+C です。
+
+ブラウザー取得にプロキシが必要な端末では、その環境で指定されたプロキシURLを `HTTPS_PROXY` に設定してから導入コマンドを実行します。端末固有のURLを配布物へ固定せず、ブラウザーやNode.jsを自動的に切り替える処理は設けません。
 
 通常の Chrome / Chromium を明示して検証する場合は、`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` に実行ファイルの絶対パスを設定します。その環境で既定引数 `--disable-extensions` による起動失敗を確認した場合だけ、`PLAYWRIGHT_IGNORE_DISABLE_EXTENSIONS=1` も設定して当該引数を除外します。指定例は次のとおりです。自動的なブラウザー切り替えは行いません。
 

@@ -58,11 +58,16 @@ AIエージェントを利用する場合は、プロジェクト側の `AGENTS.
 
 ### Wailsアプリの初期状態を生成する
 
+以下のPowerShell例ではNode.jsの版の選択にnvm-windowsを使用します。
+
 Windows向けのGo・React参照実装は [wails-template/](wails-template/README.md) に差分として管理しています。miseとNode.js 22.16以上を用意し、本リポジトリのルートで実行します。設定の信頼確認を求められた場合は、`mise.toml` の内容を確認して `mise trust` を実行してください。
 
 ```powershell
 mise run init:wails ../my-wails-app
 cd ../my-wails-app
+$nodeVersion = (Get-Content .nvmrc -Raw).Trim()
+nvm install $nodeVersion
+nvm use $nodeVersion
 node scripts/run.mjs setup
 node scripts/run.mjs dev
 ```
@@ -76,11 +81,14 @@ React・Node.js・SQLiteの参照実装は [react-template/](react-template/READ
 ```powershell
 mise run init:react ../my-react-app
 cd ../my-react-app
+$nodeVersion = (Get-Content .nvmrc -Raw).Trim()
+nvm install $nodeVersion
+nvm use $nodeVersion
 npm run setup
 npm run dev
 ```
 
-配置・上書きの規則はWailsと同様です。共通ファイルの継承、固有文書の全体上書き、新規出力先限定で行われ、生成タスクは依存取得やビルドを行いません。`react-template/` 単体をコピー・実行せず、生成先で開発してください。必要な環境は [Reactの開始手順](react-template/README.md) を参照してください。
+配置・上書きの規則はWailsと同様です。共通ファイルの継承、固有文書の全体上書き、新規出力先限定で行われ、生成タスクは依存取得やビルドを行いません。`react-template/` 単体をコピー・実行せず、生成先で開発してください。必要な環境は [Reactの開始手順](react-template/README.md) を参照してください。両拡張の開発・検証には、それぞれの `.nvmrc` に記載されたNode.jsの版を使用します。
 
 両拡張のE2EはHeadlessで実行します。依存導入後、各拡張の開始手順に従ってPlaywrightの対応版Headless Shellを導入してください。導入済みブラウザを明示指定する方法と、この環境で確認された起動引数の問題への対処も各拡張のREADMEに記載しています。
 
@@ -148,6 +156,13 @@ node scripts/update-common.mjs ../my-project OLD_COMMIT_SHA NEW_COMMIT_SHA
 ## 7. 変更履歴
 
 配布版は `template/` の内容が変わるたびに上がります。標準の版は、その標準自体に変更があった場合のみ上がります。
+
+### 拡張0.2.3（共通配布版19は据え置き）
+
+- 両拡張のNode.jsを24.21.0に揃え、`.nvmrc` を指定版の正本としました。セットアップで実行版の不一致を拒否し、依存定義・CI・導入手順を一致させています。
+- Node.js 24.16.0によるZIP展開停止と、IPv6接続からIPv4への切り替え時に発生するPlaywrightの取得失敗を切り分けました。必要な環境では既設プロキシを `HTTPS_PROXY` で明示し、通常のブラウザ自動導入を使用します。プロキシ値は採用先の端末設定で管理します。
+- 配布元で端末固有の環境変数を使用する場合は、Git管理外の `mise.local.toml` の `[env]` に設定し、`mise exec -- <コマンド>` で適用します。このファイルは生成先へコピーされません。
+- 既存の採用先はNode指定・セットアップ・CIの差分を確認して取り込み、空のブラウザキャッシュへの導入とE2Eを再検証してください。
 
 ### 拡張0.2.2（共通配布版19は据え置き）
 

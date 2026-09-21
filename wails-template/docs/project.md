@@ -74,9 +74,11 @@ node scripts/run.mjs release manifest -key "$env:USERPROFILE/wails-release-priva
 
 合否表の記入と完了条件は [検証結果の記録](standards/design-and-documentation.md#verification-records) に従います。
 
-今回の保守検証（2026-09-21、Wails拡張0.2.2、Windows amd64、Go 1.26.5・Node.js 24.16.0・Python 3.14.6・Playwright 1.56.0）: 新しい生成先で `node scripts/run.mjs setup` と `node scripts/run.mjs verify` に合格しました。`verify` は Chrome 153.0.8010.48 を `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` で明示し、`PLAYWRIGHT_IGNORE_DISABLE_EXTENSIONS=1` を設定して実行しました。型検査・Lint・Vitest 7件・Go全7パッケージのテスト・go vet（desktop・server 両構成）・文書検査（NG 0件）・server build・実Goサービスのserver E2E 3件が合格しました。
+拡張0.2.2での保守検証（2026-09-21、Windows amd64、Go 1.26.5・Node.js 24.16.0・Python 3.14.6・Playwright 1.56.0）: 新しい生成先で `node scripts/run.mjs setup` と `node scripts/run.mjs verify` に合格しました。`verify` は Chrome 153.0.8010.48 を `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` で明示し、`PLAYWRIGHT_IGNORE_DISABLE_EXTENSIONS=1` を設定して実行しました。型検査・Lint・Vitest 7件・Go全7パッケージのテスト・go vet（desktop・server 両構成）・文書検査（NG 0件）・server build・実Goサービスのserver E2E 3件が合格しました。
 
-対応する Chromium Headless Shell 141.0.7390.37（revision 1194）でも、実行ファイルを明示し、`PLAYWRIGHT_IGNORE_DISABLE_EXTENSIONS` を解除した構成で server E2E 3件が合格しました。`npx playwright install --only-shell chromium` はZIP取得を完了しましたが展開途中で停止し、自動導入は未完了です。ZIPのCRC検査に異常がないことを確認し、独立した一時ディレクトリへ手動展開した実行ファイルで検証しました。展開停止の原因は未特定です。自動的な代替ブラウザー選択や手動展開処理は組み込んでいません。
+対応する Chromium Headless Shell 141.0.7390.37（revision 1194）でも、実行ファイルを明示し、`PLAYWRIGHT_IGNORE_DISABLE_EXTENSIONS` を解除した構成で server E2E 3件が合格しました。当初の導入はZIP展開途中で停止したため、このE2EではCRC検査済みZIPを一時ディレクトリへ手動展開しました。その後、旧ZIPライブラリーが読み込み終端で立てる終了フラグと、Node.js 24.16.0のストリーム再開処理が干渉し、未処理のバッファが残ることを特定しました。同じZIP・同じPlaywrightでNode.js 24.19.0へ変更すると展開が完了し、全13ファイルのハッシュも一致しました。端末のプロキシを `HTTPS_PROXY` に明示した新しいキャッシュでは、Playwright標準の `install --only-shell chromium` も終了コード0で完了しました。
+
+拡張0.2.3の保守検証（2026-09-21、Node.js 24.21.0）: 新規生成先で `setup`、空のブラウザキャッシュへの `npx playwright install --only-shell chromium`、`verify` がすべて終了コード0で完了しました。ブラウザは対応版Headless Shell 141.0.7390.37（revision 1194）を標準設定で使用し、E2E 3件が合格しました。端末のプロキシは環境変数で明示し、実行ファイルの指定・起動引数の除外・手動展開は使用していません。Node.js 24.16.0では依存導入前に版の不一致で停止することも確認しました。`.nvmrc`、依存定義、mise、CIの指定版は24.21.0で一致しています。
 
 Windows向け本番ビルド・NSISインストーラー作成は従来の保守記録で合格しています。今回のE2E設定変更では `build`・`package` とデスクトップ実機確認は再実行していません。
 
