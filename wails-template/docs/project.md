@@ -2,7 +2,7 @@
 
 ## 1. 目的と範囲
 
-Wails 補足で合意した構造を動作可能な実装として確認するための参照アプリです。メモの編集、CSV 一括取り込み、起動・終了、およびアプリ内更新機能を含みます。業務プロダクトや汎用 CRUD 基盤を作るものではありません。
+Wails の共通構造を動作可能な実装として示す参照アプリです。メモの編集、CSV 一括取り込み、起動・終了、およびアプリ内更新機能を含みます。業務プロダクトや汎用 CRUD 基盤を作るものではありません。
 
 ## 2. 制約・受け入れ条件
 
@@ -22,20 +22,40 @@ Windows デスクトップを主対象とします（ブラウザ server build �
 <a id="design"></a>
 ## 4. 確認した事実
 
-参照実装の作成時に、配布元の版13・コミット `88b31b40c65a2ce35201eeda34358e2d103bac23` を確認しました。採用する共通資材は、生成に使う同一チェックアウトの `template/`（現在の配布版17）に従います。標準2文書と検査スクリプトは Git blob の一致を確認して複製します。
+共通資材は生成に使う同一チェックアウトの `template/`（配布版18）から取得します。標準2文書と検査スクリプトは共通側から配置します。
 
-Wails 本体・CLI・npm ランタイムは `v3.0.0-beta.23` / `3.0.0-beta.23`、Go 1.25以上を前提とします。生成 API・Service 登録・ライフサイクル・runtime Vite plugin は [固定版ソース](https://github.com/wailsapp/wails/tree/v3.0.0-beta.23/v3) および [CLI資料](https://v3.wails.io/guides/cli/)（2026-09-20確認）に基づきます。
+Wails 本体・CLI・npm ランタイムは `v3.0.0-beta.23` / `3.0.0-beta.23`、Go 1.25以上を前提とします。生成 API・Service 登録・ライフサイクル・runtime Vite plugin は [固定版ソース](https://github.com/wailsapp/wails/tree/v3.0.0-beta.23/v3) および [CLI資料](https://v3.wails.io/guides/cli/) に従います。
 
-生成先で依存取得、Wailsバインディング生成、TypeScript型検査、実Goサービスを使うE2Eを確認しました。主要な仕様判断と、実際に実行できた検証を区別します（[検証結果](#verification) 参照）。
+生成先では依存取得、Wails バインディング生成、TypeScript 型検査、実 Go サービスを使う E2E を実行します。
 
 <a id="commands"></a>
 ## 5. 実行・切り替え・検証手順
 
-起動およびビルド手順は [README](../README.md) に集約しています。本リポジトリのルートで `mise run init:wails ../my-wails-app` を実行後、生成先を作業ディレクトリとします（`wails-template/` 単体を作業ディレクトリとしません）。`docs/project.md` と `docs/document-policy.md` は Wails 差分で個別管理し、生成時に共通版を全体上書きします。部分マージは行いません。`build/app.json` の変更後は再ビルドします。
+本リポジトリのルートで `mise run init:wails ../my-wails-app` を実行し、生成先を作業ディレクトリとします（`wails-template/` 単体を作業ディレクトリとしません）。Go 1.25以上、Node.js 22.16以上、Python 3.9以上、WebView2 Evergreen Runtime を導入し、`go`・`node`・`npm`・`python` を PATH 上で使用できるようにします。NSIS 3.11以上はインストーラー作成時のみ必要です。Go の自動ツールチェーン取得を禁止する環境では、依存モジュールが要求する Go 版も事前に導入します。
 
-`dev:mock` は Wails を起動したままメモ機能のみを固定データへ差し替えます（画面に「試験用モック」が表示されることを確認）。本番ビルドでモック設定を検出した場合はビルドを中止します。
+```powershell
+cd ../my-wails-app
+node scripts/run.mjs setup
+node scripts/run.mjs dev
+```
 
-E2E は実 Go サービスと専用の一時データ領域を使用します。`python scripts/doc_check.py .` では文書リンク・UC 対応・標準ハッシュ等を確認します。Windows 実機確認では、保存後の再起動、未保存状態からの終了、多重起動、CSV 処理中の終了、インストール・更新・アンインストール後のデータ保持を確認します。
+`setup` は指定版の Wails CLI をローカルの `.tools/` に導入し、Go/npm 依存、実際の Go バインディング、ルートツリーを生成します。初回は外部ネットワークが必要です。`go.sum` と `frontend/package-lock.json` は初回生成し、初回成功後に保存します。以後は `npm ci` を使用します。直接依存の版は固定済みですが、初回解決前の推移的依存は固定されません。
+
+| コマンド（先頭に `node scripts/run.mjs`） | 内容 |
+| --- | --- |
+| `dev` | Windows アプリを起動し、Go・React の変更を監視 |
+| `dev:mock` | 試験用固定データで起動（実データは変更しない） |
+| `build` | 本番実行ファイルを `bin/` に生成 |
+| `package` | ビルド後、ユーザー単位の未署名 NSIS インストーラーを `bin/` に生成 |
+| `server` | Go 実処理を使うブラウザ確認用サーバーを localhost:34115 で起動 |
+| `verify` | 生成・型検査・Lint・テスト・文書検査・server E2E を一括実行 |
+| `test:core` | Go の機能・保存・更新検証を実行 |
+
+初回の E2E 実行前に `cd frontend; npx playwright install chromium; cd ..` を実行します。`server` は開発・検証用であり、LAN へ公開しません。終了は Ctrl+C とします。`dev:mock` は Wails を起動したままメモ機能のみを固定データへ差し替えます（画面に「試験用モック」が表示されることを確認）。本番ビルドでモック設定を検出した場合はビルドを中止します。
+
+E2E は実 Go サービスと専用の一時データ領域を使用します。生成先で `python scripts/doc_check.py .` を実行すると文書リンク・UC 対応・標準ハッシュ等を確認できます。Windows 実機確認では、保存後の再起動、未保存状態からの終了、多重起動、CSV 処理中の終了、インストール・更新・アンインストール後のデータ保持を確認します。
+
+変更後は `node scripts/run.mjs verify` を実行し、生成・型検査・Lint・テスト・文書・server E2E がすべて合格した状態を維持します。Windows 実機を対象とする操作は、同じ実装条件で別途確認します。
 
 <a id="release"></a>
 ### 更新元と署名
@@ -60,22 +80,3 @@ node scripts/run.mjs release manifest -key "$env:USERPROFILE/wails-release-priva
 旧版の更新画面で確認・取得・適用します。NSIS の実行待ちは旧アプリ PID を対象とします。署名・ハッシュ違反、適用失敗、組織ポリシーの拒否を成功扱いにしません。復旧時は同じ信頼できるインストーラーを手動実行します。
 
 **この参照版の制約:** Runtime がない端末は WebView2 を事前導入します。署名鍵の自動交換、private Releases、古いステージファイルの自動清掃、インストーラーのトランザクション復旧は実装していません。インストーラー自体は未署名であり、実行許可は環境に依存します。
-
-<a id="verification"></a>
-## 6. 検証結果
-
-完了報告では `node scripts/run.mjs verify` の結果と、Windows 実機確認の範囲を分けて記録します。Wails server build・Playwright・Go テストの結果は、Windows 実機の起動・インストール・更新確認の代わりにしません。
-
-| UC・系列 ID | 段階 | 構成 | 実行日 | コマンド | 合否 | 対象コミットまたは CI 参照 |
-| --- | --- | --- | --- | --- | --- | --- |
-| UC-1-M / UC-1-X1 | — | Wails server + Playwright | — | `node scripts/run.mjs verify` | 未検証 | — |
-| UC-2-M | — | Wails server + Playwright | — | `node scripts/run.mjs verify` | 未検証 | — |
-| UC-3-M | — | Windows + NSIS | — | READMEと本節の更新手順 | 未検証 | — |
-
-合否を記入するときは [モック標準](standards/mock-driven-development.md#workflow) の段階番号（1〜6）も記録します。段階6の結果には対象系列の合意記録と完成系監査記録が必要であり、一部構成の合格のみで完了とは扱いません。
-
-参照実装の保守検証（2026-09-20、Wails拡張0.1.1、Windows amd64、Go 1.25.13・Node.js 24.20.0）: 生成先で `node scripts/run.mjs verify` と `node scripts/run.mjs build` に合格しました。型検査・Lint・Vitest 7件・Go全パッケージテスト・go vet・文書検査（NG 0件）・実Goサービスのserver E2E 3件・Windows向け本番ビルドを確認しました。
-
-保守検証では新規保存・再保存の成功表示、履歴移動や再選択時の表示解除、下書き保持、一括取り込みを確認しました。通常終了・更新適用ではGo応答前や失敗時にruntime終了要求を出さないことを単体テストで確認しています。本番CSPはインラインスクリプトを許可せず、開発モードのみ許可します。
-
-WebView2のWindows実機起動・終了操作、NSISのインストール・更新・再起動、未署名実行制御は未検証です。上表は系列ごとの利用者合意と完成系監査を経た検証用であり、この保守検証の合格を段階6完了や製品の合意記録には転用しません。

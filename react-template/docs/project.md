@@ -8,7 +8,7 @@ React の対話制御から実 Node.js・SQLite への更新までを通す参�
 
 SPA、単一 Node.js、同一 origin、SQLite を既定とします。各利用者のメモは所有者 ID で分離します。4 worker の E2E において、同一ユーザー・同一タイトルを用いてもテスト間で干渉しないこと、UI から実 API を経由して実ファイル DB を別接続で検証することを条件とします。
 
-一括登録の上限はサンプルとして100件です。SQLite はサーバーのローカルディスクに配置し、トランザクション中に非同期 I/O を待たない短い同期処理とします。
+一括登録の上限はサンプルとして100件です。SQLite の配置とトランザクション境界は [アーキテクチャの設計上の制約](architecture.md#constraints) に従います。
 
 <a id="usecases"></a>
 ## 3. ユースケース一覧
@@ -19,9 +19,9 @@ SPA、単一 Node.js、同一 origin、SQLite を既定とします。各利用�
 | [UC-2](usecases/UC-2.md) | 利用者 | 複数のメモを確認して一括登録する | 2 | [UCP-2](architecture.md#patterns) | 対象 |
 
 <a id="design"></a>
-## 4. 確認した事実と採用差分
+## 4. 確認した事実
 
-共通資材は同一チェックアウトの `template/` から取得します（配布版17）。直接依存は `package.json`、Node 推奨版は `.nvmrc` に記載しています。
+共通資材は同一チェックアウトの `template/` から取得します（配布版18）。直接依存は `package.json`、Node 推奨版は `.nvmrc` に記載しています。
 
 - **Node 24 node:sqlite**: Release Candidate 版。実 SQLite を用いる処理・マイグレーション・バックアップを同一ドライバーで検証（[Node API](https://nodejs.org/docs/latest-v24.x/api/sqlite.html)）。並列 E2E の分離は DB ファイルの分離により実現（[SQLite WAL](https://sqlite.org/wal.html)）。
 - **Playwright fixtures**: 環境生成と破棄を一体化し、fullyParallel と複数 worker を利用（[fixtures](https://playwright.dev/docs/test-fixtures)）。
@@ -30,11 +30,46 @@ SPA、単一 Node.js、同一 origin、SQLite を既定とします。各利用�
 <a id="commands"></a>
 ## 5. 実行・切り替え・検証手順
 
-起動および検証コマンドは [README](../README.md) を参照してください。本リポジトリのルートで `mise run init:react ../my-react-app` を実行後、生成先を作業ディレクトリとします（`react-template/` 単体を作業ディレクトリとしません）。
+本リポジトリのルートで `mise run init:react ../my-react-app` を実行し、生成先を作業ディレクトリとします（`react-template/` 単体を作業ディレクトリとしません）。Node.js 24.21.0 を推奨し、最低22.16、文書検査に Python 3 を使用します。Docker や外部 DB は不要です。
+
+生成先のルートで依存導入、`.env` 作成、ルート生成を行います。初回生成された `package-lock.json` を保存し、以後は `npm ci` を使用します。
+
+```sh
+npm run setup
+npm run dev
+```
+
+ブラウザで `http://127.0.0.1:5173/notes` を開きます。ユーザー選択（Alice/Bob）でメモの作成・編集・一括登録を試せます。既定のユーザー選択はローカル参照用であり認証ではありません。共有環境では [認証・配備](#deployment) を設定します。
+
+本番形式では次を実行し、`http://127.0.0.1:3000/notes` を開きます。ビルド済み UI・tRPC・SSE を同一 origin で利用し、停止は Ctrl+C とします。DB は既定で `data/app.sqlite` に保存され、停止・再起動後もデータを維持します。
+
+```sh
+npm run build
+npm start
+```
+
+ユーザー操作から DB までの E2E は、初回のみ Chromium を導入してから実行します。
+
+```sh
+npx playwright install chromium
+npm run test:e2e
+```
+
+4 worker で実行します。テストごとのプロセス・DB 分離、UI 操作後の DB 確認、同一 DB の競合境界は [アーキテクチャのテスト分離](architecture.md#test-boundary) に従います。4並列の反復、全体検証、実 SQLite の機能・プロセス分離は次で実行します。
+
+```sh
+npm run test:e2e:repeat
+npm run verify
+npm run test:core
+```
+
+worker 数を変更する場合は `npx playwright test --workers=8` を使用します（事前ビルドが必要）。共有 DB を使わない実行条件と同一 DB の競合境界は [アーキテクチャのテスト分離](architecture.md#test-boundary) を参照します。
 
 テスト失敗時のアーティファクトは `.e2e-results/` 等に配置され、試験 DB は fixture が自動削除します。リポジトリに実データや診断ログを含めません。
 
-仕様合意用モックが必要な期間のみ `frontend/src/mocks/notes.ts` を作成し、`npm exec -- vite --config frontend/vite.config.ts --mode mock` で起動します（本番ビルドでのモック使用は禁止）。段階4で固定データを削除し、E2E は実 API で検証します。
+仕様確認用モックが必要な期間のみ `frontend/src/mocks/notes.ts` を作成し、`npm exec -- vite --config frontend/vite.config.ts --mode mock` で起動します（本番ビルドでのモック使用は禁止）。実処理へ切り替えた後は固定データを削除し、E2E は実 API で検証します。
+
+変更後は `npm run verify` を実行し、型検査・Lint・文書・機能・UI・ビルド・E2E がすべて合格した状態を維持します。
 
 <a id="deployment"></a>
 ### 認証・配備
@@ -66,20 +101,3 @@ npm run db:check -- ./backups/manual.sqlite
 ```
 
 バックアップは `VACUUM INTO` で整合性のあるスナップショットを作成します。復元時はサーバー停止後、既存 DB と WAL/SHM を退避し、チェック済みバックアップを配置して起動します。
-
-<a id="verification"></a>
-## 6. 検証結果
-
-実装後は `npm run verify` を実行し、結果を報告します（未実施の項目は「未検証」と明記）。
-
-| UC・系列 ID | 段階 | 構成 | 実行日 | コマンド | 合否 | 対象コミットまたは CI 参照 |
-| --- | --- | --- | --- | --- | --- | --- |
-| UC-1-M | — | 本番Node + Chromium + SQLite | — | npm run test:e2e | 未検証 | — |
-| UC-1-X1 / UC-1-X2 / UC-1-X3 / UC-1-X4 | — | 同上 | — | npm run test:e2e | 未検証 | — |
-| UC-2-M / UC-2-X1 | — | 同上 | — | npm run test:e2e | 未検証 | — |
-
-合否を記入するときは [モック標準](standards/mock-driven-development.md#workflow) の段階番号（1〜6）も記録します。段階6の結果には対象系列の合意記録と完成系監査記録が必要であり、一部構成の合格のみで完了とは扱いません。
-
-- **限定検証（2026-09-20）**: Node.js 22.16.0 / SQLite 3.49.1 にて `npm run test:core` を実行し21件合格。4つの実 Node プロセスが各専用 DB で更新・検証を実施（マイグレーション、外部キー、競合検出、ロールバック、通知、バックアップを含む。ブラウザ E2E ではない）。
-- **補助検査**: TypeScript strict 型検査、全62ファイルの構文検査、文書検査（NG 0件）を完了。
-- **依存取得の制約**: 提供環境の外部接続制限により、npm 依存解決、Fastify/tRPC 実起動、Vite ビルド、Playwright E2E は未検証。

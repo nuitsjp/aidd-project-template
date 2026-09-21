@@ -1,4 +1,4 @@
-"""doc_check.py の段階・合意・監査の回帰テスト。"""
+"""doc_check.py の禁止記録・重複本文判定の回帰テスト。"""
 
 from __future__ import annotations
 
@@ -13,9 +13,6 @@ from pathlib import Path
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE_ROOT = REPOSITORY_ROOT / "template"
 CHECKER = TEMPLATE_ROOT / "scripts" / "doc_check.py"
-
-COMMIT = "abcdef0123456789abcdef0123456789abcdef01"
-AUDIT_COMMIT = "1234567890abcdef1234567890abcdef12345678"
 
 
 class DocCheckRegressionTests(unittest.TestCase):
@@ -53,278 +50,230 @@ class DocCheckRegressionTests(unittest.TestCase):
 
     @staticmethod
     def write_utf8(path, text):
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(text.encode("utf-8"))
 
     @classmethod
-    def set_verification_rows(cls, root, rows):
-        """第6節の表を指定された行へ置換する。"""
-        path = root / "docs" / "project.md"
-        lines = path.read_text(encoding="utf-8").splitlines()
-        section = next(i for i, line in enumerate(lines) if line.startswith("## 6."))
-        table = next(i for i in range(section + 1, len(lines)) if lines[i].lstrip().startswith("|"))
-        end = table
-        while end < len(lines) and lines[end].lstrip().startswith("|"):
-            end += 1
-        replacement = [
-            "| UC・系列 ID | 段階 | 構成 | 実行日 | コマンド | 合否 | 対象コミットまたは CI 参照 |",
-            "| --- | --- | --- | --- | --- | --- | --- |",
-        ]
-        replacement.extend(
-            "| %s | %s | %s | %s | %s | %s | %s |" % row for row in rows
-        )
-        cls.write_utf8(path, "\n".join(lines[:table] + replacement + lines[end:]) + "\n")
+    def append(cls, root, relative, text):
+        path = root / relative
+        cls.write_utf8(path, path.read_text(encoding="utf-8").rstrip() + "\n\n" + text + "\n")
 
     @classmethod
-    def set_verification_rows_without_stage(cls, root, rows):
-        """第6節の表から段階列を除いた不正な表を作る。"""
-        path = root / "docs" / "project.md"
-        lines = path.read_text(encoding="utf-8").splitlines()
-        section = next(i for i, line in enumerate(lines) if line.startswith("## 6."))
-        table = next(i for i in range(section + 1, len(lines)) if lines[i].lstrip().startswith("|"))
-        end = table
-        while end < len(lines) and lines[end].lstrip().startswith("|"):
-            end += 1
-        replacement = [
-            "| UC・系列 ID | 構成 | 実行日 | コマンド | 合否 | 対象コミットまたは CI 参照 |",
-            "| --- | --- | --- | --- | --- | --- |",
-        ]
-        replacement.extend(
-            "| %s | %s | %s | %s | %s | %s |" % row for row in rows
-        )
-        cls.write_utf8(path, "\n".join(lines[:table] + replacement + lines[end:]) + "\n")
+    def write_extra(cls, root, relative, text):
+        cls.write_utf8(root / relative, text.rstrip() + "\n")
 
-    @classmethod
-    def add_series(cls, root, *series):
-        """UC-1 本文へ拡張系列の記述を追加する。"""
-        if not series:
-            return
-        path = root / "docs" / "usecases" / "UC-1.md"
-        text = path.read_text(encoding="utf-8").rstrip() + "\n\n"
-        text += "\n".join("- 拡張系列 %s: 拡張シナリオ" % item for item in series)
-        cls.write_utf8(path, text + "\n")
+    def test_template_is_clean(self):
+        self.assert_checker_ok()
 
-    @classmethod
-    def set_records(cls, root, agreements=(), audits=(), agreement_quote="合意します。",
-                    audit_quote="承認します。", agreement_commit=COMMIT,
-                    audit_commit=AUDIT_COMMIT):
-        """UC-1 の合意記録と完成系監査記録を独立して置換する。"""
-        path = root / "docs" / "usecases" / "UC-1.md"
-        lines = path.read_text(encoding="utf-8").splitlines()
-        agreement = next(i for i, line in enumerate(lines) if line.startswith("- 合意記録"))
-        audit = next(i for i, line in enumerate(lines) if line.startswith("- 完成系監査記録"))
-        end = next(i for i in range(audit + 1, len(lines)) if lines[i].startswith("合意記録の4項目"))
-
-        replacement = [lines[agreement]]
-        for series in agreements:
-            replacement.extend([
-                "  - %s / 提示コミット: %s / 論点と回答: 既定でよい" % (series, agreement_commit),
-                "    > %s" % agreement_quote,
-            ])
-        replacement.append(lines[audit])
-        for series in audits:
-            replacement.extend([
-                "  - %s / 提示コミット: %s" % (series, audit_commit),
-                "    > %s" % audit_quote,
-            ])
-        cls.write_utf8(path, "\n".join(lines[:agreement] + replacement + lines[end:]) + "\n")
-
-    @classmethod
-    def set_overall_agreement(cls, root, quote="全体設計に合意します。"):
-        path = root / "docs" / "architecture.md"
-        text = path.read_text(encoding="utf-8")
-        text = text.replace("{{COMMIT_HASH}}", COMMIT).replace("{{USER_RESPONSE}}", quote)
-        cls.write_utf8(path, text)
-
-    @classmethod
-    def complete_series(cls, root, series=("UC-1-M",), rows=None):
-        if rows is None:
-            rows = [("%s" % series[0], "6", "本番", "2026-09-20", "verify", "合格", COMMIT)]
-        cls.set_records(root, agreements=series, audits=series)
-        cls.set_overall_agreement(root)
-        cls.set_verification_rows(root, rows)
-
-    def test_unfilled_template_is_clean_and_reports_series_counts(self):
-        output = self.assert_checker_ok()
-        self.assertIn("記述済みの系列 1 本", output)
-        self.assertIn("拡張 0 本", output)
-
-    def test_intermediate_mock_result_does_not_require_audit(self):
-        self.assert_checker_ok(
-            lambda root: self.set_verification_rows(
-                root, [("UC-1-M", "2", "モック", "2026-09-20", "playwright", "合格", COMMIT)]
-            )
-        )
-
-    def test_two_mock_results_without_audit_remain_in_progress(self):
+    def test_adr_directory_and_typical_decision_file_are_rejected(self):
         def change(root):
-            self.add_series(root, "UC-1-X1")
-            self.set_records(root, agreements=("UC-1-M", "UC-1-X1"))
-            self.set_overall_agreement(root)
-            self.set_verification_rows(root, [
-                ("UC-1-M", "2", "モック", "2026-09-20", "playwright", "合格", COMMIT),
-                ("UC-1-X1", "3", "モック", "2026-09-20", "playwright", "合格", COMMIT),
-            ])
+            self.write_extra(root, "docs/adr/ADR-1.md", "# 旧記録\n\n背景と決定を保存していた本文です。")
 
-        self.assert_checker_ng(change, "仕掛かり", "UC-1-M", "UC-1-X1")
+        self.assert_checker_ng(change, "ADR/決定記録", "docs/adr/ADR-1.md")
 
-    def test_verification_table_without_stage_column_is_invalid(self):
-        self.assert_checker_ng(
-            lambda root: self.set_verification_rows_without_stage(
-                root, [("UC-1-M", "モック", "2026-09-20", "playwright", "合格", COMMIT)]
-            ),
-            "段階",
-        )
-
-    def test_stage6_pass_requires_agreement_and_audit(self):
-        self.assert_checker_ng(
-            lambda root: self.set_verification_rows(
-                root, [("UC-1-M", "6", "本番", "2026-09-20", "verify", "合格", COMMIT)]
-            ),
-            "UC-1-M",
-            "合意",
-            "監査",
-        )
-
-    def test_stage6_pass_with_agreement_only_requires_audit(self):
-        for result in ("合格", "不合格"):
-            with self.subTest(result=result):
-                def change(root, result=result):
-                    self.set_records(root, agreements=("UC-1-M",))
-                    self.set_overall_agreement(root)
-                    self.set_verification_rows(
-                        root, [("UC-1-M", "6", "本番", "2026-09-20", "verify", result, COMMIT)]
-                    )
-
-                self.assert_checker_ng(change, "UC-1-M", "監査")
-
-    def test_stage6_pass_with_audit_only_cannot_replace_agreement(self):
+    def test_adr_table_and_id_are_rejected(self):
         def change(root):
-            self.set_records(root, audits=("UC-1-M",))
-            self.set_overall_agreement(root)
-            self.set_verification_rows(
-                root, [("UC-1-M", "6", "本番", "2026-09-20", "verify", "合格", COMMIT)]
-            )
-
-        self.assert_checker_ng(change, "UC-1-M", "合意")
-
-    def test_stage6_pass_with_both_records_is_complete(self):
-        self.assert_checker_ok(self.complete_series)
-
-    def test_placeholder_agreement_quote_is_not_a_record(self):
-        def change(root):
-            self.set_records(
+            self.append(
                 root,
-                agreements=("UC-1-M",),
-                audits=("UC-1-M",),
-                agreement_quote="{{USER_RESPONSE}}",
-            )
-            self.set_overall_agreement(root)
-            self.set_verification_rows(
-                root, [("UC-1-M", "6", "本番", "2026-09-20", "verify", "合格", COMMIT)]
+                "docs/architecture.md",
+                "| ADR ID | 決定 | 理由 |\n| --- | --- | --- |\n| ADR-1 | 採用 | 旧決定 |",
             )
 
-        self.assert_checker_ng(change, "UC-1-M", "引用")
+        self.assert_checker_ng(change, "ADR/決定記録", "ADR-1")
 
-    def test_placeholder_audit_quote_is_not_a_record(self):
+    def test_old_headings_and_fill_labels_are_rejected(self):
         def change(root):
-            self.set_records(
+            self.append(
                 root,
-                agreements=("UC-1-M",),
-                audits=("UC-1-M",),
-                audit_quote="{{AUDIT_USER_RESPONSE}}",
-            )
-            self.set_overall_agreement(root)
-            self.set_verification_rows(
-                root, [("UC-1-M", "6", "本番", "2026-09-20", "verify", "合格", COMMIT)]
+                "docs/project.md",
+                "## 決定履歴\n\n- 承認原文: 旧記録\n- 提示コミット: abcdef0\n- 論点と回答: 旧記録",
             )
 
-        self.assert_checker_ng(change, "UC-1-M", "監査")
+        self.assert_checker_ng(change, "旧記録の見出し", "旧記録の記入ラベル")
 
-    def test_placeholder_audit_commit_is_not_a_record(self):
+    def test_old_response_and_post_save_notification_labels_are_rejected(self):
         def change(root):
-            self.set_records(
+            self.append(
                 root,
-                agreements=("UC-1-M",),
-                audits=("UC-1-M",),
-                audit_commit="{{AUDIT_COMMIT_HASH}}",
-            )
-            self.set_overall_agreement(root)
-            self.set_verification_rows(
-                root, [("UC-1-M", "6", "本番", "2026-09-20", "verify", "合格", COMMIT)]
+                "docs/architecture.md",
+                "- 応答の原文: 旧記録\n- 利用者の応答原文: 旧記録\n"
+                "- 保存後通知の改訂合意: 旧記録\n- 保存後通知の完成系監査記録: 旧記録",
             )
 
-        self.assert_checker_ng(change, "UC-1-M", "完成系監査記録", "提示コミットのハッシュ")
+        self.assert_checker_ng(change, "旧記録の記入ラベル")
 
-    def test_audit_quote_does_not_bleed_into_agreement_record(self):
+    def test_old_record_samples_in_quote_and_fence_are_rejected(self):
         def change(root):
-            self.set_records(root, agreements=("UC-1-M",), audits=("UC-1-M",), agreement_quote="")
-            self.set_overall_agreement(root)
-            self.set_verification_rows(
-                root, [("UC-1-M", "6", "本番", "2026-09-20", "verify", "合格", COMMIT)]
+            self.append(
+                root,
+                "README.md",
+                "> ## 合意記録\n> - 完成系監査中の変更: 修正\n\n```markdown\n## 検証結果\n- 承認原文: 旧記録\n```",
             )
 
-        self.assert_checker_ng(change, "UC-1-M", "合意", "引用")
+        self.assert_checker_ng(change, "旧記録の見出し", "旧記録の記入ラベル")
 
-    def test_stage6_pass_with_blank_stage_is_invalid(self):
+    def test_verification_table_is_rejected_without_stage_column(self):
         def change(root):
-            self.complete_series(root, rows=[("UC-1-M", "", "本番", "2026-09-20", "verify", "合格", COMMIT)])
+            self.write_extra(
+                root,
+                "docs/old-verification.md",
+                "| 構成 | 実行日 | 合否 | 対象コミットまたは CI 参照 |\n"
+                "| --- | --- | --- | --- |\n"
+                "| 本番 | 2026-09-21 | 合格 | abcdef0 |",
+            )
 
-        self.assert_checker_ng(change, "段階")
+        self.assert_checker_ng(change, "旧検証表", "docs/old-verification.md")
 
-    def test_stage6_pass_with_invalid_stage_is_invalid(self):
+    def test_minimal_verification_tables_are_rejected_without_date_or_reference(self):
         def change(root):
-            self.complete_series(root, rows=[("UC-1-M", "7", "本番", "2026-09-20", "verify", "合格", COMMIT)])
+            self.write_extra(
+                root,
+                "docs/old-verification.md",
+                "| UC・系列 ID | 合否 |\n| --- | --- |\n| UC-1-M | 合格 |\n\n"
+                "| テスト | 結果 |\n| --- | --- |\n| E2E | 合格 |",
+            )
 
-        self.assert_checker_ng(change, "段階")
+        self.assert_checker_ng(change, "旧検証表", "docs/old-verification.md")
 
-    def test_all_stage6_configurations_for_a_series_must_pass(self):
+    def test_condition_and_expected_result_spec_table_is_allowed(self):
         def change(root):
-            self.add_series(root, "UC-1-X1")
-            self.set_records(root, agreements=("UC-1-M", "UC-1-X1"),
-                             audits=("UC-1-M", "UC-1-X1"))
-            self.set_overall_agreement(root)
-            self.set_verification_rows(root, [
-                ("UC-1-M", "6", "本番A", "2026-09-20", "verify", "合格", COMMIT),
-                ("UC-1-M", "6", "本番B", "2026-09-20", "verify", "不合格", COMMIT),
-                ("UC-1-X1", "6", "本番", "2026-09-20", "verify", "未検証", "—"),
-            ])
+            self.write_extra(
+                root,
+                "docs/specification.md",
+                "| 条件 | 期待結果 |\n| --- | --- |\n| 入力が空 | エラーを表示 |",
+            )
 
-        self.assert_checker_ng(change, "UC-1-M", "UC-1-X1")
+        self.assert_checker_ok(change)
 
-    def test_failed_and_unverified_stage6_configurations_remain_in_progress(self):
+    def test_words_in_prose_and_prohibition_are_not_enough(self):
         def change(root):
-            self.add_series(root, "UC-1-X1", "UC-1-X2")
-            self.set_records(root, agreements=("UC-1-M", "UC-1-X1", "UC-1-X2"),
-                             audits=("UC-1-M", "UC-1-X1", "UC-1-X2"))
-            self.set_overall_agreement(root)
-            self.set_verification_rows(root, [
-                ("UC-1-M", "6", "本番", "2026-09-20", "verify", "合格", COMMIT),
-                ("UC-1-X1", "6", "本番", "2026-09-20", "verify", "不合格", COMMIT),
-                ("UC-1-X2", "6", "本番", "2026-09-20", "verify", "未検証", "—"),
-            ])
+            self.append(
+                root,
+                "README.md",
+                "この説明では、設計判断や決定履歴、合意記録、検証結果を保存しない規則を説明する。"
+                "現在の仕様は正本に集約し、必要な手順だけを参照する。",
+            )
 
-        output = self.assert_checker_ng(change, "UC-1-X1", "UC-1-X2")
-        self.assertIn("仕掛かり", output)
+        self.assert_checker_ok(change)
 
-    def test_multiple_series_in_one_result_row_are_all_checked(self):
+    def test_feature_headings_with_progress_or_verification_words_are_allowed(self):
         def change(root):
-            self.add_series(root, "UC-1-X1")
-            self.set_records(root, agreements=("UC-1-M",), audits=("UC-1-M",))
-            self.set_overall_agreement(root)
-            self.set_verification_rows(root, [
-                ("UC-1-M / UC-1-X1", "6", "本番", "2026-09-20", "verify", "合格", COMMIT),
-            ])
+            self.append(
+                root,
+                "README.md",
+                "## 進捗通知\n\n## 進捗表示\n\n## 検証結果を表示する画面\n\n"
+                "## 開発進捗機能の仕様",
+            )
 
-        self.assert_checker_ng(change, "UC-1-X1")
+        self.assert_checker_ok(change)
 
-    def test_multiple_series_in_one_result_row_can_all_complete(self):
+    def test_progress_record_headings_are_rejected(self):
         def change(root):
-            self.add_series(root, "UC-1-X1")
-            self.set_records(root, agreements=("UC-1-M", "UC-1-X1"), audits=("UC-1-M", "UC-1-X1"))
-            self.set_overall_agreement(root)
-            self.set_verification_rows(root, [
-                ("UC-1-M / UC-1-X1", "6", "本番", "2026-09-20", "verify", "合格", COMMIT),
-            ])
+            self.append(
+                root,
+                "README.md",
+                "## 進捗\n\n## 開発進捗\n\n## 作業進捗\n\n## 進捗一覧",
+            )
+
+        self.assert_checker_ng(change, "旧記録の見出し")
+
+    def test_standards_and_agents_can_contain_old_terms(self):
+        def change(root):
+            self.append(root, "AGENTS.md", "## 合意記録\n- 承認原文: 標準例")
+            self.append(root, "docs/standards/design-and-documentation.md", "## 合意記録\n- 提示コミット: 標準例")
+
+        # 標準のハッシュは変更されるため、内容判定が発火しないことを出力で確認する。
+        returncode, output = self.run_checker(change)
+        self.assertEqual(1, returncode, output)
+        self.assertIn("標準のハッシュ", output)
+        self.assertNotIn("[NG] 禁止記録・重複本文:", output)
+
+    def test_each_legacy_record_is_rejected_independently(self):
+        fragments = (
+            "## 完成系監査中のデザイン改善",
+            "## 段階3のA案採用と実装範囲",
+            "- 段階3の表示調整: 見出しと合計値を統合",
+            "## 保存後通知の改訂合意",
+            "- 保存後通知の完成系監査記録: 承認",
+            "- 再接続の改訂合意記録: 承認",
+            "- 応答の原文: 合意",
+            "- 利用者の応答原文: 合意",
+            "- **検証状態:** 21件合格",
+            "## 進捗一覧",
+            "| UC・系列 ID | 段階 | 構成 | 実行日 | コマンド | 合否 | 対象コミットまたは CI 参照 |\n"
+            "| --- | --- | --- | --- | --- | --- | --- |\n"
+            "| UC-1-M | 6 | 本番 | 2026-09-21 | verify | 合格 | abcdef0 |",
+        )
+        for fragment in fragments:
+            with self.subTest(fragment=fragment):
+                self.assert_checker_ng(
+                    lambda root: self.append(root, "docs/architecture.md", fragment),
+                    "[NG] 禁止記録・重複本文:",
+                )
+
+    def test_adjacent_duplicate_list_items_are_rejected(self):
+        body = "同じ長い仕様を箇条書きの別項目に転記しても重複が分かるよう、項目の単位で比較します。現在の仕様は正本に集約し、他の場所には参照だけを置きます。"
+
+        def change(root):
+            self.write_extra(root, "docs/duplicate-list.md", "- " + body + "\n- " + body)
+
+        self.assert_checker_ng(change, "docs/duplicate-list.md:1", "docs/duplicate-list.md:2")
+
+    def test_duplicate_paragraphs_in_one_document_are_rejected_with_both_positions(self):
+        body = "これは同一文書に二度保存された長い説明本文であり、現在の仕様を正本へ集約するための重複検査用テキストです。重複を検出する目的で十分な長さを持たせています。"
+
+        def change(root):
+            self.write_extra(root, "docs/duplicate.md", body + "\n\n" + body)
+
+        output = self.assert_checker_ng(change, "完全一致する長い本文が重複", "docs/duplicate.md:1", "docs/duplicate.md:3")
+        self.assertIn("docs/duplicate.md:1、docs/duplicate.md:3", output)
+
+    def test_duplicate_paragraphs_across_documents_are_rejected(self):
+        body = "複数文書へ同じ長い説明を転記すると正本が分散するため、この本文は重複検出の対象として配置されています。重複を検出する目的で十分な長さを持たせています。"
+
+        def change(root):
+            self.write_extra(root, "docs/one.md", body)
+            self.write_extra(root, "docs/two.md", body)
+
+        self.assert_checker_ng(change, "docs/one.md:1", "docs/two.md:1")
+
+    def test_duplicate_table_body_rows_are_rejected_but_header_is_ignored(self):
+        row = "同一の表本文を二度保存した場合に正本の所在が不明になるため、この十分に長い説明行を検出します。重複を検出する目的で十分な長さを持たせています。"
+
+        def change(root):
+            self.write_extra(
+                root,
+                "docs/duplicate-table.md",
+                "| 項目 | 説明 |\n| --- | --- |\n| A | %s |\n| A | %s |" % (row, row),
+            )
+
+        self.assert_checker_ng(change, "docs/duplicate-table.md:3", "docs/duplicate-table.md:4")
+
+    def test_code_fence_is_excluded_from_duplicate_body_check(self):
+        body = "コード例として保存する長い本文は重複検査の対象外であり、実装の例示だけを目的にしています。重複を検出する目的で十分な長さを持たせています。"
+
+        def change(root):
+            self.write_extra(root, "docs/examples.md", "```text\n%s\n%s\n```" % (body, body))
+
+        self.assert_checker_ok(change)
+
+    def test_short_boilerplate_and_link_only_guidance_are_ignored(self):
+        link = "[現在の仕様を参照してください。必要な説明をまとめた正本へのリンクです。](project.md)"
+
+        def change(root):
+            self.write_extra(root, "docs/guidance-one.md", "了解しました。\n\n" + link)
+            self.write_extra(root, "docs/guidance-two.md", "了解しました。\n\n" + link)
+
+        self.assert_checker_ok(change)
+
+    def test_similar_but_different_paragraphs_are_not_duplicates(self):
+        def change(root):
+            self.write_extra(
+                root,
+                "docs/similar.md",
+                "この長い説明は正本を一箇所に集約し、参照先だけを更新するための検査用本文です。"
+                "\n\nこの長い説明は正本を複数箇所に分散し、参照先だけを更新するための検査用本文です。",
+            )
 
         self.assert_checker_ok(change)
 
