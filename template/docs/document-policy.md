@@ -9,9 +9,9 @@
 
 | 項目 | 内容 |
 | --- | --- |
-| 配布元・版 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版19 |
-| 設計・文書標準 | [project-template-design-and-documentation / 版14](standards/design-and-documentation.md) |
-| モック標準 | [project-template-mock-driven-development / 版17](standards/mock-driven-development.md) |
+| 配布元・版 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版20 |
+| 設計・文書標準 | [project-template-design-and-documentation / 版15](standards/design-and-documentation.md) |
+| モック標準 | [project-template-mock-driven-development / 版18](standards/mock-driven-development.md) |
 | 採用元固定コミット | {{SOURCE_COMMIT}} |
 | 採用日・判断者・合意の根拠 | {{ADOPTION_RECORD}} |
 | プロジェクト固有の差分と理由 | {{LOCAL_RULE_DIFFERENCES}} |
@@ -34,7 +34,9 @@
 | `standards/` 各標準 | プロジェクト非依存の開発・文書基準（配布元からの輸入物） |
 | [project.md](project.md) | プロジェクトの目的・制約、ユースケース一覧、確認した事実、手順、検証結果 |
 | `usecases/UC-n.md` | ユースケースごとの定義、シナリオ、受け入れ条件、動作合意・完成系監査記録 |
-| [architecture.md](architecture.md) | 全体設計の合意、システム構成、実現パターン、設計判断、テーブル設計と合意記録 |
+| [architecture.md](architecture.md) | 全体設計の合意、システム構成、共通方針、実現パターン一覧、重要な設計判断 |
+| `design/UCP-n.md` | 実現パターンごとの具体的な処理・役割・境界と UC 固有の逸脱 |
+| [design/data.md](design/data.md) | DB・ファイル等の保存形式、テーブル設計と合意記録 |
 | `reference/` | 外部システムの実測応答（取得日時・方法・対象版を記録。利用時のみ） |
 | [README.md](../README.md) | プロジェクト概要と参照案内 |
 | [AGENTS.md](../AGENTS.md) | AIエージェントの作業規範 |
@@ -46,6 +48,6 @@
 <a id="agreements"></a>
 ## 4. 保護する合意
 
-採用規則、適用範囲、正本の責務、[プロジェクト定義](project.md) と `usecases/UC-n.md` で合意済みの要件・制約・仕様・完了条件、および [アーキテクチャ](architecture.md) の全体設計合意欄、設計判断 ID、合意済みのテーブル設計と合意記録を保護対象とします。これらを変更・緩和する場合は [変更手続き](standards/design-and-documentation.md#agreement-changes) に従います。設計判断は、実装の破棄や文書再編時も維持します。
+採用規則、適用範囲、正本の責務、[プロジェクト定義](project.md) と `usecases/UC-n.md` で合意済みの要件・制約・仕様・完了条件、[アーキテクチャ](architecture.md) の全体設計合意欄と設計判断 ID、`design/` の合意済み設計と合意記録を保護対象とします。変更・緩和は [変更手続き](standards/design-and-documentation.md#agreement-changes) に従い、文書移動時も判断・合意対象・提示コミット・応答原文を維持します。
 
 初期記入欄、検討中の案、モック上の仮定は合意とみなしません。判断に必要な未確定事項は停止点で利用者に確認し、確定するまで仕様・設計として記録しません。

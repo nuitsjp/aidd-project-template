@@ -12,7 +12,7 @@
 | --- | --- |
 | `AGENTS.md`、`docs/standards/`、`scripts/doc_check.py` | `template/` だけで管理し、拡張側に上書き用ファイルを置かない。採用先では同じ固定コミットから一組で更新する。技術固有の注意は既存の固有文書に記載する。 |
 | `LICENSE` | ルートだけで管理し、生成時に配置する。 |
-| `README.md`、`docs/project.md`、`docs/document-policy.md`、`docs/architecture.md`、`docs/usecases/` | 各拡張側で個別管理する。共通版の記入欄で固有の仕様・合意・検証記録を置き換えない。 |
+| `README.md`、`docs/project.md`、`docs/document-policy.md`、`docs/architecture.md`、`docs/design/`、`docs/usecases/` | 各拡張側で個別管理する。共通版の記入欄で固有の仕様・合意・検証記録を置き換えない。 |
 | 技術固有のコード・設定・`docs/architecture-wails.md`・`docs/architecture-react.md` | 対応する拡張ディレクトリで管理し、生成先に配置する。 |
 
 共通側を変更した際は、同一変更内で各拡張側への影響を確認します。`project.md` は必須項目・文書構造の変更を必要最小限で反映し、固有内容は維持します。`document-policy.md` は生成物に入る配布版・標準版と採用記録を一致させ、適用範囲・固有差分・正本配置・合意保護が新しい共通規則と整合するか確認します（記録する版は実際に生成へ使用する版とし、過去のコミットを現在の採用版の代用にしません）。

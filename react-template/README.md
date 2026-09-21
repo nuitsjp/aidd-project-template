@@ -84,7 +84,9 @@ worker数変更時は `npx playwright test --workers=8`（事前ビルド要）�
 
 | 文書 | 内容 |
 | --- | --- |
-| [architecture.md](docs/architecture.md) | 実装パターン、保存の確定点、テーブル、テスト分離 |
+| [architecture.md](docs/architecture.md) | 全体構成、共通方針、重要な設計判断、テスト分離 |
+| [UCP-1](docs/design/UCP-1.md)・[UCP-2](docs/design/UCP-2.md) | 実現パターンごとの具体的な設計と結果確定点 |
+| [data.md](docs/design/data.md) | テーブル、制約、データ設計の合意 |
 | [architecture-react.md](docs/architecture-react.md) | 共通の責務と依存方向 |
 | [project.md](docs/project.md) | サンプルの範囲、認証・配備・DB運用、検証結果 |
 | [document-policy.md](docs/document-policy.md) | 輸入標準と今回の提供範囲・合意状態 |

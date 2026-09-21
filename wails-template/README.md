@@ -84,6 +84,8 @@ NSIS はアプリ本体、スタートメニュー、アンインストール情
 ## 設計・規則・採用
 
 - [アーキテクチャ](docs/architecture.md)
+- 実現パターンの設計: [UCP-1](docs/design/UCP-1.md)、[UCP-2](docs/design/UCP-2.md)、[UCP-3](docs/design/UCP-3.md)
+- [データ設計](docs/design/data.md)
 - [Wails補足](docs/architecture-wails.md)
 - [プロジェクト定義と検証](docs/project.md)
 - [採用記録](docs/document-policy.md)
@@ -93,7 +95,7 @@ NSIS はアプリ本体、スタートメニュー、アンインストール情
 | 区分 | 対象 |
 | --- | --- |
 | 残す基盤 | `main.go`（Service 登録の骨格）、`internal/desktop`・`appstate`・`fault`・`diagnostics`・`updates`、`cmd/release`、`frontend/src/app`・`shared`・`features/application`・`features/updates`、`usecases/update-app`、`routes/__root.tsx`・`routes/updates.tsx`、`build/`、`scripts/`、`Taskfile.yml` |
-| 置き換えるサンプル | `internal/notes`、`frontend/src/features/notes`、`usecases/edit-notes`・`import-notes`、`routes/notes.tsx`・`routes/import*.tsx`・`routes/index.tsx` の遷移先、`Shell.tsx` のナビゲーションと `subscribeNotes` の購読、`tests/fixtures/notes.ts`、`tests/e2e/usecases.spec.ts`、`vite.config.ts`・`tsconfig.json`・`eslint.config.mjs` の `@notes-service` 設定、`docs/usecases/UC-1〜3.md`、`docs/architecture.md` の UCP-1・UCP-2 と第5節 |
+| 置き換えるサンプル | `internal/notes`、`frontend/src/features/notes`、`usecases/edit-notes`・`import-notes`、`routes/notes.tsx`・`routes/import*.tsx`・`routes/index.tsx` の遷移先、`Shell.tsx` のナビゲーションと `subscribeNotes` の購読、`tests/fixtures/notes.ts`、`tests/e2e/usecases.spec.ts`、`vite.config.ts`・`tsconfig.json`・`eslint.config.mjs` の `@notes-service` 設定、`docs/usecases/UC-1〜3.md`、`docs/design/UCP-1.md`・`UCP-2.md`・`data.md` |
 
 新しい機能領域のモック合成点の作り方は [Wails補足第4節](docs/architecture-wails.md#4-モックと検証境界) を参照します。
 

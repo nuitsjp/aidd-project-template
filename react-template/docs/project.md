@@ -15,8 +15,8 @@ SPA、単一 Node.js、同一 origin、SQLite を既定とします。各利用�
 
 | UC ID | 主アクター | 目的 | 実装順序 | 実現パターン | モック適用 |
 | --- | --- | --- | --- | --- | --- |
-| [UC-1](usecases/UC-1.md) | 利用者 | メモを作成・編集して保存する | 1 | [UCP-1](architecture.md#patterns) | 対象 |
-| [UC-2](usecases/UC-2.md) | 利用者 | 複数のメモを確認して一括登録する | 2 | [UCP-2](architecture.md#patterns) | 対象 |
+| [UC-1](usecases/UC-1.md) | 利用者 | メモを作成・編集して保存する | 1 | [UCP-1](design/UCP-1.md) | 対象 |
+| [UC-2](usecases/UC-2.md) | 利用者 | 複数のメモを確認して一括登録する | 2 | [UCP-2](design/UCP-2.md) | 対象 |
 
 <a id="design"></a>
 ## 4. 確認した事実と採用差分

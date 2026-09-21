@@ -5,12 +5,12 @@
 
 | 項目 | 内容 |
 | --- | --- |
-| 共通資材の採用元 | 同一チェックアウトの `template/` を生成時に配置（配布版19） |
+| 共通資材の採用元 | 同一チェックアウトの `template/` を生成時に配置（配布版20） |
 | 採用元固定コミット | {{SOURCE_COMMIT}}（正式採用時に生成元の40桁SHAを記録） |
 | 作成時の根拠 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版13 / `88b31b40c65a2ce35201eeda34358e2d103bac23`（作成時点の確認値） |
-| React拡張 | 0.2.3 / Node版固定、Playwright headless shell の導入と依存ロックの同梱 |
-| 設計・文書標準 | [版14](standards/design-and-documentation.md) 原文維持 |
-| モック標準 | [版17](standards/mock-driven-development.md) 原文維持 |
+| React拡張 | 0.2.4 / アーキテクチャと実現パターン・データ設計の分離 |
+| 設計・文書標準 | [版15](standards/design-and-documentation.md) 原文維持 |
+| モック標準 | [版18](standards/mock-driven-development.md) 原文維持 |
 | 作成依頼 | 2026-09-20、利用者による「E2EテストでユーザーからDBの更新まで含めたテストを並列で実行することを加味して、アーキテクチャを設計してください。その上でWails同様にダウンロードできる形で提供してください」 |
 | 固有差分 | サンプル仕様・実装・テストを一式として提供。系列ごとの UI 合意と完成系監査は未実施であり、同梱 E2E を標準の段階6完了とは扱いません。共通構造の補足を architecture-react.md へ分離しています |
 
@@ -30,7 +30,9 @@
 | --- | --- |
 | 本書 | 採用範囲・差分・合意の扱い |
 | [project.md](project.md) | 目的、UC一覧、運用手順、検証結果 |
-| [architecture.md](architecture.md) | サンプルの構成、実現パターン、テーブル、結果確定点 |
+| [architecture.md](architecture.md) | サンプルの構成、共通方針、重要な設計判断、全体設計の合意 |
+| `design/UCP-n.md` | 実現パターンごとの役割、実装パス、シーケンス、結果確定点、モック境界 |
+| [design/data.md](design/data.md) | データ定義・制約、保存方式、変更点、データ設計の合意 |
 | [architecture-react.md](architecture-react.md) | 共通の責務と依存方向、並列E2Eの分離原則 |
 | usecases/UC-n.md | 系列、受け入れ条件、合意状態 |
 | standards/ | 輸入した標準の原文 |
@@ -42,4 +44,4 @@
 <a id="agreements"></a>
 ## 4. 保護する合意
 
-対話と機能の n:n 対応、SQLite 既定、実処理までの並列 E2E、過剰設計・過剰文書の抑止を維持します。サンプルの画面や運用認証方式は採用先へ自動継承せず、未実施の合意や架空コミットは記録しません。
+対話と機能の n:n 対応、SQLite 既定、実処理までの並列 E2E、過剰設計・過剰文書の抑止を維持します。アーキテクチャの全体合意・設計判断 ID と `design/` の合意済み設計・合意記録を保護し、文書移動時も合意対象・提示コミット・応答原文を維持します。サンプルの画面や運用認証方式は採用先へ自動継承せず、未実施の合意や架空コミットは記録しません。

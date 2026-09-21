@@ -1,6 +1,6 @@
 # React / Node.jsアーキテクチャ
 
-[architecture.md](architecture.md) の共通構造を補足する文書です。ユースケース固有の仕様、テーブル設計、実現パターンは同書および各 UC に集約し、本書への転記は行いません。
+[architecture.md](architecture.md) の共通構造を補足する文書です。ユースケース固有の仕様は各 UC、実現パターンは `design/UCP-n.md`、テーブル設計は [データ設計](design/data.md) に記録し、本書への転記は行いません。
 
 ## 1. 構成・責務
 

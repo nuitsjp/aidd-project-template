@@ -26,16 +26,16 @@
 
 | UC ID | 主アクター | 目的 | 実装順序 | 実現パターン | モック適用 |
 | --- | --- | --- | --- | --- | --- |
-| [UC-1](usecases/UC-1.md) | {{ACTOR}} | {{GOAL}} | 1 | [UCP-1](architecture.md#patterns) | 対象 |
+| [UC-1](usecases/UC-1.md) | {{ACTOR}} | {{GOAL}} | 1 | [UCP-1](design/UCP-1.md) | 対象 |
 
 <a id="design"></a>
-## 4. 確認した事実とユースケース固有の設計
+## 4. 確認した事実
 
-{{FACTS_AND_LOCAL_DESIGN}}
+{{FACTS}}
 
 - **確認した事実**: 外部仕様や既存コードの調査結果（情報源、対象版、確認日、確認範囲）。仮定と明確に区別します。外部システムの実測応答を保存する場合は `reference/` に配置して参照します。
-- **技術選定**: 言語・ライブラリ・モック機構の選定理由、および [仕組みの追加基準](standards/design-and-documentation.md#design-decisions) に基づく根拠。
-- **パターンからの逸脱**: 実現パターンとの差分のみを記述します（全体の責務と境界は [アーキテクチャ](architecture.md) に集約）。
+- **技術選定の根拠**: 言語・ライブラリ・モック機構を評価した事実を記録し、[仕組みの追加基準](standards/design-and-documentation.md#design-decisions) に基づく重要な選定判断はアーキテクチャから参照します。
+- **設計への参照**: 全体方針・重要な判断は [アーキテクチャ](architecture.md)、具体的な処理と UC ごとのパターンからの逸脱は一覧から参照する `design/UCP-n.md`、保存形式は [データ設計](design/data.md) に記録します。
 
 <a id="commands"></a>
 ## 5. 実行・切り替え・検証手順

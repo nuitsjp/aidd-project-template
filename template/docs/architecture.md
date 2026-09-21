@@ -1,6 +1,6 @@
 # アーキテクチャ
 
-全体構造、実現パターン、DBテーブル設計、および設計判断の正本です。ユースケース固有の仕様は [ユースケース一覧](project.md#usecases) から対象の本文を参照します。図は Mermaid で記述し、コード図は作成しません。
+全体構造、共通方針、重要な設計判断と全体設計の合意の正本です。具体的な処理は実現パターンの設計、保存形式は [データ設計](design/data.md)、仕様は [ユースケース一覧](project.md#usecases) から参照します。
 
 ## 全体設計の合意
 
@@ -9,7 +9,7 @@
 - 応答の原文:
   > {{USER_RESPONSE}}
 
-全体設計の合意が記録されるまで段階4（実処理接続）へ進めません。テーブルの追加・変更がある場合は [第5節](#tables) の設計合意も必要です。
+全体設計の合意が記録されるまで段階4（実処理接続）へ進めません。テーブルの追加・変更時は [データ設計](design/data.md#agreement) の合意も必要です。
 
 ## 1. システムコンテキスト
 
@@ -29,33 +29,14 @@ flowchart LR
 | --- | --- | --- | --- |
 | {{CONTAINER}} | {{TECH}} | {{RESPONSIBILITY}} | {{PATH}} |
 
-関係線ごとにモック切り替え境界（合成点）の有無を記載します。単一コンテナ構成の場合は図を省略し、1文の記述で代替可能です。
+全体の依存方向、状態の所有者と永続化の共通方針を記し、関係線ごとにモック切り替え境界（合成点）の有無を記載します。単一コンテナ構成の場合は図を省略し、1文の記述で代替可能です。
 
 <a id="patterns"></a>
 ## 3. 実現パターン
 
-ユースケースの実現パターンの型を `UCP-1` から順に定義します。全体設計とパターンの運用は [設計標準の全体設計](standards/design-and-documentation.md#architecture-method) に従います。
-
-### UCP-1. {{PATTERN_NAME}}
-
-- 適用条件と関与コンテナ: {{APPLICABILITY}}
-- 役割表（実装パスは段階4完了時に記入）:
-
-| 役割 | 責務 | 実装パス |
-| --- | --- | --- |
-| {{ROLE}} | {{ROLE_RESPONSIBILITY}} | |
-
-- 主成功系列（参加者名は役割名）:
-
-```mermaid
-sequenceDiagram
-  participant A as {{ROLE}}
-  A->>A: {{STEP}}
-```
-
-- 整合性: 状態更新の主体 {{OWNER}} / 結果確定点 {{COMMIT_POINT}} / 障害時の停止・継続 {{FAILURE_BEHAVIOR}} / 境界（競合や通信断が想定される場合のみ） {{BOUNDARY}}
-- モックに置き換える境界と合成点: {{MOCK_BOUNDARY}}
-- 設計判断への参照: {{DECISION_IDS}}
+| 実現パターンの設計 | 適用条件・関与コンテナ |
+| --- | --- |
+| [UCP-1](design/UCP-1.md) | {{APPLICABILITY}} |
 
 ## 4. 設計判断
 
@@ -63,25 +44,3 @@ sequenceDiagram
 | --- | --- | --- | --- |
 
 ID は `ADR-1` から順に付与します（本表への1行記録を基本とし、詳細な [ADR 文書](standards/design-and-documentation.md#completion) は要件を満たす場合のみ同 ID で作成）。出所には外部ドキュメントの URL、実行コマンドと結果、または利用者の応答原文を明記します。出所を特定できない事項は決定として記録せず、利用者に確認します。実装破棄時も決定内容は保持します。
-
-<a id="tables"></a>
-## 5. テーブル設計
-
-DBテーブル設計と合意記録の正本です。対象系列の設計と合意は [設計標準の全体設計](standards/design-and-documentation.md#architecture-method) に従います。
-
-```mermaid
-erDiagram
-  TABLE_A ||--o{ TABLE_B : "{{RELATION}}"
-```
-
-| テーブル | 責務 | カラム（型 / NULL可否） | 主キー・外部キー・一意制約 | 既存設計の変更点 |
-| --- | --- | --- | --- | --- |
-| {{TABLE}} | {{RESPONSIBILITY}} | {{COLUMN}} / {{TYPE}} / {{NULLABLE}} | {{CONSTRAINTS}} | {{CHANGE}} |
-
-### テーブル設計の合意
-
-設計合意が必要な系列ごとに、次の項目と応答原文を記録します。
-
-- 系列 ID: {{SERIES_ID}} / 対象テーブルと変更範囲: {{TABLES_AND_SCOPE}}
-- 提示コミット: {{COMMIT_HASH}} / 論点と回答: {{QUESTIONS_AND_ANSWERS}}
-  > {{USER_RESPONSE}}

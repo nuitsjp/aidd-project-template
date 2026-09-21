@@ -21,14 +21,15 @@ PLACEHOLDER_HASH = "sha256:" + "0" * 64
 RESULT_VALUES = {"合格", "不合格", "未検証"}
 # 配布元が `--print-hashes` の出力で更新する。
 EXPECTED_HASHES = {
-    "docs/standards/design-and-documentation.md": "sha256:1248e559d0e7f72e9f36e377878361ab9f7382036e018406fd2e30794a6d04e3",
-    "docs/standards/mock-driven-development.md": "sha256:a8d55ab0c538850ed719ce381f9dd257c67ef0283e97c0f84ae24b6df56ee7d5",
+    "docs/standards/design-and-documentation.md": "sha256:8b1c1e2ce6ba1d768cbfbe1f9e4eb41b9ed861f959396184f7e18eb0b052bbd3",
+    "docs/standards/mock-driven-development.md": "sha256:3198bc2e5d4caa6c33d7a8e281158b600ef679972a21537b27cf1dc0d8696fad",
 }
 
 HEX_RE = re.compile(r"(?<![0-9A-Za-z])[0-9a-fA-F]{7,40}(?![0-9A-Za-z])")
 QUOTE_RE = re.compile(r"^\s*>\s*\S")
 UC_HEAD_RE = re.compile(r"^#\s+UC-(\d+)\.")
-P_HEAD_RE = re.compile(r"^###\s+UCP-(\d+)\.")
+DESIGN_UCP_HEAD_RE = re.compile(r"^#\s+UCP-(\d+)\.")
+DESIGN_UCP_FILE_RE = re.compile(r"^UCP-\d+\.md$")
 UC_ID_RE = re.compile(r"UC-\d+")
 SERIES_RE = re.compile(r"UC-(\d+)-(?:M|X\d+)")
 EXT_RE = re.compile(r"UC-\d+-X\d+")
@@ -373,8 +374,8 @@ def check_hashes(root):
     emit("報告", "標準のハッシュ: このスクリプト自身の正規化ハッシュは %s" % norm_hash(Path(__file__)))
 
 
-def check_reports(root, project_text, arch_text, uc_docs):
-    """判定 6: 証跡ファイル、行数、ユースケースと実現パターンの数の報告。"""
+def check_reports(root, project_text, uc_docs, design_docs):
+    """判定 6: 証跡ファイル、行数、ユースケースと UCP 文書の数の報告。"""
     count, total, verification = 0, 0, []
     for here, dirnames, filenames in walk(root, EVIDENCE_EXTRA_EXCLUDE):
         verification += [rel(root, here / d) for d in dirnames if d == "verification"]
@@ -398,9 +399,16 @@ def check_reports(root, project_text, arch_text, uc_docs):
         bodies = sorted(uc_bodies(uc_docs), key=lambda kv: int(kv[0][3:]))
         detail = "、".join("%s 拡張 %d 本" % (uc, len(set(EXT_RE.findall(body)))) for uc, body in bodies)
         emit("報告", "ユースケース: %d 件%s" % (len(bodies), "（%s）" % detail if bodies else ""))
-    if arch_text is not None:
-        patterns = sum(1 for line in arch_text.split("\n") if P_HEAD_RE.match(line))
-        emit("報告", "実現パターン: docs/architecture.md に %d 件" % patterns)
+    if (root / "docs" / "design").is_dir():
+        patterns = 0
+        for path, text in design_docs.items():
+            if not DESIGN_UCP_FILE_RE.match(path.name):
+                continue
+            first_heading = next((line for line in text.split("\n")
+                                  if line.lstrip().startswith("#")), "")
+            if DESIGN_UCP_HEAD_RE.match(first_heading):
+                patterns += 1
+        emit("報告", "実現パターン: docs/design/ の UCP 文書に %d 件" % patterns)
 
 
 def print_hashes(root):
@@ -430,12 +438,14 @@ def main():
     arch_text = docs.get((root / "docs" / "architecture.md").resolve())
     uc_docs = {path: text for path, text in docs.items()
                if path.parent == root / "docs" / "usecases"}
+    design_docs = {path: text for path, text in docs.items()
+                   if path.parent == root / "docs" / "design"}
     check_links(root, docs)
     check_abs_paths(root, docs)
     check_progress(project_text, arch_text, uc_docs)
     check_uc_ids(project_text, uc_docs)
     check_hashes(root)
-    check_reports(root, project_text, arch_text, uc_docs)
+    check_reports(root, project_text, uc_docs, design_docs)
     print("NG %d 件" % NG_COUNT)
     return 1 if NG_COUNT else 0
 

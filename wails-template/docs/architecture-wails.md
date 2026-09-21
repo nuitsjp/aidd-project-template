@@ -1,6 +1,6 @@
 # Wailsアーキテクチャ
 
-[architecture.md](architecture.md) の Wails 固有の構成を補足する文書です。プロダクト固有のシステム構成、実現パターン、データ設計、設計判断は同書に記録し、本書への転記は行いません。
+[architecture.md](architecture.md) の Wails 固有の構成を補足する文書です。プロダクト固有のシステム構成と重要な設計判断は同書、実現パターンは `design/UCP-n.md`、保存方式・データ定義は [データ設計](design/data.md) に記録し、本書への転記は行いません。
 
 ## 1. 構成と責務
 
