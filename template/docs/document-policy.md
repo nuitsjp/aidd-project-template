@@ -9,9 +9,9 @@
 
 | 項目 | 内容 |
 | --- | --- |
-| 配布元・版 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版18 |
-| 設計・文書標準 | [project-template-design-and-documentation / 版14](standards/design-and-documentation.md) |
-| モック標準 | [project-template-mock-driven-development / 版16](standards/mock-driven-development.md) |
+| 配布元・版 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版19 |
+| 設計・文書標準 | [project-template-design-and-documentation / 版15](standards/design-and-documentation.md) |
+| モック標準 | [project-template-mock-driven-development / 版17](standards/mock-driven-development.md) |
 | プロジェクト固有の適用範囲と差分 | {{LOCAL_RULE_DIFFERENCES}} |
 
 採用後、設計・文書標準はすべての変更に適用し、モック標準の適用範囲は第2節で定めます。`standards/` は編集せず、現在有効な固有差分のみを上表に記載します（例: `scripts/doc_check.py` を実行できない環境、Playwright CLI が使えない対象の代替確認手段と適用範囲。差分がなければ「なし」）。確認手段を替えても利用者の承認は省略しません。新版のテンプレートは自動適用しません。

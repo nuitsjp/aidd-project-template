@@ -125,15 +125,21 @@ class DocCheckRegressionTests(unittest.TestCase):
         self.assert_checker_ng(change, "旧検証表", "docs/old-verification.md")
 
     def test_minimal_verification_tables_are_rejected_without_date_or_reference(self):
-        def change(root):
-            self.write_extra(
-                root,
-                "docs/old-verification.md",
-                "| UC・系列 ID | 合否 |\n| --- | --- |\n| UC-1-M | 合格 |\n\n"
-                "| テスト | 結果 |\n| --- | --- |\n| E2E | 合格 |",
-            )
-
-        self.assert_checker_ng(change, "旧検証表", "docs/old-verification.md")
+        tables = (
+            "| UC・系列 ID | 合否 |\n| --- | --- |\n| UC-1-M | 合格 |",
+            "| テスト | 結果 |\n| --- | --- |\n| E2E | 合格 |",
+            "| **UC・系列 ID** | **合否** |\n| --- | --- |\n| UC-1-M | 合格 |",
+            "| `Test` | `status` |\n| --- | --- |\n| Login | pass |",
+        )
+        for table in tables:
+            with self.subTest(table=table):
+                self.assert_checker_ng(
+                    lambda root, table=table: self.write_extra(
+                        root, "docs/old-verification.md", table
+                    ),
+                    "旧検証表",
+                    "docs/old-verification.md:1",
+                )
 
     def test_condition_and_expected_result_spec_table_is_allowed(self):
         def change(root):
@@ -144,6 +150,53 @@ class DocCheckRegressionTests(unittest.TestCase):
             )
 
         self.assert_checker_ok(change)
+
+    def test_expected_status_and_judgment_spec_tables_are_allowed(self):
+        def change(root):
+            self.write_extra(
+                root,
+                "docs/specification.md",
+                "| 構成 | 期待するHTTPステータス |\n| --- | --- |\n| 未認証 | 401 |\n\n"
+                "| テスト | 判定方法 |\n| --- | --- |\n| 空の入力 | エラーを表示する |\n\n"
+                "| Test case | Expected status |\n| --- | --- |\n| Empty input | 400 |",
+            )
+
+        self.assert_checker_ok(change)
+
+    def test_escaped_pipe_is_not_a_table_cell_separator(self):
+        def change(root):
+            self.write_extra(
+                root,
+                "docs/specification.md",
+                "| テスト\\|結果 | テスト |\n| --- | --- |\n| A | B |",
+            )
+
+        self.assert_checker_ok(change)
+
+    def test_pipe_omitted_verification_and_adr_tables_are_rejected(self):
+        cases = (
+            (
+                "verification",
+                "構成 | 実行日 | 合否 | 対象コミットまたは CI 参照\n"
+                "--- | --- | --- | ---\n"
+                "本番 | 2026-09-21 | 合格 | abcdef0",
+                "旧検証表",
+            ),
+            (
+                "adr",
+                "ADR ID | Decision | Reason\n--- | --- | ---\n"
+                "ADR-1 | Adopt | Current architecture choice",
+                "ADR-1",
+            ),
+        )
+        for name, table, needle in cases:
+            with self.subTest(name=name):
+                self.assert_checker_ng(
+                    lambda root, table=table: self.write_extra(
+                        root, "docs/legacy.md", table
+                    ),
+                    needle,
+                )
 
     def test_words_in_prose_and_prohibition_are_not_enough(self):
         def change(root):
@@ -249,13 +302,48 @@ class DocCheckRegressionTests(unittest.TestCase):
 
         self.assert_checker_ng(change, "docs/duplicate-table.md:3", "docs/duplicate-table.md:4")
 
+    def test_pipe_omitted_duplicate_table_body_rows_are_rejected(self):
+        row = "先頭と末尾のパイプを省略した表でも同じ長い本文行を検出できるようにするための重複検査用テキストです。十分な長さを持たせています。"
+
+        def change(root):
+            self.write_extra(
+                root,
+                "docs/duplicate-table.md",
+                "項目 | 説明\n--- | ---\nA | %s\nA | %s" % (row, row),
+            )
+
+        self.assert_checker_ng(change, "docs/duplicate-table.md:3", "docs/duplicate-table.md:4")
+
     def test_code_fence_is_excluded_from_duplicate_body_check(self):
         body = "コード例として保存する長い本文は重複検査の対象外であり、実装の例示だけを目的にしています。重複を検出する目的で十分な長さを持たせています。"
 
-        def change(root):
-            self.write_extra(root, "docs/examples.md", "```text\n%s\n%s\n```" % (body, body))
+        cases = (
+            "```text\n%s\n%s\n```" % (body, body),
+            "````markdown\n%s\n```\n\n%s\n\n%s\n````" % (body, body, body),
+            "````markdown\n%s\n~~~\n\n%s\n\n%s\n````" % (body, body, body),
+            "````markdown\n%s\n````python\n\n%s\n\n%s\n````" % (body, body, body),
+        )
+        for content in cases:
+            with self.subTest(content=content):
+                self.assert_checker_ok(
+                    lambda root, content=content: self.write_extra(
+                        root, "docs/examples.md", content
+                    )
+                )
 
-        self.assert_checker_ok(change)
+    def test_duplicate_after_a_normally_closed_fence_is_rejected(self):
+        body = "フェンスを正常に閉じた後の本文はコード例ではないため、同じ長い説明を二度置いた場合に重複として検出される必要があります。"
+
+        for closing in ("````", "`````"):
+            with self.subTest(closing=closing):
+                def change(root, closing=closing):
+                    self.write_extra(
+                        root,
+                        "docs/examples.md",
+                        "````markdown\nコード例\n%s\n\n%s\n\n%s" % (closing, body, body),
+                    )
+
+                self.assert_checker_ng(change, "docs/examples.md:5", "docs/examples.md:7")
 
     def test_short_boilerplate_and_link_only_guidance_are_ignored(self):
         link = "[現在の仕様を参照してください。必要な説明をまとめた正本へのリンクです。](project.md)"
@@ -272,7 +360,21 @@ class DocCheckRegressionTests(unittest.TestCase):
                 root,
                 "docs/similar.md",
                 "この長い説明は正本を一箇所に集約し、参照先だけを更新するための検査用本文です。"
-                "\n\nこの長い説明は正本を複数箇所に分散し、参照先だけを更新するための検査用本文です。",
+                "重複検出の境界を確認するため十分な長さを持たせています。"
+                "\n\nこの長い説明は正本を複数箇所に分散し、参照先だけを更新するための検査用本文です。"
+                "重複検出の境界を確認するため十分な長さを持たせています。",
+            )
+
+        self.assert_checker_ok(change)
+
+    def test_pipe_in_prose_is_not_a_table(self):
+        body = "表ではない本文にパイプ記号を含めても、ヘッダーと区切り行がなければ通常の文章として扱うための十分に長い検査用テキストです。"
+
+        def change(root):
+            self.write_extra(
+                root,
+                "docs/prose.md",
+                "%s | 列A\n%s | 列A\n%s | 列A" % (body, body, body),
             )
 
         self.assert_checker_ok(change)

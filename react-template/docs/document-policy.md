@@ -5,12 +5,14 @@
 <a id="adoption"></a>
 ## 1. 適用する標準
 
+導入状態: **未適用**。採用先で以下の版と固有差分を確定した後に「適用済み」へ更新してください。
+
 | 項目 | 内容 |
 | --- | --- |
-| 配布元・版 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版18 |
-| 設計・文書標準 | [版14](standards/design-and-documentation.md) |
-| モック標準 | [版16](standards/mock-driven-development.md) |
-| React拡張 | 0.1.1 / React・Node.js・SQLite・並列 E2E の参照実装 |
+| 配布元・版 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版19 |
+| 設計・文書標準 | [版15](standards/design-and-documentation.md) |
+| モック標準 | [版17](standards/mock-driven-development.md) |
+| React拡張 | 0.1.2 / React・Node.js・SQLite・並列 E2E の参照実装 |
 | 固有差分 | React と Node.js の責務分担、SQLite の保存、実処理までの並列 E2E を提供します。共通構造の補足は architecture-react.md に置きます |
 
 生成時は `template/` を先にコピーし、`react-template/` の内容で上書きします。共通資材（`AGENTS.md`、`docs/standards/`、検査スクリプト、`LICENSE`）は共通側から取得し、`docs/project.md` と本書は React 差分側で個別管理します（共通版との部分マージは行いません）。

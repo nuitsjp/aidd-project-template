@@ -22,7 +22,7 @@ Windows デスクトップを主対象とします（ブラウザ server build �
 <a id="design"></a>
 ## 4. 確認した事実
 
-共通資材は生成に使う同一チェックアウトの `template/`（配布版18）から取得します。標準2文書と検査スクリプトは共通側から配置します。
+共通資材の配布元と適用版は [文書方針](document-policy.md#adoption) に従います。
 
 Wails 本体・CLI・npm ランタイムは `v3.0.0-beta.23` / `3.0.0-beta.23`、Go 1.25以上を前提とします。生成 API・Service 登録・ライフサイクル・runtime Vite plugin は [固定版ソース](https://github.com/wailsapp/wails/tree/v3.0.0-beta.23/v3) および [CLI資料](https://v3.wails.io/guides/cli/) に従います。
 
@@ -31,15 +31,14 @@ Wails 本体・CLI・npm ランタイムは `v3.0.0-beta.23` / `3.0.0-beta.23`�
 <a id="commands"></a>
 ## 5. 実行・切り替え・検証手順
 
-本リポジトリのルートで `mise run init:wails ../my-wails-app` を実行し、生成先を作業ディレクトリとします（`wails-template/` 単体を作業ディレクトリとしません）。Go 1.25以上、Node.js 22.16以上、Python 3.9以上、WebView2 Evergreen Runtime を導入し、`go`・`node`・`npm`・`python` を PATH 上で使用できるようにします。NSIS 3.11以上はインストーラー作成時のみ必要です。Go の自動ツールチェーン取得を禁止する環境では、依存モジュールが要求する Go 版も事前に導入します。
+生成したプロジェクトのルートを作業ディレクトリとします。Go 1.25以上、Node.js 22.16以上、Python 3.9以上、WebView2 Evergreen Runtime を導入し、`go`・`node`・`npm`・`python` を PATH 上で使用できるようにします。NSIS 3.11以上はインストーラー作成時のみ必要です。Go の自動ツールチェーン取得を禁止する環境では、依存モジュールが要求する Go 版も事前に導入します。
 
 ```powershell
-cd ../my-wails-app
 node scripts/run.mjs setup
 node scripts/run.mjs dev
 ```
 
-`setup` は指定版の Wails CLI をローカルの `.tools/` に導入し、Go/npm 依存、実際の Go バインディング、ルートツリーを生成します。初回は外部ネットワークが必要です。`go.sum` と `frontend/package-lock.json` は初回生成し、初回成功後に保存します。以後は `npm ci` を使用します。直接依存の版は固定済みですが、初回解決前の推移的依存は固定されません。
+`setup` は指定版の Wails CLI をローカルの `.tools/` に導入し、Go/npm 依存、実際の Go バインディング、ルートツリーを生成します。初回は外部ネットワークが必要です。`go.sum` と `frontend/package-lock.json` は初回生成し、初回成功後に保存します。以後のフロントエンド依存取得は `frontend/` で `npm ci` を使用します。直接依存の版は固定済みですが、初回解決前の推移的依存は固定されません。
 
 | コマンド（先頭に `node scripts/run.mjs`） | 内容 |
 | --- | --- |

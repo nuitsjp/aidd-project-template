@@ -4,11 +4,12 @@
 
 React の対話制御から実 Node.js・SQLite への更新までを通す参照実装です。メモの編集と一括登録の2つのパターン、および個別 DB による並列 E2E を提供します。
 
+<a id="constraints"></a>
 ## 2. 制約・受け入れ条件
 
 SPA、単一 Node.js、同一 origin、SQLite を既定とします。各利用者のメモは所有者 ID で分離します。4 worker の E2E において、同一ユーザー・同一タイトルを用いてもテスト間で干渉しないこと、UI から実 API を経由して実ファイル DB を別接続で検証することを条件とします。
 
-一括登録の上限はサンプルとして100件です。SQLite の配置とトランザクション境界は [アーキテクチャの設計上の制約](architecture.md#constraints) に従います。
+一括登録の上限はサンプルとして100件です。SQLite の配置とトランザクション境界は [React / Node.jsアーキテクチャの永続化と起動単位](architecture-react.md#persistence) に従います。
 
 <a id="usecases"></a>
 ## 3. ユースケース一覧
@@ -21,7 +22,7 @@ SPA、単一 Node.js、同一 origin、SQLite を既定とします。各利用�
 <a id="design"></a>
 ## 4. 確認した事実
 
-共通資材は同一チェックアウトの `template/` から取得します（配布版18）。直接依存は `package.json`、Node 推奨版は `.nvmrc` に記載しています。
+共通資材の配布元と適用版は [文書方針](document-policy.md#adoption) に従います。直接依存は `package.json`、Node 推奨版は `.nvmrc` に記載しています。
 
 - **Node 24 node:sqlite**: Release Candidate 版。実 SQLite を用いる処理・マイグレーション・バックアップを同一ドライバーで検証（[Node API](https://nodejs.org/docs/latest-v24.x/api/sqlite.html)）。並列 E2E の分離は DB ファイルの分離により実現（[SQLite WAL](https://sqlite.org/wal.html)）。
 - **Playwright fixtures**: 環境生成と破棄を一体化し、fullyParallel と複数 worker を利用（[fixtures](https://playwright.dev/docs/test-fixtures)）。
@@ -30,9 +31,9 @@ SPA、単一 Node.js、同一 origin、SQLite を既定とします。各利用�
 <a id="commands"></a>
 ## 5. 実行・切り替え・検証手順
 
-本リポジトリのルートで `mise run init:react ../my-react-app` を実行し、生成先を作業ディレクトリとします（`react-template/` 単体を作業ディレクトリとしません）。Node.js 24.21.0 を推奨し、最低22.16、文書検査に Python 3 を使用します。Docker や外部 DB は不要です。
+生成したプロジェクトのルートを作業ディレクトリとします。Node.js 24.21.0 を推奨し、最低22.16、文書検査に Python 3 を使用します。Docker や外部 DB は不要です。
 
-生成先のルートで依存導入、`.env` 作成、ルート生成を行います。初回生成された `package-lock.json` を保存し、以後は `npm ci` を使用します。
+同じルートで依存導入、`.env` 作成、ルート生成を行います。初回生成された `package-lock.json` を保存し、以後は `npm ci` を使用します。
 
 ```sh
 npm run setup

@@ -18,8 +18,8 @@ LINE_LIMITS = {"docs/project.md": 300, "docs/architecture.md": 200,
 PLACEHOLDER_HASH = "sha256:" + "0" * 64
 # 配布元が `--print-hashes` の出力で更新する。
 EXPECTED_HASHES = {
-    "docs/standards/design-and-documentation.md": "sha256:f52fc4fc80874bb25933e5e183d65ad32834d6373351c29281920d05a08e9094",
-    "docs/standards/mock-driven-development.md": "sha256:5feb2fa37a59c3de647b33e1caa8182a580e2874d3a4b2e20276c99b77b20aab",
+    "docs/standards/design-and-documentation.md": "sha256:0e920ebf35dba25d7c259115caab73b3c2a0a133f0d4a7adba16a4f9acc0b688",
+    "docs/standards/mock-driven-development.md": "sha256:c335a7841519b39fe4f1ccf143a31c2325e2aa641bac13127fa10ca7bf7db941",
 }
 
 UC_HEAD_RE = re.compile(r"^#\s+UC-(\d+)\.")
@@ -266,9 +266,25 @@ def is_old_record_label(line):
 
 def split_table_line(line):
     value = unquote_markdown(line).strip()
-    if not value.startswith("|"):
+    cells, current, escaped = [], [], False
+    saw_pipe = False
+    for char in value:
+        if char == "|" and not escaped:
+            cells.append("".join(current).replace(r"\|", "|").strip())
+            current = []
+            saw_pipe = True
+        else:
+            current.append(char)
+        escaped = char == "\\" and not escaped
+    trailing_pipe = saw_pipe and not current
+    if not saw_pipe:
         return None
-    return [cell.strip() for cell in value.strip("|").split("|")]
+    cells.append("".join(current).replace(r"\|", "|").strip())
+    if value.startswith("|"):
+        cells = cells[1:]
+    if trailing_pipe:
+        cells = cells[:-1]
+    return cells
 
 
 def table_blocks(text):
@@ -277,40 +293,61 @@ def table_blocks(text):
     blocks = []
     index = 0
     while index < len(lines):
-        if split_table_line(lines[index]) is None:
+        parsed = table_at(lines, index)
+        if parsed is None:
             index += 1
             continue
-        start = index
-        rows = []
-        while index < len(lines):
-            cells = split_table_line(lines[index])
-            if cells is None:
-                break
-            rows.append((index + 1, cells))
-            index += 1
-        if len(rows) >= 2:
-            blocks.append((start + 1, rows))
+        rows, index = parsed
+        blocks.append((rows[0][0], rows))
     return blocks
 
 
 def table_separator(cells):
-    return bool(cells) and all(cell and set(cell) <= set("-: ") for cell in cells)
+    return bool(cells) and all(re.fullmatch(r":?-+:?", cell) for cell in cells)
+
+
+def table_at(lines, index):
+    """指定行から始まるGFM表を [(行番号, セル列)], 次の行番号として返す。"""
+    if index + 1 >= len(lines):
+        return None
+    header = split_table_line(lines[index])
+    separator = split_table_line(lines[index + 1])
+    if (header is None or separator is None or len(header) != len(separator)
+            or not table_separator(separator)):
+        return None
+    rows = [(index + 1, header), (index + 2, separator)]
+    index += 2
+    while index < len(lines):
+        cells = split_table_line(lines[index])
+        if cells is None:
+            break
+        rows.append((index + 1, cells))
+        index += 1
+    return rows, index
 
 
 def looks_like_verification_table(rows):
     """合否・実行日・版/CI参照を組み合わせた旧検証表を判定する。"""
     header = rows[0][1]
-    joined = " ".join(header)
-    has_result = bool(re.search(r"(?:合否|検証結果|判定|ステータス|status|pass\s*/\s*fail)", joined, re.I))
-    has_plain_result = any(cell.strip() == "結果" for cell in header)
-    has_date = bool(re.search(r"(?:実行日|実施日|検証日|実行日時|日付|date)", joined, re.I))
-    has_reference = bool(re.search(
-        r"(?:対象\s*(?:コミット|版)|コミット(?:\s*(?:ID|ハッシュ))?|CI\s*(?:参照|リンク|run)?|"
-        r"commit|revision|build)", joined, re.I))
-    has_subject = bool(re.search(r"(?:UC|系列|構成|テスト|test|scenario|case)", joined, re.I))
+    normalized = {
+        re.sub(r"\s+", " ", cell.strip()).strip("`*_~").casefold()
+        for cell in header
+    }
+    has_result = bool(normalized & {
+        "合否", "検証結果", "実行結果", "実施結果", "判定", "ステータス", "結果",
+        "status", "result", "pass/fail", "pass / fail",
+    })
+    has_date = bool(normalized & {"実行日", "実施日", "検証日", "実行日時", "日付", "date", "execution date"})
+    has_reference = bool(normalized & {
+        "対象コミットまたは ci 参照", "対象コミット", "対象版", "コミット", "コミット id",
+        "コミットハッシュ", "ci 参照", "ci リンク", "commit", "revision", "build",
+    })
+    has_subject = bool(normalized & {
+        "uc", "uc id", "uc・系列 id", "系列", "構成", "テスト", "テスト項目",
+        "test", "test case", "scenario", "case",
+    })
     return ((has_result and has_date and has_reference)
-            or (has_result and has_subject)
-            or (has_plain_result and bool(re.search(r"(?:^|[| ])テスト(?:項目)?(?:$|[| ])", joined))))
+            or (has_result and has_subject))
 
 
 def looks_like_decision_file(root, path):
@@ -377,17 +414,22 @@ def duplicate_candidates(text):
     index = 0
     in_fence = False
     fence_char = ""
+    fence_length = 0
     while index < len(lines):
         raw = lines[index]
-        stripped = unquote_markdown(raw).strip()
-        fence = FENCE_RE.match(stripped)
+        unquoted = unquote_markdown(raw)
+        stripped = unquoted.strip()
+        fence = FENCE_RE.match(unquoted)
         if fence:
             flush_paragraph()
-            marker = fence.group(1)[0]
             if not in_fence:
-                in_fence, fence_char = True, marker
-            elif marker == fence_char:
-                in_fence, fence_char = False, ""
+                in_fence = True
+                fence_char = fence.group(1)[0]
+                fence_length = len(fence.group(1))
+            elif (fence.group(1)[0] == fence_char
+                  and len(fence.group(1)) >= fence_length
+                  and not unquoted[fence.end():].strip()):
+                in_fence, fence_char, fence_length = False, "", 0
             index += 1
             continue
         if in_fence:
@@ -401,27 +443,14 @@ def duplicate_candidates(text):
             flush_paragraph()
             index += 1
             continue
-        cells = split_table_line(raw)
-        if cells is not None:
+        parsed = table_at(lines, index)
+        if parsed is not None:
+            rows, index = parsed
             flush_paragraph()
-            rows = []
-            start = index
-            while index < len(lines):
-                row = split_table_line(lines[index])
-                if row is None:
-                    break
-                rows.append((index + 1, row))
-                index += 1
-            if len(rows) >= 2:
-                body_rows = rows[2:] if table_separator(rows[1][1]) else rows[1:]
-                for lineno, row in body_rows:
-                    value = duplicate_normalize(" | ".join(row))
-                    if (len(value) >= DUPLICATE_MIN_CHARS and not is_link_only(value)
-                            and not table_separator(row)):
-                        candidates.append((lineno, value))
-            else:
-                # Markdown でない単独のパイプ行は通常の段落として扱う。
-                paragraph.append((start + 1, stripped))
+            for lineno, row in rows[2:]:
+                value = duplicate_normalize(" | ".join(row))
+                if len(value) >= DUPLICATE_MIN_CHARS and not is_link_only(value):
+                    candidates.append((lineno, value))
             continue
         if re.match(r"^(?:[-*+]\s+|\d+[.)]\s+)", stripped):
             flush_paragraph()

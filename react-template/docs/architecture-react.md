@@ -29,6 +29,7 @@ React・TypeScript・Vite、TanStack Router/Query、Mantine・CSS Modules を用
 
 公開エラーはコード、安全なメッセージ、必要な入力項目情報で返します。内部要因は API 境界で記録し、利用者への表示や再試行対話はフロントエンド側で制御します。
 
+<a id="persistence"></a>
 ## 3. 永続化と起動単位
 
 永続化には SQLite を使用します。ファイルはサーバーの永続領域に配置し、WAL、外部キー制約、有限の busy timeout を設定して短いトランザクションで確定します（同期 DB 操作中に外部 I/O や確認待ちは含めません）。

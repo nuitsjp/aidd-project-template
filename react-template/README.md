@@ -2,19 +2,13 @@
 
 Reactの対話制御からNode.jsの機能、SQLiteへの確定までを通す参照実装です。
 
-## 配置
+## 新規プロジェクトの生成
 
-`react-template/` は、同一チェックアウトの `template/` に重ねるReact固有の差分です。単独実行せず、リポジトリのルートから以下を実行して新規プロジェクトを生成します（`template/` を先にコピーし、`react-template/` の内容で上書きしてルートの `LICENSE` を配置します）。
-
-```text
-aidd-project-template/
-├── template/
-└── react-template/       ← 生成時に重ねる差分（単独実行しない）
-```
+新規プロジェクトは [配布元の導入手順](https://github.com/nuitsjp/aidd-project-template#2-新規プロジェクトへの導入) に従って生成します。`react-template/` は同一チェックアウトの `template/` に重ねる React 固有の差分であり、単体では実行しません。
 
 ## 実行・確認
 
-生成、環境構築、起動、切り替え、テスト、配備の手順は [プロジェクト定義の実行手順](docs/project.md#commands) に集約しています。生成先のルートで手順を実行し、`react-template/` 単体では実行しません。
+生成後の環境構築、起動、切り替え、テスト、配備の手順は [プロジェクト定義の実行手順](docs/project.md#commands) に集約しています。生成したプロジェクトのルートで実行します。
 
 ## 参照先
 

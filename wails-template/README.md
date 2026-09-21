@@ -4,19 +4,13 @@ Windows用のユースケース駆動参照アプリです。対話制御を Rea
 
 配布物はビルド対象のソース一式です。
 
-## 配置
+## 新規プロジェクトの生成
 
-`wails-template/` は、同一チェックアウトの `template/` に重ねるWails固有の差分です。単独実行せず、リポジトリのルートから以下を実行して新規プロジェクトを生成します（`template/` を先にコピーし、`wails-template/` の内容で上書きしてルートの `LICENSE` を配置します）。
-
-```text
-aidd-project-template/
-├── template/
-└── wails-template/       ← 生成時に重ねる差分（単独実行しない）
-```
+新規プロジェクトは [配布元の導入手順](https://github.com/nuitsjp/aidd-project-template#2-新規プロジェクトへの導入) に従って生成します。`wails-template/` は同一チェックアウトの `template/` に重ねる Wails 固有の差分であり、単体では実行しません。
 
 ## Windowsで開始
 
-必要な環境、生成、セットアップ、起動、テスト、配布、更新の手順は [プロジェクト定義の実行手順](docs/project.md#commands) に集約しています。生成先のルートで手順を実行し、`wails-template/` 単体では実行しません。
+生成後に必要な環境、セットアップ、起動、テスト、配布、更新の手順は [プロジェクト定義の実行手順](docs/project.md#commands) に集約しています。生成したプロジェクトのルートで実行します。
 
 ## 確認できる実装
 
