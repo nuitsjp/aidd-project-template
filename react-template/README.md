@@ -2,7 +2,7 @@
 
 Reactの対話制御からNode.jsの機能、SQLiteへの確定までを通す参照実装です。
 
-**検証状態:** 生成先で `npm run verify`（依存解決後の型検査・Lint・文書検査、実SQLiteによる機能・並列分離テスト21件、単体テスト3件、本番ビルド、本番Node + Chromium + SQLite の E2E 14件）と4並列×3回の E2E 反復に合格しました（詳細は [検証結果](docs/project.md#verification) 参照）。同梱サンプルの系列ごとの利用者合意と完成系監査は未実施です。
+**検証状態:** 拡張0.2.2は同梱ロックからの依存導入、型検査・Lint・文書検査、実SQLiteによる機能・並列分離テスト21件、単体テスト3件、本番ビルド、配備用パッケージの依存導入、通常Chromeを明示指定したE2E反復42件を確認しました（詳細は [検証結果](docs/project.md#verification) 参照）。同梱サンプルの系列ごとの利用者合意と完成系監査は未実施です。
 
 ## 配置
 
@@ -29,7 +29,7 @@ npm run dev
 
 ブラウザで `http://127.0.0.1:5173/notes` を開きます。ユーザー選択（Alice/Bob）でメモの作成・編集・一括登録を試せます。既定のユーザー選択は**ローカル参照実装用であり認証ではありません**。共有環境への配備時は [認証・配備](docs/project.md#deployment) を設定してください。
 
-セットアップは依存導入、`.env`作成、ルート生成を行います。初回生成された `package-lock.json` を保存し、以後は `npm ci` を使用します。
+セットアップは同梱の `package-lock.json` を使った `npm ci`、`.env`作成、ルート生成を行います。ロックがなければ停止します。依存の更新時だけ依存定義とロックを併せて更新し、`npm run setup`・`npm run verify` で検証します。採用後のロックは採用先が管理し、新しい雛形のロックで上書きしません。
 
 ## ビルドと本番形式でのローカル起動
 
@@ -43,7 +43,19 @@ npm start
 ## ユーザー操作からDBまでの並列E2E
 
 ```sh
-npx playwright install chromium
+npx playwright install --only-shell chromium
+npm run test:e2e
+```
+
+導入済みPlaywrightに対応するHeadless Shellを取得し、E2Eはヘッドレスで実行します。
+
+Playwrightのブラウザ実体を明示する場合は `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` を指定できます。その環境で `--disable-extensions` による起動失敗を確認した場合だけ、同じコマンドに `PLAYWRIGHT_IGNORE_DISABLE_EXTENSIONS=1` を加えてその引数を除外します。
+
+PowerShellで通常のChromeを指定する例です。ブラウザの切り替えや自動フォールバックは行いません。
+
+```powershell
+$env:PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH = Join-Path $env:ProgramFiles 'Google/Chrome/Application/chrome.exe'
+$env:PLAYWRIGHT_IGNORE_DISABLE_EXTENSIONS = '1'
 npm run test:e2e
 ```
 
@@ -72,5 +84,7 @@ worker数変更時は `npx playwright test --workers=8`（事前ビルド要）�
 サンプルのUIやタイトル一意制約、文字数制限は参照用仕様です。製品開発時は `backend/features/notes/`・`frontend/src/usecases/` とE2Eを製品のユースケースに置き換えます。テンプレート名が残る箇所（`package.json` の名前、`frontend/index.html` のタイトル、`frontend/src/app/Shell.tsx` の表示名、`backend/http/auth.ts` の Cookie 名、`.github/workflows/react-template.yml` のファイル名）も製品名へ置き換えます。
 
 サンプルの仕様・合意は採用先へ引き継がず、採用時は [導入開始手順](https://github.com/nuitsjp/aidd-project-template#3-初期セットアップと最初のユースケース) を確認して製品固有の仕様と合意を定義します。
+
+継続更新する共通資材は `AGENTS.md`・標準2件・文書検査器です。生成後の製品文書・実装・設定・DB移行履歴は採用先が管理し、初期雛形とは全文同期しません。共通資材の採用元コミットと固有差分は [文書方針](docs/document-policy.md#adoption) に記録します。更新は [配布元の更新手順](https://github.com/nuitsjp/aidd-project-template#5-配布版の更新取り込み) に従います。
 
 `.github/workflows/react-template.yml` は生成プロジェクト用のCI例です（生成後のルートで実行することを前提としています）。

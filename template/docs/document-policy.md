@@ -9,13 +9,14 @@
 
 | 項目 | 内容 |
 | --- | --- |
-| 配布元・版 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版17 |
-| 設計・文書標準 | [project-template-design-and-documentation / 版13](standards/design-and-documentation.md) |
-| モック標準 | [project-template-mock-driven-development / 版15](standards/mock-driven-development.md) |
+| 配布元・版 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版19 |
+| 設計・文書標準 | [project-template-design-and-documentation / 版14](standards/design-and-documentation.md) |
+| モック標準 | [project-template-mock-driven-development / 版17](standards/mock-driven-development.md) |
+| 採用元固定コミット | {{SOURCE_COMMIT}} |
 | 採用日・判断者・合意の根拠 | {{ADOPTION_RECORD}} |
 | プロジェクト固有の差分と理由 | {{LOCAL_RULE_DIFFERENCES}} |
 
-採用後、設計・文書標準はすべての変更に適用し、モック標準の適用範囲は第2節で定めます。`standards/` は編集せず、固有差分は上表に理由とともに記録します（例: `scripts/doc_check.py` を実行できない環境、Playwright CLI が使えない対象の代替確認手段と適用範囲。差分がなければ「なし」）。確認手段を替えても利用者の承認は省略しません。新版のテンプレートは自動適用しません。
+採用後、設計・文書標準はすべての変更に適用し、モック標準の適用範囲は第2節で定めます。AGENTS・標準2件・`scripts/doc_check.py` は配布元で同一固定コミットから採用先へ4ファイル一組で反映し、その他の文書は初回生成後に採用先で管理します。固有規則は上表の差分欄に理由とともに記録し、差分がなければ「なし」と記録します（例: `scripts/doc_check.py` を実行できない環境、Python を導入できない場合、Playwright CLI が使えない対象の代替確認手段と適用範囲）。雛形全文は同期せず、必要な書式移行だけを適用します。確認手段を替えても利用者の承認は省略しません。採用元固定コミット欄には実際に採用した40桁コミットを記録します。新版のテンプレートは自動適用しません。
 
 <a id="mock-scope"></a>
 ## 2. モック駆動開発の適用範囲

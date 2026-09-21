@@ -30,6 +30,8 @@ node scripts/run.mjs dev
 
 `setup` は指定版の Wails CLI をローカルの `.tools/` に導入し、Go/npm 依存、実際の Go バインディング、ルートツリーを生成します。初回は外部ネットワークが必要です。`go.sum` と `frontend/package-lock.json` は検証時に生成したものを同梱しており、npm 依存は `npm ci` で lockfile どおりに導入されます。依存を変更したときは両ファイルを更新してコミットしてください。
 
+Wails本体・JavaScript Runtimeは検証する組合せで更新し、`setup` でGo依存の版に対応するCLIを入れ直して生成コードを再生成します。`verify` とWindowsビルドを実行し、実機確認の範囲も記録します。採用後の依存定義・ロックは採用先が管理します。最低対応版は上記の前提、検証に使ったツール版は `mise.toml` と [検証結果](docs/project.md#verification) を参照します。
+
 | コマンド（先頭に `node scripts/run.mjs`） | 内容 |
 | --- | --- |
 | `dev` | Windowsアプリを起動し、Go・React の変更を監視 |
@@ -40,7 +42,15 @@ node scripts/run.mjs dev
 | `verify` | 生成・型検査・Lint・テスト・文書検査・server E2E を一括実行 |
 | `test:core` | Go の機能・保存・更新検証を実行 |
 
-初回の E2E 実行前に `cd frontend; npx playwright install chromium; cd ..` を実行してください。`server` は開発・検証用であり、LAN へ公開しません。終了は Ctrl+C です。
+初回の E2E 実行前に `cd frontend; npx playwright install --only-shell chromium; cd ..` を実行し、導入済み Playwright に対応する headless shell を取得してください。E2E はヘッドレスで実行します。`server` は開発・検証用であり、LAN へ公開しません。終了は Ctrl+C です。
+
+通常の Chrome / Chromium を明示して検証する場合は、`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` に実行ファイルの絶対パスを設定します。その環境で既定引数 `--disable-extensions` による起動失敗を確認した場合だけ、`PLAYWRIGHT_IGNORE_DISABLE_EXTENSIONS=1` も設定して当該引数を除外します。指定例は次のとおりです。自動的なブラウザー切り替えは行いません。
+
+```powershell
+$env:PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH = Join-Path $env:ProgramFiles 'Google/Chrome/Application/chrome.exe'
+$env:PLAYWRIGHT_IGNORE_DISABLE_EXTENSIONS = '1'
+node scripts/run.mjs verify
+```
 
 ## 確認できる実装
 
@@ -83,5 +93,7 @@ NSIS はアプリ本体、スタートメニュー、アンインストール情
 新しい機能領域のモック合成点の作り方は [Wails補足第4節](docs/architecture-wails.md#4-モックと検証境界) を参照します。
 
 採用時は [導入開始手順](https://github.com/nuitsjp/aidd-project-template#3-初期セットアップと最初のユースケース) を確認し、サンプルの仕様・合意を引き継がずに製品固有の内容を定義します。
+
+上表の「残す基盤」も生成後は採用先が管理するコードです。継続同期する対象ではありません。配布元から一組で更新する対象は `AGENTS.md`・標準2件・文書検査器に限り、製品文書・実装・設定・DB移行履歴は上書きしません。採用元コミットと固有差分を [文書方針](docs/document-policy.md#adoption) に記録し、[配布元の更新手順](https://github.com/nuitsjp/aidd-project-template#5-配布版の更新取り込み) に従います。
 
 `.github/workflows/windows.yml` は生成プロジェクト用の CI 例です。main への push と pull request で `setup`・`verify`・`build`・`package` を実行し、インストーラーを artifact として保存します。`wails-template/` をチェックアウト上で単独実行する CI ではありません。ライセンスは [MIT](LICENSE) です。

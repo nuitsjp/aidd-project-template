@@ -26,7 +26,7 @@ jobs:
         run: node scripts/run.mjs setup
       - name: Browser
         working-directory: frontend
-        run: npx playwright install chromium
+        run: npx playwright install --only-shell chromium
       - name: Verify
         run: node scripts/run.mjs verify
       - name: Windows executable

@@ -34,7 +34,7 @@ flowchart LR
 <a id="patterns"></a>
 ## 3. 実現パターン
 
-ユースケースの実現パターンの型を `UCP-1` から順に定義します。既存パターンで説明できないユースケースが生じた場合のみ、[仕組みの追加基準](standards/design-and-documentation.md#design-decisions) を満たして新設します（シーケンス図は1パターンにつき1本）。
+ユースケースの実現パターンの型を `UCP-1` から順に定義します。全体設計とパターンの運用は [設計標準の全体設計](standards/design-and-documentation.md#architecture-method) に従います。
 
 ### UCP-1. {{PATTERN_NAME}}
 
@@ -67,7 +67,7 @@ ID は `ADR-1` から順に付与します（本表への1行記録を基本と�
 <a id="tables"></a>
 ## 5. テーブル設計
 
-DBテーブル設計と合意記録の正本です。対象系列で追加・変更するテーブル設計のみを記述・更新します（変更がない場合は再合意不要）。ER図、テーブル定義、既存設計の変更点を提示し、他文書へは転記しません。DBを使わない場合はその旨を記し、以下の記入欄を削除します。
+DBテーブル設計と合意記録の正本です。対象系列の設計と合意は [設計標準の全体設計](standards/design-and-documentation.md#architecture-method) に従います。
 
 ```mermaid
 erDiagram

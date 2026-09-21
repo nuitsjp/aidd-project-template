@@ -22,7 +22,7 @@ Windows デスクトップを主対象とします（ブラウザ server build �
 <a id="design"></a>
 ## 4. 確認した事実
 
-参照実装の作成時に、配布元の版13・コミット `88b31b40c65a2ce35201eeda34358e2d103bac23` を確認しました。採用する共通資材は、生成に使う同一チェックアウトの `template/`（現在の配布版18）に従います。標準2文書と検査スクリプトは Git blob の一致を確認して複製します。
+参照実装の作成時に、配布元の版13・コミット `88b31b40c65a2ce35201eeda34358e2d103bac23` を確認しました。採用する共通資材は、生成に使う同一チェックアウトの `template/` に従い、実際の採用版と固定コミットを [文書方針](document-policy.md#adoption) に記録します。
 
 Wails 本体・CLI・npm ランタイムは `v3.0.0-beta.23` / `3.0.0-beta.23`、Go 1.25以上を前提とします。生成 API・Service 登録・ライフサイクル・runtime Vite plugin は [固定版ソース](https://github.com/wailsapp/wails/tree/v3.0.0-beta.23/v3) および [CLI資料](https://v3.wails.io/guides/cli/)（2026-09-20確認）に基づきます。
 
@@ -72,10 +72,14 @@ node scripts/run.mjs release manifest -key "$env:USERPROFILE/wails-release-priva
 | UC-2-M | — | Wails server + Playwright | — | `node scripts/run.mjs verify` | 未検証 | — |
 | UC-3-M | — | Windows + NSIS | — | READMEと本節の更新手順 | 未検証 | — |
 
-合否を記入するときは [モック標準](standards/mock-driven-development.md#workflow) の段階番号（1〜6）も記録します。段階6の結果には対象系列の合意記録と完成系監査記録が必要であり、一部構成の合格のみで完了とは扱いません。
+合否表の記入と完了条件は [検証結果の記録](standards/design-and-documentation.md#verification-records) に従います。
 
-参照実装の保守検証（2026-09-21、Wails拡張0.2.0、Windows 11 Enterprise 24H2 amd64、Go 1.26.5・Node.js 24.16.0・Python 3.14・NSIS 3.12・WebView2 153）: 生成先で `node scripts/run.mjs verify`・`build`・`package` に合格しました。型検査・Lint・Vitest 7件・Go全パッケージテスト・go vet（desktop・server 両構成）・文書検査（NG 0件）・server build・Windows向け本番ビルド・NSISインストーラー作成を確認しました。実Goサービスのserver E2E 3件は、この環境では Playwright の Chromium 取得がプロキシで完了せず未実行です（2026-09-20 の保守検証で合格した記録を最後の結果とします）。
+今回の保守検証（2026-09-21、Wails拡張0.2.2、Windows amd64、Go 1.26.5・Node.js 24.16.0・Python 3.14.6・Playwright 1.56.0）: 新しい生成先で `node scripts/run.mjs setup` と `node scripts/run.mjs verify` に合格しました。`verify` は Chrome 153.0.8010.48 を `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` で明示し、`PLAYWRIGHT_IGNORE_DISABLE_EXTENSIONS=1` を設定して実行しました。型検査・Lint・Vitest 7件・Go全7パッケージのテスト・go vet（desktop・server 両構成）・文書検査（NG 0件）・server build・実Goサービスのserver E2E 3件が合格しました。
 
-Windows 実機では、NSIS による版 0.1.0 のサイレントインストール（配置・レジストリ・スタートメニュー）、WebView2 での起動、多重起動時の2つ目のプロセス終了、ウィンドウ閉鎖時の終了確認（取り消しで継続、確認で終了）、共有フォルダを更新元とした版 0.2.0 への更新（署名済み更新情報の受理、取得とハッシュ検証、NSIS への引き渡し、旧プロセス終了待ち、適用後の新版起動、レジストリの版更新）、サイレントアンインストール後の登録情報削除とユーザーデータ保持を UI Automation による操作で確認しました。
+対応する Chromium Headless Shell 141.0.7390.37（revision 1194）でも、実行ファイルを明示し、`PLAYWRIGHT_IGNORE_DISABLE_EXTENSIONS` を解除した構成で server E2E 3件が合格しました。`npx playwright install --only-shell chromium` はZIP取得を完了しましたが展開途中で停止し、自動導入は未完了です。ZIPのCRC検査に異常がないことを確認し、独立した一時ディレクトリへ手動展開した実行ファイルで検証しました。展開停止の原因は未特定です。自動的な代替ブラウザー選択や手動展開処理は組み込んでいません。
+
+Windows向け本番ビルド・NSISインストーラー作成は従来の保守記録で合格しています。今回のE2E設定変更では `build`・`package` とデスクトップ実機確認は再実行していません。
+
+従来のWindows実機保守検証では、NSIS による版 0.1.0 のサイレントインストール（配置・レジストリ・スタートメニュー）、WebView2 での起動、多重起動時の2つ目のプロセス終了、ウィンドウ閉鎖時の終了確認（取り消しで継続、確認で終了）、共有フォルダを更新元とした版 0.2.0 への更新（署名済み更新情報の受理、取得とハッシュ検証、NSIS への引き渡し、旧プロセス終了待ち、適用後の新版起動、レジストリの版更新）、サイレントアンインストール後の登録情報削除とユーザーデータ保持を UI Automation による操作で確認しました。
 
 実機では未確認の項目: 画面へのキー入力を伴う保存・取り込み（保存・下書き保持・一括取り込みは server E2E で確認）、CSV 処理中の終了、未署名実行制御（SmartScreen 等）。上表は系列ごとの利用者合意と完成系監査を経た検証用であり、この保守検証の合格を段階6完了や製品の合意記録には転用しません。

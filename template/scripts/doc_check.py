@@ -17,10 +17,12 @@ EVIDENCE_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".log", ".sha
 LINE_LIMITS = {"docs/project.md": 300, "docs/architecture.md": 200,
                "docs/document-policy.md": 100}
 PLACEHOLDER_HASH = "sha256:" + "0" * 64
+# 合否欄の語彙の正本: docs/standards/design-and-documentation.md#verification-records
+RESULT_VALUES = {"合格", "不合格", "未検証"}
 # 配布元が `--print-hashes` の出力で更新する。
 EXPECTED_HASHES = {
-    "docs/standards/design-and-documentation.md": "sha256:26747160169c6f7ec30c9774342fd6010e0f1be6cc51104565d81ad17dabb0c3",
-    "docs/standards/mock-driven-development.md": "sha256:0f189c865adb71131b77f79a4ef1089532bba4f95841b664cbb45069d7bdcb6b",
+    "docs/standards/design-and-documentation.md": "sha256:1248e559d0e7f72e9f36e377878361ab9f7382036e018406fd2e30794a6d04e3",
+    "docs/standards/mock-driven-development.md": "sha256:a8d55ab0c538850ed719ce381f9dd257c67ef0283e97c0f84ae24b6df56ee7d5",
 }
 
 HEX_RE = re.compile(r"(?<![0-9A-Za-z])[0-9a-fA-F]{7,40}(?![0-9A-Za-z])")
@@ -211,13 +213,15 @@ def agreement_records(body):
     records = {"合意記録": [], "完成系監査記録": []}
     kind, current = None, None
     for line in body.splitlines():
-        if line.startswith(("- ", "#")):
+        series = SERIES_RE.search(line)
+        is_record = series is not None and "提示コミット:" in line
+        # 記録行はインデントの有無にかかわらず読む。
+        if line.startswith(("- ", "#")) and not (kind and is_record):
             heading = re.match(r"^- (合意記録|完成系監査記録)(?:[（(:：]|$)", line)
             kind, current = heading.group(1) if heading else None, None
         if kind is None:
             continue
-        series = SERIES_RE.search(line)
-        if series and "提示コミット:" in line:
+        if is_record:
             commit = line.split("提示コミット:", 1)[1].split("/", 1)[0].strip().strip("`")
             current = [series.group(0), commit, False]
             records[kind].append(current)
@@ -240,6 +244,8 @@ def verification_results(project_text):
         series_ids = {m.group(0) for m in SERIES_RE.finditer(cell(header, cells, "UC・系列 ID"))}
         phase = cell(header, cells, "段階")
         result = cell(header, cells, "合否")
+        if filled(result) and result not in RESULT_VALUES:
+            emit("NG", "仕掛かり: docs/project.md:%d の合否欄は「合格」「不合格」「未検証」のいずれかが必要（実測 %s）" % (lineno, result))
         if series_ids and filled(result) and result != "未検証" and phase not in {"1", "2", "3", "4", "5", "6"}:
             emit("NG", "仕掛かり: docs/project.md:%d の記入済み検証結果には段階番号（1〜6）が必要" % lineno)
         for series in series_ids:

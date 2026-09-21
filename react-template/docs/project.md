@@ -82,8 +82,9 @@ npm run db:check -- ./backups/manual.sqlite
 | UC-2-M | — | 同上 | — | npm run test:e2e | 未検証 | — |
 | UC-2-X1 | — | 同上 | — | npm run test:e2e | 未検証 | — |
 
-合否を記入するときは [モック標準](standards/mock-driven-development.md#workflow) の段階番号（1〜6）も記録します。段階6の結果には対象系列の合意記録と完成系監査記録が必要であり、一部構成の合格のみで完了とは扱いません。
+合否表の記入と完了条件は [検証結果の記録](standards/design-and-documentation.md#verification-records) に従います。
 
-- **保守検証（2026-09-21、React拡張0.2.0、Windows、Node.js 24.16.0 / SQLite 3.53.0 / Playwright 1.63.0）**: 直接依存を各メジャー内の最新（`@fastify/static` は修正版の 10 系、`vitest` は 5 系）へ更新し、`npm audit` の指摘 0 件を確認。生成先で `npm run setup` 後に `npm run verify` に合格。内訳は `typecheck`（フロントエンド・バックエンド・Node 側テストとスクリプト）、`lint`、文書検査（NG 0件）、`test:core` 21件（4つの実 Node プロセスが各専用 DB で更新・検証。マイグレーション、外部キー、競合検出、ロールバック、通知、バックアップを含む）、`test:unit` 3件、`build`、E2E 14件（本番エントリ・一時 DB・自動割当ポートをテストごとに分離）。`npm run test:e2e:repeat`（4並列×3回、42件）も合格。
-- **検証環境の制約**: E2E のブラウザは `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` で導入済みの Chrome を指定し、組織管理下の Chrome が `--disable-extensions` で起動に失敗するため、検証用コピーの Playwright 設定でのみ同フラグを除外して実行しました。配布物の設定は変更していません（CI 例では Playwright 配布の Chromium を使用）。
+- **保守検証（2026-09-21、React拡張0.2.2、Windows、Node.js 24.16.0 / SQLite 3.53.0 / Playwright 1.63.0）**: 生成先で依存ロックを作成し、同じロックから `npm run setup` の `npm ci` が成功。`npm run verify` の型検査・Lint・機能テスト21件・単体テスト3件・本番ビルド・E2E 14件は、Chrome 153.0.8010.48を `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` で指定し `PLAYWRIGHT_IGNORE_DISABLE_EXTENSIONS=1` を設定した環境で合格。`npm run test:e2e:repeat` も42件（14件×3回）が合格。Playwright headless shell 148.0.7778.96を明示したE2E 14件も合格。`node scripts/package.mjs` が同じロックを配備物へ同梱し、配備先の `npm ci --omit=dev` も成功。
+- **ブラウザ導入の制約**: `npx playwright install --only-shell chromium` は `PLAYWRIGHT_DOWNLOAD_CONNECTION_TIMEOUT=120000` を設定してもCDNへの接続が再試行を含めて120秒でタイムアウトし、今回の環境では新規取得できませんでした。既存のPlaywright headless shellを使ったE2E 14件は合格しています。
+- **起動引数の選択**: `playwright.config.ts` は `headless: true` を明示し、`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` を指定できます。`PLAYWRIGHT_IGNORE_DISABLE_EXTENSIONS=1` のときだけ `--disable-extensions` を除外します。通常Chromeをこの設定で起動したE2E反復42件は合格しました。
 - **未実施**: 同梱サンプルの系列ごとの動作合意と完成系監査。上表の合否は採用先で段階6を経てから記入します。

@@ -112,7 +112,7 @@ class DocCheckRegressionTests(unittest.TestCase):
         lines = path.read_text(encoding="utf-8").splitlines()
         agreement = next(i for i, line in enumerate(lines) if line.startswith("- 合意記録"))
         audit = next(i for i, line in enumerate(lines) if line.startswith("- 完成系監査記録"))
-        end = next(i for i in range(audit + 1, len(lines)) if lines[i].startswith("合意記録の4項目"))
+        end = next(i for i in range(audit + 1, len(lines)) if not lines[i].strip())
 
         replacement = [lines[agreement]]
         for series in agreements:
@@ -327,6 +327,25 @@ class DocCheckRegressionTests(unittest.TestCase):
             ])
 
         self.assert_checker_ok(change)
+
+    def test_unindented_records_are_read(self):
+        def change(root):
+            self.complete_series(root)
+            path = root / "docs" / "usecases" / "UC-1.md"
+            text = path.read_text(encoding="utf-8")
+            text = text.replace("  - UC-1-M / 提示コミット:", "- UC-1-M / 提示コミット:")
+            text = text.replace("    > ", "> ")
+            self.write_utf8(path, text)
+
+        output = self.assert_checker_ok(change)
+        self.assertIn("合意済み 1 本、完成系監査記録あり 1 本、段階6の全構成合格 1 本", output)
+
+    def test_result_outside_vocabulary_is_invalid(self):
+        rows = [("UC-1-M", "6", "本番", "2026-09-21", "verify", "合格（手元）", COMMIT)]
+        self.assert_checker_ng(
+            lambda root: self.complete_series(root, rows=rows),
+            "合否欄は「合格」「不合格」「未検証」のいずれかが必要",
+        )
 
 
 if __name__ == "__main__":
