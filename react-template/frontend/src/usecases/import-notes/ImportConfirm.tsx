@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Navigate, useNavigate } from '@tanstack/react-router';
-import { Alert, Button, Group, List, Stack, Text, Title } from '@mantine/core';
+import { Button, Group, List, Notification, Stack, Text, Title } from '@mantine/core';
 import { useImportMany } from '../../features/notes/queries.ts';
 import { ErrorNotice } from '../../shared/ErrorNotice.tsx';
 import { useImportDialogue } from './ImportDialogue.tsx';
@@ -11,11 +11,11 @@ export function ImportConfirm() {
     const [count, setCount] = useState<number | null>(null);
     if (count !== null)
         return <section className="panel">
-        <Alert color="teal" role="status">{count}件を登録しました</Alert>
+        <Notification color="teal" role="status" withCloseButton={false} withBorder>{count}件を登録しました</Notification>
         <Button onClick={() => void navigate({ to: "/notes" })} mt="lg">メモ一覧へ</Button>
         </section>;
     if (!state.preview)
-        return <Navigate to="/import/"/>;
+        return <Navigate to="/import"/>;
     async function submit() {
         try {
             const result = await commit.mutateAsync(state.input);
@@ -33,7 +33,7 @@ export function ImportConfirm() {
     <ErrorNotice error={commit.error}/>
     <Group>
     <Button loading={commit.isPending} onClick={() => void submit()}>一括登録する</Button>
-    <Button onClick={() => void navigate({ to: "/import/" })} variant="default" disabled={commit.isPending}>入力に戻る</Button>
+    <Button onClick={() => void navigate({ to: "/import" })} variant="default" disabled={commit.isPending}>入力に戻る</Button>
     </Group>
     </Stack>
     </section>;

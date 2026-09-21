@@ -59,11 +59,48 @@ class DocCheckRegressionTests(unittest.TestCase):
         cls.write_utf8(path, path.read_text(encoding="utf-8").rstrip() + "\n\n" + text + "\n")
 
     @classmethod
+    def write_design_docs(cls, root, files):
+        for name, text in files.items():
+            cls.write_utf8(root / "docs" / "design" / name, text)
+
+    @classmethod
     def write_extra(cls, root, relative, text):
         cls.write_utf8(root / relative, text.rstrip() + "\n")
 
     def test_template_is_clean(self):
         self.assert_checker_ok()
+
+    def test_reports_all_ucp_documents_but_not_other_design_documents(self):
+        def change(root):
+            self.write_design_docs(root, {
+                "UCP-1.md": "# UCP-1. 最初のパターン\n\n# UCP-88. 本文中の見出し\n",
+                "UCP-2.md": "# UCP-2. 次のパターン\n",
+            })
+            data_path = root / "docs" / "design" / "data.md"
+            self.write_utf8(
+                data_path,
+                "# UCP-99. 対象外ファイルの見出し\n\n"
+                + data_path.read_text(encoding="utf-8"),
+            )
+            architecture_path = root / "docs" / "architecture.md"
+            self.write_utf8(
+                architecture_path,
+                architecture_path.read_text(encoding="utf-8")
+                + "\n### UCP-99. 旧形式のパターン\n",
+            )
+
+        output = self.assert_checker_ok(change)
+        self.assertIn("docs/design/ の UCP 文書に 2 件", output)
+        self.assertNotIn("architecture.md に", output)
+
+    def test_broken_link_in_design_document_is_detected(self):
+        def change(root):
+            self.write_design_docs(
+                root,
+                {"UCP-1.md": "# UCP-1. パターン\n\n[存在しない設計](missing.md)\n"},
+            )
+
+        self.assert_checker_ng(change, "UCP-1.md", "リンク先が存在しない")
 
     def test_adr_directory_and_typical_decision_file_are_rejected(self):
         def change(root):

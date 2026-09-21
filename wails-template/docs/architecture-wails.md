@@ -1,6 +1,6 @@
 # Wailsアーキテクチャ
 
-[architecture.md](architecture.md) の Wails 固有の構成を補足する文書です。プロダクト固有のシステム構成、実現パターン、データ設計、設計上の制約は同書に記録し、本書への転記は行いません。
+[architecture.md](architecture.md) の Wails 固有の構成を補足する文書です。プロダクト固有のシステム構成は同書、実現パターンは `design/UCP-n.md`、保存方式・データ定義は [データ設計](design/data.md) に記録し、本書への転記は行いません。
 
 ## 1. 構成と責務
 
@@ -47,13 +47,26 @@ Query は機能・取得条件ごとに定義し、ユースケース間で共�
 
 仕様確認用モックは画面・対話制御・Query を本番と共用し、Vite のモジュール参照設定（`@notes-service`）で差し替えます。契約は生成型と共有し、既定は実処理とします。固定データの移動・削除とテスト作成時点は [モック標準](standards/mock-driven-development.md) に従います。
 
+合成点は機能領域（Go の Service）ごとに1つの参照名です。新しい機能領域 `<name>` の確認用モックを作るときは、次の4箇所を揃えます。
+
+| 場所 | 追加内容 |
+| --- | --- |
+| `frontend/vite.config.ts` | `@<name>-service` の alias。`WAILS_FRONTEND_MODE=mock` のとき固定データ、それ以外は `bindings/.../internal/<name>/service.ts` |
+| `frontend/tsconfig.json` | 同名の `paths` を実処理側へ向ける（型検査は常に実契約で行う） |
+| `frontend/eslint.config.mjs` | `usecases/`・`shared/` からの直接 import 禁止対象に `@<name>-service` と `@bindings/**/<name>/service` を追加 |
+| `frontend/tests/fixtures/<name>.ts` | 生成型を import し、`CancellablePromise` を返す同名の関数だけを持つ固定データ。業務ロジックや永続化は再実装しない |
+
+`features/<name>/queries.ts` は `@<name>-service` からのみ Service を import します。実処理へ切り替えた後は固定データを削除または移動し、alias の分岐だけを残します。同梱の `tests/fixtures/notes.ts` はこの機構を示す試験用データです。
+
 検証は Playwright による実処理 E2E を中心とします。ブラウザ確認は Wails server build、ネイティブ操作や環境依存動作は Windows 実機で確認します。Vitest・React Testing Library・Go 標準テストは必要なリスクを補います。
 
 ## 5. 実行とデータ保護
 
 単一インスタンス・単一ウィンドウを既定とします。リソースとバックグラウンド処理は Go の Service が所有します。終了前の未保存確認はフロントエンド、安全な停止判断は Go が担い、終了確定後に停止・解放します。
 
-業務データ・設定・秘密情報は Go 側で管理します。秘密情報は通常の設定と分け、保存形式の変更は明示的な移行で扱います。診断ログは Go の `slog` へ集約し、機密情報を除いて容量制限付きでローカル保存します。
+業務データ・設定・秘密情報は Go 側で管理し、アプリ配置先と分離したユーザー領域に保存します。秘密情報は通常の設定と分け、保存形式の変更は明示的な移行で扱います。読込失敗時に空データで上書き保存しません。
+
+本番 UI は同梱アセットを使用し、外部コンテンツにアプリの権限を与えません。診断ログは Go の `slog` へ集約し、機密情報を除いて容量制限付きでローカル保存します。
 
 ## 6. 配布とアプリ内更新
 

@@ -10,8 +10,4 @@
 
 ## 関連文書
 
-- [ユースケース一覧](docs/project.md#usecases): 各ユースケースの仕様と受け入れ条件への参照
-- [プロジェクト定義](docs/project.md): 要件、確認した事実、実行・検証手順
-- [アーキテクチャ](docs/architecture.md): システム構成、実現パターン、設計上の制約、テーブル設計
-- [文書方針](docs/document-policy.md): 採用標準、モック適用範囲、正本の配置、仕様変更の対象
-- [エージェント行動指針](AGENTS.md): AIエージェントの作業規範
+文書の役割と正本の配置は [文書方針第3節](docs/document-policy.md#sources) を参照します。

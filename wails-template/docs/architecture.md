@@ -24,58 +24,15 @@ flowchart LR
 起動時は設定読込 → Logger・状態管理・機能 Service 生成 → Wails 登録 → ウィンドウ作成の順に行います。終了時は React の未保存確認 → Go の稼働処理確認・終了許可 → 応答受信後の runtime Application.Quit → Service 停止・Logger 解放の順に行います。Go は終了許可後の新規処理を拒否し、WindowClosing と ShouldQuit を同じ確認経路へ接続します。更新適用も、Go が NSIS 起動に成功して終了を許可した応答をフロントエンドが受け取ってから終了を要求します。
 
 <a id="patterns"></a>
-## 3. 実現パターン
+## 3. 実現パターンの適用条件
 
-### UCP-1. 取得・編集・保存
+| 設計 | 適用条件 | 関与コンテナ |
+| --- | --- | --- |
+| [UCP-1. 取得・編集・保存](design/UCP-1.md) | 取得データを下書きとして編集して保存する（UC-1）。 | デスクトップアプリ |
+| [UCP-2. 入力・確認・実行・結果確認](design/UCP-2.md) | 複数画面で入力を確認し、一括処理の結果を確認する（UC-2）。 | デスクトップアプリ |
+| [UCP-3. 検証・引き渡し・外部プロセスによる確定](design/UCP-3.md) | 検証済み更新を外部プロセスへ引き渡し、アプリ終了後に確定する（UC-3）。 | デスクトップアプリ・更新インストーラー |
 
-UC-1 に適用します。役割は `EditNotes/Editor`（下書き）、`features/notes/queries.ts`（取得・更新）、`notes.Service`（検証・保存）です。
-
-```mermaid
-sequenceDiagram
-  actor User as 利用者
-  participant UI as 対話制御
-  participant Q as 機能アクセス
-  participant Go as notes.Service
-  User->>UI: メモを選択
-  UI->>Q: 取得
-  Q->>Go: Get
-  Go-->>UI: 保存済みメモ
-  User->>UI: 入力・保存指示
-  UI->>Q: 下書きを保存
-  Q->>Go: Save
-  Go->>Go: 検証・ファイル置換による確定
-  Go-->>Q: 保存結果 / 変更通知
-  Q-->>UI: 関連Queryの更新
-```
-
-Go のファイル置換成功を結果確定点とします。失敗時は既存データと下書きを保持し、取得結果の再取得で下書きを上書きしません。モック合成点は `frontend/vite.config.ts` の `@notes-service` です。
-
-### UCP-2. 入力・確認・実行・結果確認
-
-UC-2 に適用します。`ImportDialogue` が複数ルート間の状態を所有し、`ImportInput` と `ImportConfirm` を切り替えます。取得には UC-1 と同一の `listNotes` を使用します。
-
-```mermaid
-sequenceDiagram
-  actor User as 利用者
-  participant UI as ImportDialogue
-  participant Q as 機能アクセス
-  participant Go as notes.Service
-  User->>UI: CSV入力・確認指示
-  UI->>Q: PreviewImport
-  Q->>Go: CSV解析
-  Go-->>UI: 取り込み候補
-  User->>UI: 実行指示
-  UI->>Q: Import
-  Q->>Go: CSV・処理ID
-  Go-->>UI: 進捗イベント
-  Go->>Go: 全件を検証して一括確定
-  Go-->>Q: 結果・変更通知
-  Q-->>UI: 結果表示・一覧更新
-```
-
-確定前の失敗や中止では一部行のみの保存は行いません。中止と確定の競合は、一覧の再取得で実状態を確認します。最後の進捗は `GetImportProgress` でも取得できます。モック合成点は UCP-1 と同様です。
-
-UC-3 の未保存確認は、更新画面へ遷移する前に編集・取り込み画面の離脱ブロッカーが行います。更新画面では適用と再起動を確認します。NSIS 起動後は別プロセスとなるため、インストーラーの成功を Go の戻り値で表しません。署名・ハッシュ検証失敗や起動失敗では現在のアプリを維持し、適用失敗は NSIS が通知します。
+永続化の具体的な定義・制約は [データ設計](design/data.md) を参照します。
 
 <a id="constraints"></a>
 ## 4. 設計上の制約
@@ -85,6 +42,4 @@ UC-3 の未保存確認は、更新画面へ遷移する前に編集・取り込
 <a id="tables"></a>
 ## 5. 保存設計
 
-DB テーブルや ORM は使用しません。`notes.json`（版番号1、メモ配列、項目: `id`・`title`・`body`・`updatedAt`）を Go で読み込み、一時ファイルへの書き込みと同期を経て置換します（Windows の `MoveFileExW` による置換・完了保証）。読込失敗時に空データで上書き保存しません。
-
-保存先はユーザー領域（アプリ ID 別）とし、インストール先やキャッシュ・ログと分離します。バックアップ・クラウド同期・多プロセス編集は実装しません。
+データベーステーブルや ORM は使用しません。保存方式とデータ定義は [データ設計](design/data.md) に集約します。

@@ -9,12 +9,13 @@
 
 | 項目 | 内容 |
 | --- | --- |
-| 配布元・版 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版19 |
-| 設計・文書標準 | [project-template-design-and-documentation / 版15](standards/design-and-documentation.md) |
-| モック標準 | [project-template-mock-driven-development / 版17](standards/mock-driven-development.md) |
+| 配布元・版 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版21 |
+| 設計・文書標準 | [project-template-design-and-documentation / 版16](standards/design-and-documentation.md) |
+| モック標準 | [project-template-mock-driven-development / 版19](standards/mock-driven-development.md) |
+| 採用元固定コミット | {{SOURCE_COMMIT}} |
 | プロジェクト固有の適用範囲と差分 | {{LOCAL_RULE_DIFFERENCES}} |
 
-採用後、設計・文書標準はすべての変更に適用し、モック標準の適用範囲は第2節で定めます。`standards/` は編集せず、現在有効な固有差分のみを上表に記載します（例: `scripts/doc_check.py` を実行できない環境、Playwright CLI が使えない対象の代替確認手段と適用範囲。差分がなければ「なし」）。確認手段を替えても利用者の承認は省略しません。新版のテンプレートは自動適用しません。
+採用後、設計・文書標準はすべての変更に適用し、モック標準の適用範囲は第2節で定めます。配布元管理の AGENTS・標準2件・`scripts/doc_check.py` は同じ固定コミットから4ファイル一組で更新し、採用元固定コミット欄には実際に採用した40桁SHAを記載します。その他の文書は採用先で管理し、雛形全文は同期しません。現在有効な固有差分のみを上表に記載します（例: `scripts/doc_check.py` を実行できない環境、Playwright CLI が使えない対象の代替確認手段と適用範囲。差分がなければ「なし」）。確認手段を替えても利用者の承認は省略しません。新版のテンプレートは自動適用しません。
 
 <a id="mock-scope"></a>
 ## 2. モック駆動開発の適用範囲
@@ -31,8 +32,10 @@
 | 本書 | 適用する標準、固有差分、モック適用範囲、正本の配置、仕様変更の対象 |
 | `standards/` 各標準 | プロジェクト非依存の開発・文書基準（配布元からの輸入物） |
 | [project.md](project.md) | プロジェクトの目的・制約、ユースケース一覧、確認した事実、実行・検証手順 |
-| `usecases/UC-n.md` | ユースケースごとの定義、シナリオ、受け入れ条件、実現パターンへの参照と差分 |
-| [architecture.md](architecture.md) | システム構成、実現パターン、設計上の制約、テーブル設計 |
+| `usecases/UC-n.md` | ユースケースごとの定義、シナリオ、受け入れ条件、実現パターンへの参照 |
+| [architecture.md](architecture.md) | システム構成、共通方針、実現パターン一覧、設計上の制約 |
+| `design/UCP-n.md` | 実現パターンごとの処理・役割・境界と UC 固有の差分 |
+| [design/data.md](design/data.md) | DB・ファイル等の保存形式と現在のテーブル設計 |
 | `reference/` | 外部システムの実測応答（取得日時・方法・対象版を記録。利用時のみ） |
 | [README.md](../README.md) | プロジェクト概要と参照案内 |
 | [AGENTS.md](../AGENTS.md) | AIエージェントの作業規範 |
@@ -44,6 +47,6 @@
 <a id="agreements"></a>
 ## 4. 仕様変更の対象
 
-採用規則、適用範囲、正本の責務、[プロジェクト定義](project.md) と `usecases/UC-n.md` の要件・制約・仕様・完了条件、および [アーキテクチャ](architecture.md) の構成・設計上の制約・テーブル設計を変更・緩和する場合は [変更手続き](standards/design-and-documentation.md#agreement-changes) に従います。文書再編でも現在有効な仕様を維持し、不要になった記述は削除します。
+採用規則、適用範囲、正本の責務、[プロジェクト定義](project.md) と `usecases/UC-n.md` の要件・制約・仕様・完了条件、および [アーキテクチャ](architecture.md) の構成・設計上の制約と `design/` の処理・保存設計を変更・緩和する場合は [変更手続き](standards/design-and-documentation.md#agreement-changes) に従います。文書再編でも現在有効な仕様を維持し、不要になった記述は削除します。
 
 初期記入欄、検討中の案、モック上の仮定は合意とみなしません。判断に必要な未確定事項は停止点で利用者に確認し、確定するまで仕様・設計として記録しません。

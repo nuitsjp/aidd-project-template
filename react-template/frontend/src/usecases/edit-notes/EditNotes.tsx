@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Badge, Button, Group, Stack, Text, Textarea, TextInput, Title } from '@mantine/core';
+import { Badge, Button, Group, Notification, Stack, Text, Textarea, TextInput, Title } from '@mantine/core';
 import type { Note } from '../../../../contracts/notes.ts';
 import { useNotes, useSaveNote, useRemoveNote } from '../../features/notes/queries.ts';
 import { ErrorNotice } from '../../shared/ErrorNotice.tsx';
@@ -73,7 +73,7 @@ export function EditNotes() {
     <Stack>
     <TextInput label="タイトル" value={title} onChange={e => setTitle(e.currentTarget.value)} disabled={busy} autoComplete="off"/>
     <Textarea label="本文" minRows={7} autosize value={body} onChange={e => setBody(e.currentTarget.value)} disabled={busy}/>
-    <ErrorNotice error={save.error || remove.error}/>{message && <Alert color="teal" role="status">{message}</Alert>}<Group justify="space-between">
+    <ErrorNotice error={save.error || remove.error}/>{message && <Notification color="teal" role="status" withCloseButton={false} withBorder>{message}</Notification>}<Group justify="space-between">
     <Button type="submit" loading={save.isPending} disabled={remove.isPending}>保存する</Button>{selected && <Button color="red" variant="subtle" loading={remove.isPending} disabled={save.isPending} onClick={() => void deleteSelected()}>削除する</Button>}</Group>
     </Stack>
     </form>

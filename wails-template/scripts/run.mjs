@@ -4,6 +4,11 @@ import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, delimiter, resolve } from 'node:path';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const requiredNodeVersion = readFileSync(resolve(root, '.nvmrc'), 'utf8').trim();
+if (process.versions.node !== requiredNodeVersion) {
+  console.error(`Node.js ${requiredNodeVersion} を使用してください（実行中: ${process.versions.node}）。nvm install ${requiredNodeVersion} と nvm use ${requiredNodeVersion} を実行してください。`);
+  process.exit(1);
+}
 process.chdir(root);
 const windows = process.platform === 'win32';
 const tools = resolve('.tools');
