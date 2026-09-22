@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const dotnetGeneratedNames = new Set([
   '.vs', 'bin', 'obj', 'TestResults', 'node_modules', 'dist', 'data', 'release',
-  'coverage', '.e2e-results', 'playwright-report', '.env',
+  'coverage', '.e2e-results', 'playwright-report', '.env', 'mise.local.props',
 ]);
 
 try {

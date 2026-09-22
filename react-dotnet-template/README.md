@@ -19,15 +19,17 @@ cd ../my-react-dotnet-app
 
 生成先では `mise.toml` の `[tools]` が Node.js 24.21.0、.NET SDK 10.0.401、Python 3.13.15 を固定します。生成後のプロジェクトのルートで、内容を確認して `mise trust` を実行し、`mise run setup` でツール、npm 依存、NuGet 依存を導入します。Playwright を使う前に `mise run setup:browser` を一度実行します。
 
+`mise run setup` は PATH 上の mise の実体パスを絶対パスで `backend/mise.local.props` に記録します。このローカルファイルは Git 管理と配布物から除外されます。初回セットアップ時と mise を移動した後に `mise run setup` を再実行してください。
+
 ```powershell
 mise trust
 mise run setup
 mise run setup:browser
 ```
 
-source で作業する場合は、`react-dotnet-template/` を作業ディレクトリにして同じコマンドを実行します。`mise run setup` は初回に必要です。`mise run check:docs` と `mise run verify` の文書検査は、共通の `template/` とこの拡張を一時生成先へ配置して行い、アプリの build・test は source で行います。source で `mise run package` を実行する場合はリポジトリルートの `LICENSE` を使います。
+source で作業する場合は、`react-dotnet-template/` を作業ディレクトリにして同じコマンドを実行します。`mise run setup` は初回セットアップ時と mise を移動した後に必要です。`mise run check:docs` と `mise run verify` の文書検査は、共通の `template/` とこの拡張を一時生成先へ配置して行い、アプリの build・test は source で行います。source で `mise run package` を実行する場合はリポジトリルートの `LICENSE` を使います。
 
-Visual Studio で source の F5 を使うときは、`react-dotnet-template/App.slnx` を開き、`backend/App.csproj` の App をスタートアッププロジェクトに設定して F5 を押します。App が `mise exec` で固定版 Node.js を使って UI をビルドするため、F5 のたびに `npm ci` を実行する必要はありません。採用先では生成先ルートの `App.slnx` を開き、同じスタートアップ設定を行います。
+Visual Studio で source の F5 を使うときは、`react-dotnet-template/App.slnx` を開き、`backend/App.csproj` の App をスタートアッププロジェクトに設定して F5 を押します。`App.csproj` は `backend/mise.local.props` に記録された mise の絶対パスで `mise exec` を実行するため、Visual Studio 起動時の PATH に mise が含まれていなくても F5 を使えます。F5 のたびに `npm ci` を実行する必要はありません。採用先では生成先ルートの `App.slnx` を開き、同じスタートアップ設定を行います。
 
 起動、切り替え、テスト、配備の手順と全タスクの一覧は [プロジェクト定義の実行手順](docs/project.md#commands) に集約しています。コンソールの `mise run dev` は Vite（`127.0.0.1:5173`）と ASP.NET Core（`127.0.0.1:3000`）を実 DB で起動し、Vite の HMR と API プロキシを使います。Visual Studio の F5 と `mise run start` は UI を内包した単一の .NET プロセスを起動します。
 

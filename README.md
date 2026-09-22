@@ -102,7 +102,8 @@ mise run dev
 mise run verify
 ```
 
-`mise run check:docs` と `mise run verify` の文書検査は source の `template/` 不在を補うため、共通の `template/` と拡張側を一時生成先へ配置して実行します。アプリの build・test は source で実行します。Visual Studio で source の `App.slnx` を開く場合もこのディレクトリを起点にし、`backend/App.csproj` の App をスタートアッププロジェクトに設定して F5 を押します。初回の `mise run setup` は必要ですが、F5 のたびに npm の依存を再取得する必要はありません。source で `mise run package` を実行する場合はリポジトリルートの `LICENSE` を使い、生成先では生成先に配置された `LICENSE` を使います。F5 と `mise run start` は単一の .NET プロセスが UI と API を配信し、コンソールの `mise run dev` は Vite（127.0.0.1:5173）の HMR と ASP.NET Core（127.0.0.1:3000）を使います。セットアップ・起動・検証・配備の手順は [React・.NETの実行手順](react-dotnet-template/docs/project.md#commands) に従います。本番の配布物は .NET で起動し、Node.js はビルドとテストに使用します。
+`mise run check:docs` と `mise run verify` の文書検査は source の `template/` 不在を補うため、共通の `template/` と拡張側を一時生成先へ配置して実行します。アプリの build・test は source で実行します。Visual Studio で source の `App.slnx` を開く場合もこのディレクトリを起点にし、`backend/App.csproj` の App をスタートアッププロジェクトに設定して F5 を押します。セットアップ完了後は F5 のたびに npm の依存を再取得する必要はありません。source で `mise run package` を実行する場合はリポジトリルートの `LICENSE` を使い、生成先では生成先に配置された `LICENSE` を使います。F5 と `mise run start` は単一の .NET プロセスが UI と API を配信し、コンソールの `mise run dev` は Vite（127.0.0.1:5173）の HMR と ASP.NET Core（127.0.0.1:3000）を使います。セットアップ・起動・検証・配備の手順は [React・.NETの実行手順](react-dotnet-template/docs/project.md#commands) に従います。本番の配布物は .NET で起動し、Node.js はビルドとテストに使用します。
+`mise run setup` は PATH 上の mise の実体パスを絶対パスで `backend/mise.local.props` に記録します。このローカルファイルは Git と配布物に含めません。初回セットアップ時と mise を移動した後に `mise run setup` を再実行してください。`App.csproj` は記録した mise の絶対パスで UI をビルドするため、Visual Studio 起動時の PATH に依存しません。
 
 ## 3. 初期セットアップと最初のユースケース
 

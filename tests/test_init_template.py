@@ -9,7 +9,7 @@ from pathlib import Path
 SOURCE = Path(__file__).resolve().parents[1]
 KINDS = ("wails", "react", "react-dotnet")
 DOTNET_GENERATED_NAMES = {".vs", "bin", "obj", "TestResults", "node_modules", "dist", "data",
-                          "release", "coverage", ".e2e-results", "playwright-report", ".env"}
+                          "release", "coverage", ".e2e-results", "playwright-report", ".env", "mise.local.props"}
 
 
 class InitTemplateTests(unittest.TestCase):
@@ -42,7 +42,7 @@ class InitTemplateTests(unittest.TestCase):
                 self.assertEqual(actual.keys(), expected.keys())
                 self.assertFalse((destination / ".vs").exists())
                 if kind == "react-dotnet":
-                    for name in ("backend/bin", "backend/obj", "backend/data", "data", ".env"):
+                    for name in ("backend/bin", "backend/obj", "backend/data", "backend/mise.local.props", "data", ".env"):
                         self.assertFalse((destination / name).exists(), name)
                 for name, content in expected.items():
                     self.assertEqual(actual[name], content, str(name))

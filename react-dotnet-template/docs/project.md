@@ -40,9 +40,9 @@ mise trust
 mise run setup
 ```
 
-`mise run setup` は `mise install`、npm 依存の `ci`、`.env` の作成、ルートツリーの生成、`dotnet restore App.slnx --locked-mode` を行います。`package-lock.json` と各 .NET プロジェクトの `packages.lock.json` を同梱します。初回の `mise run setup` は source と生成先のどちらでも必要ですが、F5 は npm の依存取得を行いません。依存更新時などに setup を再実行する場合は npm の依存定義とロックを併せて更新し、NuGet は `.csproj` の版を変更してロックを更新します。更新後は `mise run setup` と `mise run verify` で確認します。採用後の依存とロックは採用先で管理します。
+`mise run setup` は `mise install`、npm 依存の `ci`、`.env` の作成、ルートツリーの生成、`dotnet restore App.slnx --locked-mode` を行い、PATH 上の mise の実体パスを絶対パスで `backend/mise.local.props` に記録します。このローカルファイルは Git 管理と配布物から除外されます。`mise run setup` は source と生成先の初回セットアップ時に必要で、mise を移動した後も再実行してください。F5 は npm の依存取得を行いません。依存更新時などに setup を再実行する場合は npm の依存定義とロックを併せて更新し、NuGet は `.csproj` の版を変更してロックを更新します。更新後は `mise run setup` と `mise run verify` で確認します。採用後の依存とロックは採用先で管理します。
 
-Visual Studio で F5 を使う場合は `App.slnx` を開き、`backend/App.csproj` の App をスタートアッププロジェクトに設定します。採用先では生成先ルートの `App.slnx`、source では `react-dotnet-template/App.slnx` を開きます。source の場合はリポジトリのルートから拡張ディレクトリへ移動して `mise trust` と初回の `mise run setup` を完了してから、Visual Studio でその `App.slnx` を開いてください。既存の `.suo` に保存された利用者設定がソリューションのプロジェクト順より優先されるため、App の選択を確認してください。frontend（`frontend/Frontend.esproj`）はソリューションの表示用であり、依存取得や UI ビルドを所有しません。App の UI ビルドは `mise exec` で固定版 Node.js を選択します。mise 導入前から Visual Studio を開いていた場合は再起動し、`mise` コマンドを PATH から実行できる状態にしてください。F5 のたびに npm の依存を再取得する必要はありません。
+Visual Studio で F5 を使う場合は `App.slnx` を開き、`backend/App.csproj` の App をスタートアッププロジェクトに設定します。採用先では生成先ルートの `App.slnx`、source では `react-dotnet-template/App.slnx` を開きます。source の場合はリポジトリのルートから拡張ディレクトリへ移動して `mise trust` と初回の `mise run setup` を完了してから、Visual Studio でその `App.slnx` を開いてください。既存の `.suo` に保存された利用者設定がソリューションのプロジェクト順より優先されるため、App の選択を確認してください。frontend（`frontend/Frontend.esproj`）はソリューションの表示用であり、依存取得や UI ビルドを所有しません。`App.csproj` は `backend/mise.local.props` に記録された mise の絶対パスで `mise exec` を実行し、固定版 Node.js を選択します。Visual Studio 起動時の PATH に mise を追加する必要はありません。F5 のたびに npm の依存を再取得する必要はありません。
 
 F5 は `backend/Properties/launchSettings.json` の App プロファイルで `backend/App.csproj` を起動します。App が React をビルドして静的ファイルを配置し、単一の .NET プロセスで UI と API を配信します。固定の URL は `http://127.0.0.1:3000/notes` です。ソリューションの frontend プロジェクトに依存取得や事前の UI ビルドをさせる必要はありません。
 
