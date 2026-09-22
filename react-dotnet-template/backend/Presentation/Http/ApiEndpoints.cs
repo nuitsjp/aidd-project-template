@@ -1,8 +1,12 @@
+using Aidd.ReactDotnet.Infrastructure.Notifications;
+using Aidd.ReactDotnet.Infrastructure.Configuration;
+using Aidd.ReactDotnet.Infrastructure.Authentication;
+using Aidd.ReactDotnet.Application.Authentication;
+using Aidd.ReactDotnet.Domain;
 using System.Threading.Channels;
 using Aidd.ReactDotnet.Features.Notes;
-using Aidd.ReactDotnet.Shared;
 
-namespace Aidd.ReactDotnet.Http;
+namespace Aidd.ReactDotnet.Presentation.Http;
 
 internal static class ApiEndpoints
 {
@@ -34,18 +38,12 @@ internal static class ApiEndpoints
         app.MapGet("/api/notes", (HttpRequest request) => Results.Ok(notes.List(RequireUser(identity, request).Id)));
         app.MapGet("/api/notes/{id}", (string id, HttpRequest request) =>
         {
-            if (!JsonInput.IsUuid(id))
+            if (!JsonRequest.IsUuid(id))
             {
                 throw AppFaultException.Validation();
             }
 
             return Results.Ok(notes.Get(RequireUser(identity, request).Id, id));
-        });
-        app.MapPost("/api/notes/save", async (HttpContext context) =>
-        {
-            var user = RequireUser(identity, context.Request);
-            var input = await JsonInput.ReadSaveNote(context.Request, context.RequestAborted);
-            return Results.Ok(notes.Save(user.Id, input));
         });
         app.MapPost("/api/notes/remove", async (HttpContext context) =>
         {

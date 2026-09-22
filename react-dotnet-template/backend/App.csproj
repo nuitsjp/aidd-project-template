@@ -10,10 +10,11 @@
     <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Dapper" Version="2.1.86" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.12" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Shared/Migrations/*.sql" LogicalName="App.Migrations.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="Infrastructure/Persistence/Migrations/*.sql" LogicalName="App.Migrations.%(Filename)%(Extension)" />
   </ItemGroup>
   <Target Name="BuildFrontend" BeforeTargets="PrepareForBuild" Condition="'$(DesignTimeBuild)' != 'true' and '$(SkipFrontendBuild)' != 'true'">
     <Error Condition="'$(MiseExecutable)' == '' or !Exists('$(MiseExecutable)')" Text="miseの実体パスが未設定または無効です。プロジェクトのルートで mise run setup を実行してください。" />

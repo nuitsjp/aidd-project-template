@@ -1,5 +1,6 @@
+using Aidd.ReactDotnet.Infrastructure.Persistence;
+using Aidd.ReactDotnet.Infrastructure.Notifications;
 using Aidd.ReactDotnet.Features.Notes;
-using Aidd.ReactDotnet.Shared;
 
 namespace Aidd.ReactDotnet.Tests;
 
@@ -17,6 +18,7 @@ internal sealed class TestDatabase : IDisposable
         EnsureUser("bob", "Bob");
         Notifications = new ChangeNotifications(NotificationErrors.Add);
         Notes = new NotesService(Path, Notifications, NotificationErrors.Add);
+        Save = new SaveNote(Path, Notifications, NotificationErrors.Add);
     }
 
     internal string Path { get; }
@@ -24,6 +26,8 @@ internal sealed class TestDatabase : IDisposable
     internal ChangeNotifications Notifications { get; }
 
     internal NotesService Notes { get; set; }
+
+    internal SaveNote Save { get; set; }
 
     internal List<Exception> NotificationErrors { get; } = [];
 

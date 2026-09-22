@@ -8,8 +8,9 @@
 | --- | --- | --- |
 | 対話 | 入力、下書き、失敗時の再入力 | `frontend/src/usecases/edit-notes/EditNotes.tsx` |
 | 機能アクセス | Query、mutation、変更通知の購読 | `frontend/src/features/notes/queries.ts` |
-| HTTP 境界 | JSON 入出力、利用者、公開エラーの検証 | `backend/http/ApiEndpoints.cs` |
-| メモ機能 | 所有者条件、版検査、SQL 確定 | `backend/features/notes/NotesService.cs` |
+| 保存 API | HTTP 受付、入力検証、所有者条件、版検査、SQL 確定 | `backend/Features/Notes/SaveNote.cs` |
+| その他の HTTP 境界 | JSON 入出力、利用者、公開エラーの検証 | `backend/Presentation/Http/ApiEndpoints.cs` |
+| 取得・削除 | 所有者条件、版検査、SQL 確定 | `backend/Features/Notes/NotesService.cs` |
 
 ```mermaid
 sequenceDiagram
@@ -17,7 +18,7 @@ sequenceDiagram
   participant D as 対話
   participant F as 機能アクセス
   participant H as HTTP JSON
-  participant S as NotesService
+  participant S as SaveNote
   participant DB as SQLite
   U->>D: 編集して保存
   D->>F: 下書きを保存
@@ -32,6 +33,6 @@ sequenceDiagram
   D-->>U: 保存完了
 ```
 
-状態更新主体および結果確定点は `NotesService` の COMMIT です。失敗時はトランザクションをロールバックして下書きを維持します。再取得や SSE の失敗で確定済み保存を失敗扱いに変更しません。
+保存の状態更新主体および結果確定点は `SaveNote` の COMMIT です。失敗時はトランザクションをロールバックして下書きを維持します。再取得や SSE の失敗で確定済み保存を失敗扱いに変更しません。
 
 公開エラーは `{appError:{code,message,fieldErrors?}}` の形で返します。モック境界と合成点は [アーキテクチャ](../architecture.md) の UI→API の定義に従います。「メモを作成・編集して保存する」固有の逸脱はありません。

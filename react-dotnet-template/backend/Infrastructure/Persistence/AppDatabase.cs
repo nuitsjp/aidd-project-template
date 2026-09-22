@@ -1,6 +1,7 @@
+using Dapper;
 using Microsoft.Data.Sqlite;
 
-namespace Aidd.ReactDotnet.Shared;
+namespace Aidd.ReactDotnet.Infrastructure.Persistence;
 
 internal static class AppDatabase
 {
@@ -14,13 +15,11 @@ internal static class AppDatabase
         var absolute = Path.GetFullPath(path);
         Directory.CreateDirectory(Path.GetDirectoryName(absolute)!);
         using var connection = OpenConnection(absolute);
-        Execute(connection, "PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;");
-        Execute(connection, "BEGIN IMMEDIATE;");
+        connection.Execute("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;");
+        BeginImmediate(connection);
         try
         {
-            using var versionCommand = connection.CreateCommand();
-            versionCommand.CommandText = "PRAGMA user_version";
-            var version = Convert.ToInt32(versionCommand.ExecuteScalar());
+            var version = connection.ExecuteScalar<int>("PRAGMA user_version;");
             if (version is < 0 or > 1)
             {
                 throw new InvalidOperationException("未対応のDBスキーマです。");
@@ -31,18 +30,24 @@ internal static class AppDatabase
                 using var stream = typeof(AppDatabase).Assembly.GetManifestResourceStream("App.Migrations.001-notes.sql")
                     ?? throw new InvalidOperationException("DB migrationが見つかりません。");
                 using var reader = new StreamReader(stream);
-                Execute(connection, reader.ReadToEnd());
-                Execute(connection, "PRAGMA user_version=1;");
+                connection.Execute(reader.ReadToEnd());
+                connection.Execute("PRAGMA user_version=1;");
             }
 
-            Execute(connection, "COMMIT;");
+            Commit(connection);
         }
         catch
         {
-            Execute(connection, "ROLLBACK;");
+            Rollback(connection);
             throw;
         }
     }
+
+    internal static void BeginImmediate(SqliteConnection connection) => connection.Execute("BEGIN IMMEDIATE;");
+
+    internal static void Commit(SqliteConnection connection) => connection.Execute("COMMIT;");
+
+    internal static void Rollback(SqliteConnection connection) => connection.Execute("ROLLBACK;");
 
     internal static SqliteConnection OpenConnection(string path)
     {
@@ -56,7 +61,7 @@ internal static class AppDatabase
         try
         {
             connection.Open();
-            Execute(connection, "PRAGMA foreign_keys=ON; PRAGMA busy_timeout=2000; PRAGMA synchronous=FULL;");
+            connection.Execute("PRAGMA foreign_keys=ON; PRAGMA busy_timeout=2000; PRAGMA synchronous=FULL;");
             return connection;
         }
         catch
@@ -97,17 +102,8 @@ internal static class AppDatabase
     internal static DatabaseCheck Check(string path)
     {
         using var connection = OpenReadOnly(Path.GetFullPath(path));
-        using var versionCommand = connection.CreateCommand();
-        versionCommand.CommandText = "PRAGMA user_version";
-        var version = Convert.ToInt32(versionCommand.ExecuteScalar());
-        using var checkCommand = connection.CreateCommand();
-        checkCommand.CommandText = "PRAGMA quick_check";
-        using var reader = checkCommand.ExecuteReader();
-        var results = new List<string>();
-        while (reader.Read())
-        {
-            results.Add(reader.GetString(0));
-        }
+        var version = connection.ExecuteScalar<int>("PRAGMA user_version;");
+        var results = connection.Query<string>("PRAGMA quick_check;").AsList();
 
         return new DatabaseCheck(version, results);
     }
@@ -124,7 +120,7 @@ internal static class AppDatabase
         try
         {
             connection.Open();
-            Execute(connection, "PRAGMA busy_timeout=2000;");
+            connection.Execute("PRAGMA busy_timeout=2000;");
             return connection;
         }
         catch
@@ -132,13 +128,6 @@ internal static class AppDatabase
             connection.Dispose();
             throw;
         }
-    }
-
-    private static void Execute(SqliteConnection connection, string sql)
-    {
-        using var command = connection.CreateCommand();
-        command.CommandText = sql;
-        command.ExecuteNonQuery();
     }
 }
 

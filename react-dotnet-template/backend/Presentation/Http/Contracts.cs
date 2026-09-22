@@ -1,8 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Aidd.ReactDotnet.Shared;
-
-internal sealed record Principal(string Id, string Name);
+namespace Aidd.ReactDotnet.Presentation.Http;
 
 internal sealed record PublicAppError(
     string Code,

@@ -1,4 +1,5 @@
-using Aidd.ReactDotnet.Shared;
+using Aidd.ReactDotnet.Infrastructure.Persistence;
+using Aidd.ReactDotnet.Infrastructure.Configuration;
 using Microsoft.Data.Sqlite;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -54,7 +55,7 @@ public sealed class DatabaseAndConfigTests
     public void BackupCopiesCommittedWalStateAndPassesQuickCheck()
     {
         using var fixture = new TestDatabase();
-        fixture.Notes.Save("alice", new Aidd.ReactDotnet.Features.Notes.SaveNote(null, null, "backup", "copy"));
+        fixture.Save.Execute("alice", new Aidd.ReactDotnet.Features.Notes.SaveNote.Input(null, null, "backup", "copy"));
         var backup = Path.Combine(Path.GetDirectoryName(fixture.Path)!, "backup.sqlite");
         AppDatabase.Backup(fixture.Path, backup);
         var check = AppDatabase.Check(backup);

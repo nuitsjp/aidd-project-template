@@ -25,6 +25,11 @@
           "Microsoft.Testing.Extensions.TrxReport": "2.4.1"
         }
       },
+      "Dapper": {
+        "type": "Transitive",
+        "resolved": "2.1.86",
+        "contentHash": "v5wQfl9GfHhfTeFhorWTefa8c1Ev4HO8VF8i8wbSdZkq+P/az+1DTcqpkz8s9lMGyFf9kvoeJ+b2ABShW4cuIA=="
+      },
       "Microsoft.ApplicationInsights": {
         "type": "Transitive",
         "resolved": "2.23.0",
@@ -180,6 +185,7 @@
       "app": {
         "type": "Project",
         "dependencies": {
+          "Dapper": "[2.1.86, )",
           "Microsoft.Data.Sqlite": "[10.0.12, )"
         }
       }

@@ -1,8 +1,12 @@
+using Aidd.ReactDotnet.Presentation.Http;
+using Aidd.ReactDotnet.Infrastructure.Persistence;
+using Aidd.ReactDotnet.Infrastructure.Notifications;
+using Aidd.ReactDotnet.Infrastructure.Configuration;
+using Aidd.ReactDotnet.Infrastructure.Authentication;
+using Aidd.ReactDotnet.Domain;
 using System.Net;
 using System.Text.Json;
 using Aidd.ReactDotnet.Features.Notes;
-using Aidd.ReactDotnet.Http;
-using Aidd.ReactDotnet.Shared;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 
@@ -161,6 +165,7 @@ public static class Program
             await next(context);
         });
 
+        new SaveNote(config.DatabasePath, notifications, error => app.Logger.LogWarning(error, "変更通知に失敗しました")).Map(app, identity);
         ApiEndpoints.Map(app, config, identity, notes, notifications, app.Lifetime.ApplicationStopping);
         app.UseDefaultFiles();
         app.UseStaticFiles();

@@ -1,10 +1,14 @@
+using Aidd.ReactDotnet.Infrastructure.Persistence;
+using Aidd.ReactDotnet.Application.Authentication;
+using Aidd.ReactDotnet.Domain;
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
+using Dapper;
 using Microsoft.Data.Sqlite;
 
-namespace Aidd.ReactDotnet.Shared;
+namespace Aidd.ReactDotnet.Infrastructure.Authentication;
 
 internal sealed partial class IdentityService
 {
@@ -97,14 +101,10 @@ internal sealed partial class IdentityService
     internal Principal EnsureUser(Principal user)
     {
         using var connection = AppDatabase.OpenConnection(databasePath);
-        using var command = connection.CreateCommand();
-        command.CommandText = """
-            INSERT INTO users(id,name) VALUES($id,$name)
+        connection.Execute("""
+            INSERT INTO users(id,name) VALUES(@id,@name)
             ON CONFLICT(id) DO UPDATE SET name=excluded.name WHERE users.name<>excluded.name
-            """;
-        command.Parameters.AddWithValue("$id", user.Id);
-        command.Parameters.AddWithValue("$name", user.Name);
-        command.ExecuteNonQuery();
+            """, new { id = user.Id, name = user.Name });
         return user;
     }
 

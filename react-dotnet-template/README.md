@@ -44,7 +44,7 @@ Visual Studio で source の F5 を使うときは、`react-dotnet-template/App.
 | [project.md](docs/project.md) | 目的、制約、外部事実、認証・配備・DB 運用、実行手順 |
 | [document-policy.md](docs/document-policy.md) | 適用する標準、固有差分、正本の責務 |
 
-サンプルの UI、タイトル一意制約、文字数制限は参照用仕様です。製品開発時は `backend/features/notes/`、`frontend/src/usecases/`、E2E を製品のユースケースに置き換えます。テンプレート名が残る `package.json`、`frontend/index.html`、`frontend/src/app/Shell.tsx`、`.github/workflows/react-dotnet-template.yml` も製品名へ置き換えます。
+サンプルの UI、タイトル一意制約、文字数制限は参照用仕様です。製品開発時は `backend/Features/Notes/`、`frontend/src/usecases/`、E2E を製品のユースケースに置き換えます。テンプレート名が残る `package.json`、`frontend/index.html`、`frontend/src/app/Shell.tsx`、`.github/workflows/react-dotnet-template.yml` も製品名へ置き換えます。
 
 サンプルの仕様は製品の承認済み仕様として扱いません。導入時は [導入開始手順](https://github.com/nuitsjp/aidd-project-template#3-初期セットアップと最初のユースケース) を確認し、製品固有の仕様を定義します。
 

@@ -1,4 +1,4 @@
-namespace Aidd.ReactDotnet.Shared;
+namespace Aidd.ReactDotnet.Domain;
 
 internal sealed class AppFaultException : Exception
 {

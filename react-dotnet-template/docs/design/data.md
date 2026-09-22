@@ -2,7 +2,7 @@
 
 関連: [アーキテクチャ](../architecture.md)、[UCP-1](UCP-1.md)、[UCP-2](UCP-2.md)。
 
-DB は `DB_PATH` で指定したサーバーの永続領域に配置し、本番・E2E とも同一マイグレーションを使用します。SQL 移行は `backend/Shared/Migrations` に置きます。`Microsoft.Data.Sqlite` で操作ごとに接続を開き、WAL、外部キー制約、有限の busy timeout を有効にします。トランザクションは外部 I/O や利用者の確認待ちを含まない短い同期処理で確定します。
+DB は `DB_PATH` で指定したサーバーの永続領域に配置し、本番・E2E とも同一マイグレーションを使用します。SQL 移行は `backend/Infrastructure/Persistence/Migrations` に置きます。`Microsoft.Data.Sqlite` で操作ごとに接続を開き、WAL、外部キー制約、有限の busy timeout を有効にします。トランザクションは外部 I/O や利用者の確認待ちを含まない短い同期処理で確定します。
 
 ```mermaid
 erDiagram

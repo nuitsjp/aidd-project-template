@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace Aidd.ReactDotnet.Shared;
+namespace Aidd.ReactDotnet.Infrastructure.Configuration;
 
 internal sealed record AppConfig(
     string Host,

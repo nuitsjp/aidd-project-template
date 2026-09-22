@@ -26,7 +26,7 @@ SPA、単一 ASP.NET Core サーバー、同一 origin、SQLite を既定とし�
 
 - **ASP.NET Core / .NET SDK**: .NET SDK 10.0.401 と ASP.NET Core .NET 10 を使用します。`backend/App.csproj` が単一サーバーの実行単位で、UI のビルドと静的ファイルの配置も所有します。ルートの `App.slnx` は `frontend/Frontend.esproj`、バックエンド、バックエンドテストを束ねます。
 - **HTTP JSON / SSE**: ブラウザとサーバーは HTTP JSON の公開エンドポイントで通信し、`/events/notes` は確定後の変更通知に SSE を使用します。エンドポイント、DTO、エラー形状は [React + .NET アーキテクチャ](architecture-react-dotnet.md) に記録します。
-- **SQLite**: `Microsoft.Data.Sqlite` で実 SQLite を操作し、マイグレーションは `backend/Shared/Migrations` に配置します。WAL、外部キー制約、有限の busy timeout を設定し、短い書込みトランザクションで確定します（[SQLite WAL](https://sqlite.org/wal.html)）。
+- **SQLite**: `Microsoft.Data.Sqlite` と Dapper で実 SQLite を操作し、マイグレーションは `backend/Infrastructure/Persistence/Migrations` に配置します。WAL、外部キー制約、有限の busy timeout を設定し、短い書込みトランザクションで確定します（[SQLite WAL](https://sqlite.org/wal.html)）。
 - **公開契約**: ブラウザ側の JSON 型は `contracts/notes.ts`、サーバー側は C# DTO で管理し、境界テストで整合を確認します。
 - **Playwright fixtures**: 開発サーバー形式と配布形式で同じシナリオを実行します。環境生成と破棄を一体化し、fullyParallel と複数 worker を利用します（[fixtures](https://playwright.dev/docs/test-fixtures)）。各 E2E は .NET プロセス、ポート、一時 DB、ブラウザ、Cookie を分離し、独立した Node.js `node:sqlite` 読取専用接続で DB を確認します。
 
@@ -117,7 +117,7 @@ ASP.NET Core サーバーは loopback 限定とします。認証リバースプ
 
 ### DB 運用
 
-マイグレーションは `backend/Shared/Migrations` に配置し、適用済み SQL は変更しません（現行 `user_version=1`）。
+マイグレーションは `backend/Infrastructure/Persistence/Migrations` に配置し、適用済み SQL は変更しません（現行 `user_version=1`）。
 
 ```powershell
 mise run db:backup -- ./backups/manual.sqlite

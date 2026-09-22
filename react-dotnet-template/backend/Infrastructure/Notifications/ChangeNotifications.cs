@@ -1,4 +1,4 @@
-namespace Aidd.ReactDotnet.Shared;
+namespace Aidd.ReactDotnet.Infrastructure.Notifications;
 
 internal sealed class ChangeNotifications
 {

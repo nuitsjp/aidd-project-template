@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | 対話の親 | 段階をまたぐ入力の保持 | `frontend/src/usecases/import-notes/ImportDialogue.tsx` |
 | 入力・確認 | プレビューと最終実行 | `frontend/src/usecases/import-notes/ImportInput.tsx`、`ImportConfirm.tsx` |
-| 共通のメモ機能 | 検証と一括 INSERT | `backend/features/notes/NotesService.cs` |
+| 共通のメモ機能 | 検証と一括 INSERT | `backend/Features/Notes/NotesService.cs` |
 
 ```mermaid
 sequenceDiagram
