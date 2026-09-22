@@ -6,18 +6,18 @@
 
 ## 共通テンプレートと拡張差分の管理
 
-`template/` を技術中立な共通正本、`wails-template/`・`react-template/` を各技術固有の差分とします。初期状態はルートの `mise run init:wails <出力先>` または `mise run init:react <出力先>` で、`template/`、選択した拡張ディレクトリ、ルートの `LICENSE` の順に配置します。同名ファイルは拡張側で全体を上書きし、部分マージや変数展開は行いません（新規ディレクトリへの出力のみを対象とします）。
+`template/` を技術中立な共通正本、`wails-template/`・`react-template/`・`react-dotnet-template/` を各技術固有の差分とします。初期状態はルートの `mise run init:wails <出力先>`、`mise run init:react <出力先>` または `mise run init:react-dotnet <出力先>` で、`template/`、選択した拡張ディレクトリ、ルートの `LICENSE` の順に配置します。同名ファイルは拡張側で全体を上書きし、部分マージや変数展開は行いません（新規ディレクトリへの出力のみを対象とします）。
 
 | 対象 | 管理ルール |
 | --- | --- |
 | `AGENTS.md`、`docs/standards/`、`scripts/doc_check.py`、`.agents/skills/usecase-docs/` | `template/` だけで管理し、拡張側に上書き用ファイルを置かない。採用先では同じ固定コミットから一組で更新する。技術固有の注意は既存の固有文書に記載する。 |
 | `LICENSE` | ルートだけで管理し、生成時に配置する。 |
 | `README.md`、`docs/project.md`、`docs/document-policy.md`、`docs/architecture.md`、`docs/design/`、`docs/usecases/` | 各拡張側で個別管理する。共通版の記入欄で固有の現在の仕様・制約・検証手順を置き換えない。 |
-| 技術固有のコード・設定・`docs/architecture-wails.md`・`docs/architecture-react.md` | 対応する拡張ディレクトリで管理し、生成先に配置する。 |
+| 技術固有のコード・設定・`docs/architecture-wails.md`・`docs/architecture-react.md`・`docs/architecture-react-dotnet.md` | 対応する拡張ディレクトリで管理し、生成先に配置する。 |
 
 共通側を変更した際は、同一変更内で各拡張側への影響を確認します。`project.md` は必須項目・文書構造の変更を必要最小限で反映し、固有内容は維持します。`document-policy.md` は生成物に入る配布版・標準版と適用版を一致させ、適用範囲・固有差分・正本配置・仕様変更の扱いが新しい共通規則と整合するか確認します（記載する版は実際に生成へ使用する版とし、過去のコミットを現在の適用版の代用にしません）。
 
-拡張ディレクトリ単体では実行・配布・文書検査を行わず、生成先で開発・検証して保守変更を正本へ反映します。生成物や依存取得物はコミットしません。生成によってサンプルの仕様合意や未実施の検証が完了したとは扱いません。
+`wails-template/` と `react-template/` は拡張ディレクトリ単体では実行・配布・文書検査を行わず、生成先で開発・検証して保守変更を正本へ反映します。`react-dotnet-template/` はテンプレート開発時に限り、source checkout として拡張ディレクトリ単独で実行できます。source では `mise trust`、`mise run setup`、`mise run setup:browser`、`mise run dev`、`mise run verify`、Visual Studio の F5 を使えます。source の `check:docs` と `verify` は共通の `template/` と拡張側を一時生成先へ配置して文書だけを検査し、アプリの build・test は source で実行します。source の package はルートの `LICENSE` を使います。共通の文書・検査資材を拡張側へ複製せず、採用先では従来どおり生成先の `scripts/doc_check.py` と `LICENSE` を使います。生成物や依存取得物はコミットしません。生成によってサンプルの仕様合意や未実施の検証が完了したとは扱いません。
 
 生成後のプロジェクト文書・実装・設定・DB移行履歴は採用先が管理し、初期雛形との全文同期は行いません。継続更新する規則は既存標準に集約し、必要な書式移行は変更履歴に記載します。依存ロックは再現に必要な配布資材として、生成先で検証したものを正本に保存します。
 
@@ -37,5 +37,5 @@
 - ルート README 第2節の導入手順（PowerShell と bash の両方）を一時ディレクトリで実行し、`template/` の全ファイルと LICENSE が正しく配置されること。
 - `template/` 配下の Markdown 合計行数が 410 行以下であること。
 - テンプレート全文に、他ユースケースへの横展開を許可する記述（「独立した機能」「先行して進め」等）が含まれていないこと。
-- 共通側や共有生成処理を変更した場合は両拡張、拡張固有の差分を変更した場合は対象拡張の初期状態を一時ディレクトリへ生成します。隠しファイルを含む配置、拡張側の上書き、共通ファイルと LICENSE の一致、既存出力先の拒否を確認し、生成先で `python scripts/doc_check.py .` が NG なく通ることを確認します。採用版と固有文書の整合性もレビューします。
-- 拡張の実装を変更した場合は、生成先で Wails は `node scripts/run.mjs verify`、React は `npm run verify` を実行し、実機確認の範囲と分けて報告します（文書・生成のみの変更ではアプリ全体の検証を必須とせず、未実施の検証を明記）。
+- 共通側や共有生成処理を変更した場合は全拡張、拡張固有の差分を変更した場合は対象拡張の初期状態を一時ディレクトリへ生成します。隠しファイルを含む配置、拡張側の上書き、共通ファイルと LICENSE の一致、既存出力先の拒否を確認し、生成先で `python scripts/doc_check.py .` が NG なく通ることを確認します。採用版と固有文書の整合性もレビューします。
+- 拡張の実装を変更した場合は、生成先で Wails は `node scripts/run.mjs verify`、React は `npm run verify`、React・.NET は source で `mise run verify` または生成先で `npm run verify` を実行し、実機確認の範囲と分けて報告します。共通側や生成内容・共通継承の確認は、引き続き生成先で行います（文書・生成のみの変更ではアプリ全体の検証を必須とせず、未実施の検証を明記）。

@@ -1,0 +1,127 @@
+# React + .NET Template のプロジェクト定義
+
+## 1. 目的と範囲
+
+React の対話制御から実 ASP.NET Core（.NET 10）・SQLite への更新までを通す参照実装です。メモの編集と一括登録の 2 つのパターン、および個別 DB による並列 E2E を提供します。
+
+<a id="constraints"></a>
+## 2. 制約・受け入れ条件
+
+SPA、単一 ASP.NET Core サーバー、同一 origin、SQLite を既定とします。各利用者のメモは所有者 ID で分離します。4 worker の E2E において、同一ユーザー・同一タイトルを用いてもテスト間で干渉しないこと、UI から実 HTTP API を経由して実ファイル DB を別接続で検証することを条件とします。
+
+一括登録の上限はサンプルとして 100 件です。SQLite の配置、保存方式、トランザクション境界は [データ設計](design/data.md) に従います。
+
+<a id="usecases"></a>
+## 3. ユースケース一覧
+
+| ユースケース | 主アクター | 目的 | 実装順序 | 実現パターン | モック適用 |
+| --- | --- | --- | --- | --- | --- |
+| [メモを作成・編集して保存する](usecases/メモを作成・編集して保存する/README.md) | 利用者 | メモを作成・編集して保存する | 1 | [UCP-1](design/UCP-1.md) | 対象 |
+| [複数のメモを確認して一括登録する](usecases/複数のメモを確認して一括登録する/README.md) | 利用者 | 複数のメモを確認して一括登録する | 2 | [UCP-2](design/UCP-2.md) | 対象 |
+
+<a id="design"></a>
+## 4. 確認した事実
+
+共通資材の配布元と適用版は [文書方針](document-policy.md#adoption) に従います。直接依存は `package.json` と各 `.csproj`、実行ツールの固定版とタスクは生成先の `mise.toml` に記載します。`mise.toml` の `[tools]` は Node.js 24.21.0、.NET SDK 10.0.401、Python 3.13.15 です。
+
+- **ASP.NET Core / .NET SDK**: .NET SDK 10.0.401 と ASP.NET Core .NET 10 を使用します。`backend/App.csproj` が単一サーバーの実行単位で、UI のビルドと静的ファイルの配置も所有します。ルートの `App.slnx` は `frontend/Frontend.esproj`、バックエンド、バックエンドテストを束ねます。
+- **HTTP JSON / SSE**: ブラウザとサーバーは HTTP JSON の公開エンドポイントで通信し、`/events/notes` は確定後の変更通知に SSE を使用します。エンドポイント、DTO、エラー形状は [React + .NET アーキテクチャ](architecture-react-dotnet.md) に記録します。
+- **SQLite**: `Microsoft.Data.Sqlite` で実 SQLite を操作し、マイグレーションは `backend/Shared/Migrations` に配置します。WAL、外部キー制約、有限の busy timeout を設定し、短い書込みトランザクションで確定します（[SQLite WAL](https://sqlite.org/wal.html)）。
+- **公開契約**: ブラウザ側の JSON 型は `contracts/notes.ts`、サーバー側は C# DTO で管理し、境界テストで整合を確認します。
+- **Playwright fixtures**: 開発サーバー形式と配布形式で同じシナリオを実行します。環境生成と破棄を一体化し、fullyParallel と複数 worker を利用します（[fixtures](https://playwright.dev/docs/test-fixtures)）。各 E2E は .NET プロセス、ポート、一時 DB、ブラウザ、Cookie を分離し、独立した Node.js `node:sqlite` 読取専用接続で DB を確認します。
+
+<a id="commands"></a>
+## 5. 実行・切り替え・検証手順
+
+採用先では生成したプロジェクトのルートを作業ディレクトリとします。テンプレート開発では `react-dotnet-template/` を source の作業ディレクトリとします。どちらも Docker や外部 DB は不要で、`mise.toml` の `[tools]` に固定した Node.js 24.21.0、.NET SDK 10.0.401、Python 3.13.15 を使用します。生成先または source の初回セットアップ前に `mise.toml` の内容を確認して信頼し、ツールと依存を導入します。
+
+```powershell
+mise trust
+mise run setup
+```
+
+`mise run setup` は `mise install`、npm 依存の `ci`、`.env` の作成、ルートツリーの生成、`dotnet restore App.slnx --locked-mode` を行います。`package-lock.json` と各 .NET プロジェクトの `packages.lock.json` を同梱します。初回の `mise run setup` は source と生成先のどちらでも必要ですが、F5 は npm の依存取得を行いません。依存更新時などに setup を再実行する場合は npm の依存定義とロックを併せて更新し、NuGet は `.csproj` の版を変更してロックを更新します。更新後は `mise run setup` と `mise run verify` で確認します。採用後の依存とロックは採用先で管理します。
+
+Visual Studio で F5 を使う場合は `App.slnx` を開き、`backend/App.csproj` の App をスタートアッププロジェクトに設定します。採用先では生成先ルートの `App.slnx`、source では `react-dotnet-template/App.slnx` を開きます。source の場合はリポジトリのルートから拡張ディレクトリへ移動して `mise trust` と初回の `mise run setup` を完了してから、Visual Studio でその `App.slnx` を開いてください。既存の `.suo` に保存された利用者設定がソリューションのプロジェクト順より優先されるため、App の選択を確認してください。frontend（`frontend/Frontend.esproj`）はソリューションの表示用であり、依存取得や UI ビルドを所有しません。App の UI ビルドは `mise exec` で固定版 Node.js を選択します。mise 導入前から Visual Studio を開いていた場合は再起動し、`mise` コマンドを PATH から実行できる状態にしてください。F5 のたびに npm の依存を再取得する必要はありません。
+
+F5 は `backend/Properties/launchSettings.json` の App プロファイルで `backend/App.csproj` を起動します。App が React をビルドして静的ファイルを配置し、単一の .NET プロセスで UI と API を配信します。固定の URL は `http://127.0.0.1:3000/notes` です。ソリューションの frontend プロジェクトに依存取得や事前の UI ビルドをさせる必要はありません。
+
+コンソール開発は次のコマンドで開始します。依存取得先へ組織のプロキシ経由で接続する場合は、実行前に端末の `HTTPS_PROXY` を設定します。値をリポジトリへ保存せず、TLS 検証を無効化しません。
+
+```powershell
+mise run dev
+```
+
+`mise run dev` は Vite（`http://127.0.0.1:5173`）と ASP.NET Core（`http://127.0.0.1:3000`）を起動します。Vite は HMR を提供し、`/api`、`/events`、`/health` の要求を ASP.NET Core へプロキシします。画面は `http://127.0.0.1:5173/notes` で開き、実 DB（既定は `data/app.sqlite`）を使用します。ユーザー選択（Alice/Bob）はローカル参照用であり認証ではありません。共有環境では [認証・配備](#deployment) を設定します。
+
+全タスクの入口は mise です。
+
+| タスク | 内容 |
+| --- | --- |
+| `mise run setup` | 固定ツールの導入、npm 依存、NuGet 依存の復元 |
+| `mise run setup:browser` | Playwright の Chromium を導入 |
+| `mise run dev` | Vite の HMR と ASP.NET Core を実 DB で起動 |
+| `mise run build` | UI をビルドして単一 .NET 配布物へ publish |
+| `mise run build:frontend` | React UI だけをビルド |
+| `mise run build:backend` | UI ビルドを除外して API だけをビルド |
+| `mise run start` | ビルド済みの単一 .NET 配布物を起動 |
+| `mise run typecheck` | ルートツリー生成と TypeScript 型検査 |
+| `mise run lint` | ESLint による検査 |
+| `mise run format` | Prettier による整形 |
+| `mise run check:docs` | Python の文書検査。source では共通の `template/` と拡張側を一時生成先へ配置して文書だけを検査 |
+| `mise run test:frontend` | Vitest の単体テスト |
+| `mise run test:backend` | UI ビルドを除外した .NET テスト |
+| `mise run test:e2e:dev` | バックエンドだけをビルドし、Vite 開発サーバーで E2E |
+| `mise run test:e2e:hosted` | 一体ビルドを行い、単一 .NET 配信で E2E |
+| `mise run verify` | 型、Lint、文書、単体、バックエンド、dev/hosted E2E。source では文書を一時生成先、アプリの build・test を source で検査 |
+| `mise run package` | `verify` 後に配布物を生成 |
+| `mise run db:backup -- <path>` | 実 DB の整合したバックアップを作成 |
+| `mise run db:check [-- <path>]` | 指定 DB（省略時は設定済み DB）を検査 |
+
+`mise run build` は Vite で UI をビルドし、`backend/App.csproj` の publish に含めて `dist/server` を生成します。`mise run start` は同じ配布物を `http://127.0.0.1:3000/notes` で起動します。停止は Ctrl+C とします。配布物には Node.js を含めません。
+
+E2E は同じシナリオを開発サーバー形式と配布形式で切り替えて実行します。初回だけ次を実行してください。
+
+```powershell
+mise run setup:browser
+mise run test:e2e:dev
+mise run test:e2e:hosted
+```
+
+既定は 4 worker です。テストごとの分離、UI 操作後の DB 確認、同一 DB の競合境界は [並列 E2E](architecture-react-dotnet.md#test-boundary) に従います。両モードとも実 HTTP API と実 DB を使用し、テスト失敗時のアーティファクトは `dist/e2e-results-dev/`・`dist/e2e-results-hosted/` と `dist/playwright-report-dev/`・`dist/playwright-report-hosted/` に配置されます。試験 DB は fixture が自動削除します。実データや診断ログはリポジトリへ含めません。
+
+仕様確認用モックが必要な期間のみ、既存のモック標準に従って作成します。本番ビルドでモックを使用せず、実処理へ切り替えた後は固定データを削除し、E2E は実 HTTP API で検証します。
+
+変更後は `mise run verify` を実行し、型検査、Lint、文書、Vitest、.NET 機能テスト、開発サーバー形式 E2E、配布形式 E2E がすべて合格した状態を維持します。
+
+<a id="deployment"></a>
+### 認証・配備
+
+`AUTH_MODE=demo` はローカル参照用の簡易ユーザー選択であり、認証ではありません。
+
+共有サーバー配備時は、配布物の外側に DB を置き、次の環境変数を設定して起動します。
+
+```dotenv
+HOST=127.0.0.1
+PORT=3000
+DB_PATH=../persistent/app.sqlite
+AUTH_MODE=proxy
+PUBLIC_ORIGIN=https://app.example.com
+```
+
+ASP.NET Core サーバーは loopback 限定とします。認証リバースプロキシが全エンドポイントを保護し、クライアントからの `x-authenticated-user` ヘッダーを除去したうえで、検証済みの利用者 ID を付与します。プロキシ側で TLS 終端、SSE バッファリング無効化、適切なタイムアウトを設定します。
+
+配布先で `.env` が自動で読み込まれるとは仮定しません。PowerShell では `$env:HOST='127.0.0.1'` などを設定し、bash では `HOST=127.0.0.1 PORT=3000 DB_PATH=../persistent/app.sqlite AUTH_MODE=proxy PUBLIC_ORIGIN=https://app.example.com dotnet App.dll` のように環境変数を付けて `dotnet App.dll` を起動します。
+
+`mise run package` は `mise run verify` 後に `release/app` を生成し、`dist/server` の内容と `LICENSE` を `release/app` 直下へ配置します。source で実行する場合はリポジトリルートの `LICENSE`、生成先では生成先の `LICENSE` を使用します。配布先には Node.js を配置せず、.NET 10 ASP.NET Core runtime を用意して `dotnet App.dll` を実行します。DB 領域は配布ディレクトリの外側に配置します。
+
+### DB 運用
+
+マイグレーションは `backend/Shared/Migrations` に配置し、適用済み SQL は変更しません（現行 `user_version=1`）。
+
+```powershell
+mise run db:backup -- ./backups/manual.sqlite
+mise run db:check -- ./backups/manual.sqlite
+```
+
+上記の mise タスクは、それぞれ `dotnet App.dll db:backup <path>` と `dotnet App.dll db:check <path>` に引数を渡します。バックアップは整合性のあるスナップショットを作成します。復元時はサーバー停止後、既存 DB と WAL/SHM を退避し、チェック済みバックアップを配置して起動します。

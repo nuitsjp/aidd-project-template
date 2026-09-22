@@ -1,0 +1,16 @@
+node_modules/
+bin/
+obj/
+TestResults/
+.vs/
+dist/
+frontend/dist/
+frontend/src/routeTree.gen.ts
+.env
+data/
+*.sqlite*
+*.log
+.e2e-results/
+playwright-report/
+coverage/
+release/

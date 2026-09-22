@@ -80,6 +80,30 @@ cd ../my-react-app
 
 配置・上書きの規則はWailsと同様です。共通ファイルの継承、固有文書の全体上書き、新規出力先限定で行われ、生成タスクは依存取得やビルドを行いません。`react-template/` 単体をコピー・実行せず、生成先で開発してください。必要な環境と生成後のセットアップ・起動は [Reactの実行手順](react-template/docs/project.md#commands) に従います。
 
+### React・.NETアプリの初期状態を生成する
+
+React・ASP.NET Core・SQLiteの参照実装は [react-dotnet-template/](react-dotnet-template/README.md) に差分として管理しています。React版の画面と参照仕様を基に、単一の.NETサーバーがビルド済みUIとHTTP APIを同じoriginで配信します。Wailsと同じ生成環境で、本リポジトリのルートから実行します。
+
+```powershell
+mise run init:react-dotnet ../my-react-dotnet-app
+cd ../my-react-dotnet-app
+```
+
+`template/` → `react-dotnet-template/` → ルートの `LICENSE` の順に配置します。共通資材の継承、同名ファイルの全体上書き、新規出力先限定の規則は他の拡張と同じです。採用プロジェクトは生成先で開発します。テンプレート開発時は `react-dotnet-template/` を source checkout として単独で開発・検証できます。生成先と source の `mise.toml` は Node.js 24.21.0、.NET SDK 10.0.401、Python 3.13.15 を固定します。全用途の入口は `mise run` です。
+
+source を使う場合は、リポジトリのルートから拡張ディレクトリへ移動して初回だけセットアップします。
+
+```powershell
+Set-Location ./react-dotnet-template
+mise trust
+mise run setup
+mise run setup:browser
+mise run dev
+mise run verify
+```
+
+`mise run check:docs` と `mise run verify` の文書検査は source の `template/` 不在を補うため、共通の `template/` と拡張側を一時生成先へ配置して実行します。アプリの build・test は source で実行します。Visual Studio で source の `App.slnx` を開く場合もこのディレクトリを起点にし、`backend/App.csproj` の App をスタートアッププロジェクトに設定して F5 を押します。初回の `mise run setup` は必要ですが、F5 のたびに npm の依存を再取得する必要はありません。source で `mise run package` を実行する場合はリポジトリルートの `LICENSE` を使い、生成先では生成先に配置された `LICENSE` を使います。F5 と `mise run start` は単一の .NET プロセスが UI と API を配信し、コンソールの `mise run dev` は Vite（127.0.0.1:5173）の HMR と ASP.NET Core（127.0.0.1:3000）を使います。セットアップ・起動・検証・配備の手順は [React・.NETの実行手順](react-dotnet-template/docs/project.md#commands) に従います。本番の配布物は .NET で起動し、Node.js はビルドとテストに使用します。
+
 ## 3. 初期セットアップと最初のユースケース
 
 以下の順序で、最初のユースケース1件を実処理まで通します。作業単位・再開時の確認・停止点は [モック標準](template/docs/standards/mock-driven-development.md#workflow) に従います。
@@ -117,7 +141,7 @@ cd ../my-react-app
 | --- | --- |
 | `AGENTS.md`、`docs/standards/` の2標準、`scripts/doc_check.py`、`.agents/skills/usecase-docs/` のスキルと雛形2件 | 配布元が管理する7ファイル。同じ固定コミットから一組で差し替える。固有規則は `docs/document-policy.md` の差分欄で管理する。 |
 | `README.md`、`docs/project.md`、`docs/architecture.md`、`docs/document-policy.md`、`docs/design/`・ユースケース／シナリオ本文・技術固有文書 | 初回生成後は採用先が管理する。雛形の全文は同期せず、変更履歴にある必須項目の移行だけを適用する。現在の仕様と検証手順を維持する。 |
-| React/Wailsの実装・設定・DB移行履歴 | 初回生成後は採用先が管理する。参照実装の差分は個別に評価する。現在、継続同期する共通コードパッケージは提供しない。 |
+| React/Wails/React・.NETの実装・設定・DB移行履歴 | 初回生成後は採用先が管理する。参照実装の差分は個別に評価する。現在、継続同期する共通コードパッケージは提供しない。 |
 | 外部依存と生成コード | 各プロジェクトで依存定義とロックを更新し、既存の生成・検証コマンドを実行する。生成コードは手でマージしない。最低対応版と検証に使ったツール版は区別する。 |
 
 共通7ファイルは、配布元リポジトリで次を実行して更新できます（Node.jsとGitが必要です）。`OLD_COMMIT_SHA` は文書方針の更新前コミット、`NEW_COMMIT_SHA` は採用する更新後コミットの40桁SHAに置き換え、両コミットを配布元のローカルGitで参照できる状態にします。
@@ -146,6 +170,12 @@ node scripts/update-common.mjs ../my-project OLD_COMMIT_SHA NEW_COMMIT_SHA
 ## 7. 変更履歴
 
 配布版は `template/` の内容が変わるたびに上がります。標準の版は、その標準自体に変更があった場合のみ上がります。
+
+### React・.NET拡張 0.1.0（共通配布版22のまま）
+
+- 変更したファイル: 新設の `react-dotnet-template/`、ルートの `mise.toml`・`scripts/init-template.mjs`・`tests/test_init_template.py`・`AGENTS.md`・`README.md`。
+- 変更点: React版を基にASP.NET Core・SQLiteの参照実装を追加しました。機能サービスは業務判断と保存処理を1ファイルへまとめ、純粋関数を直接呼び、入出力境界だけをインスタンスごとの `Func` で差し替えます。単一.NETサーバーによるUI/API配信、実DBの.NETテスト、プロセスとDBを分離する並列E2E、配布物の生成を提供します。
+- 標準の版: 設計・文書標準17、モック標準20で変更ありません。採用側への影響: 新規の `init:react-dotnet` で利用します。既存React/Wailsプロジェクトの実装や依存定義を置き換える変更ではありません。
 
 ### 版22
 
