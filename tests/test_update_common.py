@@ -13,6 +13,11 @@ MANAGED = (
     "docs/standards/mock-driven-development.md",
     "scripts/doc_check.py",
 )
+SKILL_FILES = (
+    ".agents/skills/usecase-docs/SKILL.md",
+    ".agents/skills/usecase-docs/assets/usecase.md",
+    ".agents/skills/usecase-docs/assets/scenario.md",
+)
 
 
 class CommonUpdateTests(unittest.TestCase):
@@ -30,9 +35,14 @@ class CommonUpdateTests(unittest.TestCase):
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(f"original {name}\n".encode())
         cls.before = cls.snapshot("original")
-        for name in (*MANAGED, "docs/project.md"):
-            (cls.repo / "template" / name).write_bytes(f"updated {name}\n".encode())
+        for name in (*MANAGED, *SKILL_FILES, "docs/project.md"):
+            path = cls.repo / "template" / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(f"updated {name}\n".encode())
         cls.after = cls.snapshot("updated")
+        for name in (*MANAGED, *SKILL_FILES):
+            (cls.repo / "template" / name).write_bytes(f"revised {name}\n".encode())
+        cls.revised = cls.snapshot("revised")
 
     @classmethod
     def tearDownClass(cls):
@@ -77,11 +87,53 @@ class CommonUpdateTests(unittest.TestCase):
         existing = self.contents()
         result = self.update()
         self.assertEqual(result.returncode, 0, result.stderr)
-        for name in MANAGED:
+        for name in (*MANAGED, *SKILL_FILES):
             self.assertEqual((self.project / name).read_bytes(), f"updated {name}\n".encode())
         for name in ("docs/project.md", "app.ts"):
             self.assertEqual((self.project / name).read_bytes(), existing[name])
         self.assertIn(self.after, result.stdout)
+
+    def test_existing_skill_files_are_updated_from_the_same_commit(self):
+        first = self.update()
+        self.assertEqual(first.returncode, 0, first.stderr)
+        result = self.update(before=self.after, after=self.revised)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        for name in (*MANAGED, *SKILL_FILES):
+            self.assertEqual((self.project / name).read_bytes(), f"revised {name}\n".encode())
+
+    def test_new_skill_file_collision_rejects_entire_update(self):
+        path = self.project / SKILL_FILES[-1]
+        path.parent.mkdir(parents=True)
+        path.write_bytes(b"user-owned scenario template\n")
+        existing = self.contents()
+        result = self.update()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(SKILL_FILES[-1], result.stderr)
+        self.assertEqual(self.contents(), existing)
+
+    def test_modified_existing_skill_rejects_entire_update(self):
+        first = self.update()
+        self.assertEqual(first.returncode, 0, first.stderr)
+        (self.project / SKILL_FILES[-1]).write_bytes(b"custom scenario template\n")
+        existing = self.contents()
+        result = self.update(before=self.after, after=self.revised)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(SKILL_FILES[-1], result.stderr)
+        self.assertEqual(self.contents(), existing)
+
+    def test_new_skill_parent_symlink_rejects_entire_update(self):
+        with tempfile.TemporaryDirectory(prefix="external-", dir=self.workspace.name) as outside:
+            link = self.project / ".agents"
+            try:
+                link.symlink_to(outside, target_is_directory=True)
+            except OSError as error:
+                self.skipTest(f"Directory symlinks unavailable: {error}")
+            self.addCleanup(link.unlink)
+            existing = self.contents()
+            result = self.update()
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(self.contents(), existing)
+            self.assertEqual(list(Path(outside).iterdir()), [])
 
     def test_local_change_rejects_entire_update(self):
         (self.project / MANAGED[-1]).write_bytes(b"locally customized checker\n")

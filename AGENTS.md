@@ -10,7 +10,7 @@
 
 | 対象 | 管理ルール |
 | --- | --- |
-| `AGENTS.md`、`docs/standards/`、`scripts/doc_check.py` | `template/` だけで管理し、拡張側に上書き用ファイルを置かない。採用先では同じ固定コミットから一組で更新する。技術固有の注意は既存の固有文書に記載する。 |
+| `AGENTS.md`、`docs/standards/`、`scripts/doc_check.py`、`.agents/skills/usecase-docs/` | `template/` だけで管理し、拡張側に上書き用ファイルを置かない。採用先では同じ固定コミットから一組で更新する。技術固有の注意は既存の固有文書に記載する。 |
 | `LICENSE` | ルートだけで管理し、生成時に配置する。 |
 | `README.md`、`docs/project.md`、`docs/document-policy.md`、`docs/architecture.md`、`docs/design/`、`docs/usecases/` | 各拡張側で個別管理する。共通版の記入欄で固有の現在の仕様・制約・検証手順を置き換えない。 |
 | 技術固有のコード・設定・`docs/architecture-wails.md`・`docs/architecture-react.md` | 対応する拡張ディレクトリで管理し、生成先に配置する。 |

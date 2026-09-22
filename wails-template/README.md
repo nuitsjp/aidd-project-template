@@ -50,12 +50,12 @@ NSIS はアプリ本体、スタートメニュー、アンインストール情
 | 区分 | 対象 |
 | --- | --- |
 | 残す基盤 | `main.go`（Service 登録の骨格）、`internal/desktop`・`appstate`・`fault`・`diagnostics`・`updates`、`cmd/release`、`frontend/src/app`・`shared`・`features/application`・`features/updates`、`usecases/update-app`、`routes/__root.tsx`・`routes/updates.tsx`、`build/`、`scripts/`、`Taskfile.yml` |
-| 置き換えるサンプル | `internal/notes`、`frontend/src/features/notes`、`usecases/edit-notes`・`import-notes`、`routes/notes.tsx`・`routes/import*.tsx`・`routes/index.tsx` の遷移先、`Shell.tsx` のナビゲーションと `subscribeNotes` の購読、`tests/fixtures/notes.ts`、`tests/e2e/usecases.spec.ts`、`vite.config.ts`・`tsconfig.json`・`eslint.config.mjs` の `@notes-service` 設定、`docs/usecases/UC-1〜3.md`、`docs/design/UCP-1.md`・`UCP-2.md`・`data.md` |
+| 置き換えるサンプル | `internal/notes`、`frontend/src/features/notes`、`usecases/edit-notes`・`import-notes`、`routes/notes.tsx`・`routes/import*.tsx`・`routes/index.tsx` の遷移先、`Shell.tsx` のナビゲーションと `subscribeNotes` の購読、`tests/fixtures/notes.ts`、`tests/e2e/usecases.spec.ts`、`vite.config.ts`・`tsconfig.json`・`eslint.config.mjs` の `@notes-service` 設定、`docs/usecases/` の各ユースケースとシナリオ、`docs/design/UCP-1.md`・`UCP-2.md`・`data.md` |
 
 新しい機能領域のモック合成点の作り方は [Wails補足第4節](docs/architecture-wails.md#4-モックと検証境界) を参照します。
 
 採用時は [導入開始手順](https://github.com/nuitsjp/aidd-project-template#3-初期セットアップと最初のユースケース) を確認し、製品固有の内容を定義します。
 
-上表の「残す基盤」も生成後は採用先が管理するコードです。継続同期する対象ではありません。配布元から一組で更新する対象は `AGENTS.md`・標準2件・文書検査器に限り、製品文書・実装・設定・DB移行履歴は上書きしません。採用元コミットと固有差分の扱いは [文書方針](docs/document-policy.md#adoption) に従います。
+上表の「残す基盤」も生成後は採用先が管理するコードです。継続同期する対象ではありません。配布元から一組で更新する対象は `AGENTS.md`・標準2件・文書検査器・`.agents/skills/usecase-docs/` とし、製品文書・実装・設定・DB移行履歴は上書きしません。採用元コミットと固有差分の扱いは [文書方針](docs/document-policy.md#adoption) に従います。
 
 `.github/workflows/windows.yml` は生成プロジェクト用の CI 例です。main への push と pull request で `setup`・`verify`・`build`・`package` を実行し、インストーラーを artifact として保存します。`wails-template/` をチェックアウト上で単独実行する CI ではありません。ライセンスは [MIT](LICENSE) です。

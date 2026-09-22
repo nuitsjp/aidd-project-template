@@ -1,6 +1,6 @@
 import { test, expect } from './fixtures.ts';
 import { signIn, saveFromUI } from './helpers.ts';
-test('UC-2-M 確認前は未保存、確認後に全件をSQLiteへ登録する', async ({ page, app }) => {
+test('複数のメモを確認して一括登録する / 確認したメモを一括登録する 確認前は未保存、確認後に全件をSQLiteへ登録する', async ({ page, app }) => {
     await signIn(page);
     await page.getByRole('link', { name: /一括登録/ }).click();
     await page.getByLabel('タイトル一覧').fill('一件目\n二件目');
@@ -14,7 +14,7 @@ test('UC-2-M 確認前は未保存、確認後に全件をSQLiteへ登録する'
     await page.getByRole('button', { name: 'メモ一覧へ' }).click();
     await expect(page.getByRole('button', { name: '一件目を編集' })).toBeVisible();
 });
-test('UC-2-X1 途中の一意制約違反は先行行もロールバックする', async ({ page, app }) => {
+test('複数のメモを確認して一括登録する / 一括登録の失敗時に全件を取り消す 途中の一意制約違反は先行行もロールバックする', async ({ page, app }) => {
     await signIn(page);
     await saveFromUI(page, '既存', '変更されない');
     await page.getByRole('link', { name: /一括登録/ }).click();

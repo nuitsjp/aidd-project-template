@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('UC-1-M: save a note, reload through Go, and edit the same record', async ({ page }) => {
+test('メモを作成・編集して保存する / メモを作成・編集して保存する: save a note, reload through Go, and edit the same record', async ({ page }) => {
   await page.goto('/#/notes');
   await page.getByRole('link', { name: '新しいメモ' }).click();
   await page.getByLabel('タイトル', { exact: true }).fill('E2E 保存確認');
@@ -30,7 +30,7 @@ test('UC-1-M: save a note, reload through Go, and edit the same record', async (
   await expect(page.getByLabel('本文', { exact: true })).toHaveValue('更新した本文');
 });
 
-test('UC-1-X1: validation and leave guard preserve the draft', async ({ page }) => {
+test('メモを作成・編集して保存する / 保存失敗や離脱時に下書きを保護する: validation and leave guard preserve the draft', async ({ page }) => {
   await page.goto('/#/notes');
   await page.getByRole('link', { name: '新しいメモ' }).click();
   await page.getByLabel('本文', { exact: true }).fill('未保存の内容');
@@ -44,7 +44,7 @@ test('UC-1-X1: validation and leave guard preserve the draft', async ({ page }) 
   await expect(page.getByLabel('本文', { exact: true })).toHaveValue('未保存の内容');
 });
 
-test('UC-2-M: keep input between routes, preview, then atomically import', async ({ page }) => {
+test('CSVの内容を確認して一括登録する / CSVの内容を確認して一括登録する: keep input between routes, preview, then atomically import', async ({ page }) => {
   await page.goto('/#/import');
   const csv = 'title,body\nE2E 取込A,本文A\nE2E 取込B,本文B\n';
   await page.getByLabel('CSVデータ', { exact: true }).fill(csv);

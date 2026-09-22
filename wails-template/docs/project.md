@@ -13,11 +13,11 @@ Windows デスクトップを主対象とします（ブラウザ server build �
 <a id="usecases"></a>
 ## 3. ユースケース一覧
 
-| UC ID | 主アクター | 目的 | 実装順序 | 実現パターン | モック適用 |
+| ユースケース | 主アクター | 目的 | 実装順序 | 実現パターン | モック適用 |
 | --- | --- | --- | --- | --- | --- |
-| [UC-1](usecases/UC-1.md) | 利用者 | メモを作成・編集して保存する | 1 | [UCP-1](design/UCP-1.md) | 対象 |
-| [UC-2](usecases/UC-2.md) | 利用者 | CSVの内容を確認して一括登録する | 2 | [UCP-2](design/UCP-2.md) | 対象 |
-| [UC-3](usecases/UC-3.md) | 利用者 | 新版を確認してアプリを更新する | 3 | [UCP-3](design/UCP-3.md) | 対象 |
+| [メモを作成・編集して保存する](usecases/メモを作成・編集して保存する/README.md) | 利用者 | メモを作成・編集して保存する | 1 | [UCP-1](design/UCP-1.md) | 対象 |
+| [CSVの内容を確認して一括登録する](usecases/CSVの内容を確認して一括登録する/README.md) | 利用者 | CSVの内容を確認して一括登録する | 2 | [UCP-2](design/UCP-2.md) | 対象 |
+| [新版を確認してアプリを更新する](usecases/新版を確認してアプリを更新する/README.md) | 利用者 | 新版を確認してアプリを更新する | 3 | [UCP-3](design/UCP-3.md) | 対象 |
 
 <a id="design"></a>
 ## 4. 確認した事実

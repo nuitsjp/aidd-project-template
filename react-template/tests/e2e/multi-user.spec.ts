@@ -1,6 +1,6 @@
 import { test, expect } from './fixtures.ts';
 import { signIn, saveFromUI } from './helpers.ts';
-test('UC-1-X3 別ユーザーのデータは表示されない', async ({ page, context, app, browser }) => {
+test('メモを作成・編集して保存する / 他者のメモへのアクセスを拒否する 別ユーザーのデータは表示されない', async ({ page, context, app, browser }) => {
     await signIn(page);
     await saveFromUI(page, '所有者別タイトル', 'Aliceの本文');
     const other = await browser.newContext({ baseURL: app.url });
@@ -17,7 +17,7 @@ test('UC-1-X3 別ユーザーのデータは表示されない', async ({ page, 
         await other.close();
     }
 });
-test('UC-1-X4 同じDBの二つの対話では古い版の上書きを拒否する', async ({ page, context, app }) => {
+test('メモを作成・編集して保存する / 更新競合で下書きを維持する 同じDBの二つの対話では古い版の上書きを拒否する', async ({ page, context, app }) => {
     await signIn(page);
     await saveFromUI(page, '競合対象', '初期');
     const second = await context.newPage();
@@ -33,7 +33,7 @@ test('UC-1-X4 同じDBの二つの対話では古い版の上書きを拒否す�
     expect(app.rows()[0]?.body).toBe('先に確定');
     await second.close();
 });
-test('UC-1-M 別タブの確定をSSEで一覧へ反映する', async ({ page, context, app }) => {
+test('メモを作成・編集して保存する / メモを作成・編集して保存する 別タブの確定をSSEで一覧へ反映する', async ({ page, context, app }) => {
     await signIn(page);
     const second = await context.newPage();
     await second.goto('/notes');

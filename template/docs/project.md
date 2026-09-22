@@ -20,13 +20,13 @@
 <a id="usecases"></a>
 ## 3. ユースケース一覧
 
-ユースケースの本文・シナリオ（主成功系列・拡張系列）・受け入れ条件は `usecases/UC-n.md` に集約し、下表から参照します。案の検討・保存は [提示と保存の手順](standards/mock-driven-development.md#discussion) に従います（未着手の UC は本文を作成せず、リンクも付けません）。
+ユースケースの共通事項は `usecases/<名称>/README.md`、シナリオと固有の受け入れ条件は同じディレクトリの `scenarios/<名称>.md` に記載します。案の検討・保存は [提示と保存の手順](standards/mock-driven-development.md#discussion) に従います（未着手のユースケースは下表に名称だけを置き、本文とリンクは作りません）。
 
 ユースケースの単位・系列の分割・モック適用は [モック標準のユースケース分割](standards/mock-driven-development.md#discussion) に従います。
 
-| UC ID | 主アクター | 目的 | 実装順序 | 実現パターン | モック適用 |
+| ユースケース | 主アクター | 目的 | 実装順序 | 実現パターン | モック適用 |
 | --- | --- | --- | --- | --- | --- |
-| [UC-1](usecases/UC-1.md) | {{ACTOR}} | {{GOAL}} | 1 | [UCP-1](design/UCP-1.md) | 対象 |
+| {{USE_CASE_NAME}} | {{ACTOR}} | {{GOAL}} | 1 | [UCP-1](design/UCP-1.md) | 対象 |
 
 <a id="design"></a>
 ## 4. 確認した事実

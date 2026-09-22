@@ -1,6 +1,6 @@
 # AIDD Project Template
 
-配布版: **21**
+配布版: **22**
 
 過剰な設計や文書作成を抑え、動作するモックで仕様合意を形成してから実処理へ接続する「モック駆動開発」のテンプレートです。
 
@@ -14,13 +14,13 @@
 | [AGENTS.md](template/AGENTS.md) | AIエージェントの行動規範（現在地、停止点、文書管理、完了報告） |
 | [docs/document-policy.md](template/docs/document-policy.md) | 適用する標準、モック適用範囲、正本の配置、仕様変更の対象 |
 | [docs/project.md](template/docs/project.md) | 目的・制約、ユースケース一覧、確認した事実、実行・検証手順 |
-| [docs/usecases/UC-1.md](template/docs/usecases/UC-1.md) | ユースケースごとの現在の定義、シナリオ、受け入れ条件 |
+| [.agents/skills/usecase-docs/](template/.agents/skills/usecase-docs/SKILL.md) | 文書作成手順とユースケース・シナリオの雛形。実仕様は `docs/usecases/<名称>/README.md` とその `scenarios/<名称>.md` に作成 |
 | [docs/architecture.md](template/docs/architecture.md) | システム構成、共通方針、実現パターン一覧、設計上の制約 |
 | [docs/design/UCP-1.md](template/docs/design/UCP-1.md) | 実現パターンごとの具体的な処理・役割・境界 |
 | [docs/design/data.md](template/docs/design/data.md) | 保存形式と現在のテーブル設計 |
 | [docs/standards/design-and-documentation.md](template/docs/standards/design-and-documentation.md) | 設計と文書化の基準、先行成果物の範囲、完了基準、変更手続き |
 | [docs/standards/mock-driven-development.md](template/docs/standards/mock-driven-development.md) | 系列ごとの段階とゲート条件、仕掛かり上限、モックの境界 |
-| [scripts/doc_check.py](template/scripts/doc_check.py) | 文書整合の判定6件（リンク、絶対パス、禁止記録・重複本文、UC ID、標準ハッシュ、証跡・行数報告）。Python 3 標準ライブラリのみ |
+| [scripts/doc_check.py](template/scripts/doc_check.py) | 文書整合の判定6件（リンク、絶対パス、禁止記録・重複本文、ユースケース・シナリオ構造、標準ハッシュ、証跡・行数報告）。Python 3 標準ライブラリのみ |
 
 正本の役割は [文書方針](template/docs/document-policy.md#sources) で定め、他の箇所には参照を置きます。現在の仕様・制約・手順のみを維持し、決定経緯・承認履歴・検証実績は配布文書へ保存しません。`docs/standards/` は配布元からの輸入物として編集せず、固有差分は `docs/document-policy.md` 第1節に記載します。
 
@@ -50,7 +50,7 @@ bash での実行例（コピー先が既に存在する場合は `mkdir` が失
 mkdir ../my-project && cp -r template/. ../my-project && cp LICENSE ../my-project && cd ../my-project
 ```
 
-コピー後に `python scripts/doc_check.py` を実行し、リンクとアンカーの整合性を確認します（プロジェクト内で完結して参照するため、配布元リポジトリとの同期設定は不要です）。採用時の記入は第3節から始めます。共通版と各拡張の README にも、この開始手順への案内を残しています。
+コピー後に `python scripts/doc_check.py` を実行し、リンクと文書構造の整合性を確認します。隠しディレクトリ `.agents/skills/usecase-docs/` もコピー対象です。共通版のユースケースは未着手の一覧のみで、本文は合意後に同梱雛形から作成します（雛形は実仕様の検査対象外）。採用時の記入は第3節から始めます。共通版と各拡張の README にも、この開始手順への案内を残しています。
 
 AIエージェントを利用する場合は、プロジェクト側の `AGENTS.md` が読み込まれるよう設定します。ツール固有の設定が必要な場合も規則を複製せず参照にとどめます。例えば Claude Code では、ルートに `@AGENTS.md` と記載した `CLAUDE.md` を配置します（詳細は [公式ドキュメント](https://code.claude.com/docs/en/memory) を参照）。
 
@@ -87,10 +87,10 @@ cd ../my-react-app
 | 順序 | 作業内容 | 完了条件 |
 | --- | --- | --- |
 | 1 | `docs/document-policy.md` に適用する標準の版、モック適用範囲の固有除外、差分を記入 | 採用規則と適用範囲が確定し、状態を「適用済み」に更新 |
-| 2 | `README.md`（概要）、`docs/project.md` 第1・2節（目的、対象、制約、受け入れ条件）、第3節のカタログ表（UC ID、主アクター、目的、実装順序）の案をメッセージで議論し、利用者の確認後に記入 | 解決する問題と対象外を説明でき、UC-1 が決定 |
+| 2 | `README.md`（概要）、`docs/project.md` 第1・2節（目的、対象、制約、受け入れ条件）、第3節のカタログ表（ユースケース名、主アクター、目的、実装順序）の案をメッセージで議論し、利用者の確認後に記入 | 解決する問題と対象外を説明でき、最初のユースケースが決定 |
 | 3 | アーキテクチャを決定づける外部依存の実測を行い、事実を `docs/project.md` 第4節と `docs/reference/` に記録 | 情報源・対象版・確認日が記録されている（該当する外部依存がなければ省略） |
 | 4 | `docs/architecture.md` 第1・2節、パターンの名称と適用条件、第4節の設計上の制約を記入し、会話で全体設計の合意を得る | 利用者が対象範囲の全体設計を確認している |
-| 5 | UC-1 を [モック標準第2節](template/docs/standards/mock-driven-development.md#workflow) の段階1〜6で系列ごとに通す（主成功系列 UC-1-M から着手し、拡張は1本ずつ追加。案の全文はメッセージで議論し、確認後に本文とパターンを保存。テーブル追加・変更時は段階4開始前に設計合意） | 利用者が完成系を承認し、最新コードのテストと実環境検証が合格してモック標準の完了条件を満たす |
+| 5 | 最初のユースケースを [モック標準第2節](template/docs/standards/mock-driven-development.md#workflow) の段階1〜6で系列ごとに通す（主成功から着手し、拡張は1本ずつ追加。案の全文はメッセージで議論し、確認後に同梱雛形でユースケースとシナリオを別ファイルへ保存。テーブル追加・変更時は段階4開始前に設計合意） | 利用者が完成系を承認し、最新コードのテストと実環境検証が合格してモック標準の完了条件を満たす |
 | 6 | 次のユースケースへ順序5を繰り返す（構造変更時は `docs/architecture.md`、処理・保存設計の変更時は対象の `docs/design/` 文書を参照） | 進行中の系列が常に1本以下 |
 
 ### 補足事項
@@ -115,18 +115,18 @@ cd ../my-react-app
 
 | 対象 | 更新方法 |
 | --- | --- |
-| `AGENTS.md`、`docs/standards/` の2標準、`scripts/doc_check.py` | 配布元が管理する4ファイル。同じ固定コミットから一組で差し替える。固有規則は `docs/document-policy.md` の差分欄で管理する。 |
-| `README.md`、`docs/project.md`、`docs/architecture.md`、`docs/document-policy.md`、`docs/design/`・UC本文・技術固有文書 | 初回生成後は採用先が管理する。雛形の全文は同期せず、変更履歴にある必須項目の移行だけを適用する。現在の仕様と検証手順を維持する。 |
+| `AGENTS.md`、`docs/standards/` の2標準、`scripts/doc_check.py`、`.agents/skills/usecase-docs/` のスキルと雛形2件 | 配布元が管理する7ファイル。同じ固定コミットから一組で差し替える。固有規則は `docs/document-policy.md` の差分欄で管理する。 |
+| `README.md`、`docs/project.md`、`docs/architecture.md`、`docs/document-policy.md`、`docs/design/`・ユースケース／シナリオ本文・技術固有文書 | 初回生成後は採用先が管理する。雛形の全文は同期せず、変更履歴にある必須項目の移行だけを適用する。現在の仕様と検証手順を維持する。 |
 | React/Wailsの実装・設定・DB移行履歴 | 初回生成後は採用先が管理する。参照実装の差分は個別に評価する。現在、継続同期する共通コードパッケージは提供しない。 |
 | 外部依存と生成コード | 各プロジェクトで依存定義とロックを更新し、既存の生成・検証コマンドを実行する。生成コードは手でマージしない。最低対応版と検証に使ったツール版は区別する。 |
 
-共通4ファイルは、配布元リポジトリで次を実行して更新できます（Node.jsとGitが必要です）。`OLD_COMMIT_SHA` は文書方針の更新前コミット、`NEW_COMMIT_SHA` は採用する更新後コミットの40桁SHAに置き換え、両コミットを配布元のローカルGitで参照できる状態にします。
+共通7ファイルは、配布元リポジトリで次を実行して更新できます（Node.jsとGitが必要です）。`OLD_COMMIT_SHA` は文書方針の更新前コミット、`NEW_COMMIT_SHA` は採用する更新後コミットの40桁SHAに置き換え、両コミットを配布元のローカルGitで参照できる状態にします。
 
 ```sh
 node scripts/update-common.mjs ../my-project OLD_COMMIT_SHA NEW_COMMIT_SHA
 ```
 
-コマンドは全4ファイルが更新前の原本と一致することを確認してから差し替えます（LFとCRLFの差は許容）。ローカル変更・欠落・不正なコミットがあれば書き込まず停止し、固有文書・コード・文書方針には触れません。採用元が不明な場合は履歴から特定し、原本との差分を確認してから利用します。変更済みファイルを強制上書きする機能はありません。
+コマンドは既存資材が更新前の原本と一致することを確認してから差し替えます（LFとCRLFの差は許容）。更新前コミットに存在しない追加資材は、採用先にも同名ファイルがないことを確認して配置します。全7件を確認し、ローカル変更・既存資材の欠落・追加先の競合・不正なコミットがあれば書き込まず停止します。固有文書・コード・文書方針には触れません。採用元が不明な場合は履歴から特定し、原本との差分を確認してから利用します。変更済みファイルを強制上書きする機能はありません。
 
 差し替え後は採用先で `python scripts/doc_check.py .` を実行し、必要な書式移行を完了してから `docs/document-policy.md` の配布版・標準版・採用元固定コミットを更新します。文書の見出し・表・記録欄が変更される版では、その版の移行手順も必要です。競合しないことだけで仕様や合意の維持を保証したとは扱いません。
 
@@ -146,6 +146,14 @@ node scripts/update-common.mjs ../my-project OLD_COMMIT_SHA NEW_COMMIT_SHA
 ## 7. 変更履歴
 
 配布版は `template/` の内容が変わるたびに上がります。標準の版は、その標準自体に変更があった場合のみ上がります。
+
+### 版22
+
+- 変更したファイル: 共通の `AGENTS.md`・プロジェクト定義・文書方針・2標準・`scripts/doc_check.py`、新設の `.agents/skills/usecase-docs/`、両拡張の文書・E2Eテスト名、ルートの `README.md`・`AGENTS.md`・`mise.toml`・共通更新処理と回帰テスト。旧 `docs/usecases/UC-n.md` は名称ベースの配置へ移行しました。
+- 変更点: ユースケースは `docs/usecases/<名称>/README.md`、主成功・拡張シナリオはその `scenarios/<名称>.md` に分離しました。親には共通事項と個別リンク、子には条件・手順・固有の受け入れ条件を置きます。連番IDを廃止し、名称変更時は参照も更新します。作成用スキルと雛形を同梱し、必須構造と一覧・参照の整合を検査します。共通版は未着手の一覧のみとし、雛形を実仕様に混入させません。UCPの連番と作業の仕掛かり制限は変更しません。
+- 標準の版: 設計・文書標準17、モック標準20。両拡張は0.2.6。
+- 採用側への影響: 共通7ファイルを同じ固定コミットから更新します。既存UC本文から共通事項を親へ、主成功・拡張の条件・動作・受け入れ条件を個別シナリオへ移し、一覧の列を「ユースケース」へ変更します。文書・テストの旧ID参照を名称と新パスへ更新し、旧本文は削除します。未着手項目に本文やリンクは不要です。検査後に文書方針の採用版・固定コミットを更新します。スキル雛形を作成済み仕様へ上書きせず、履歴にある旧ID表記の遡及修正も不要です。
+- 共通配布物の総行数: Markdown 410行（スキル・雛形を含む）、スクリプト721行、合計1131行。
 
 ### 版21
 

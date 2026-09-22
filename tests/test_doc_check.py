@@ -1,4 +1,4 @@
-"""doc_check.py の禁止記録・重複本文判定の回帰テスト。"""
+"""doc_check.py の文書構造・参照・禁止記録判定の回帰テスト。"""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from urllib.parse import quote
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
@@ -69,6 +70,228 @@ class DocCheckRegressionTests(unittest.TestCase):
 
     def test_template_is_clean(self):
         self.assert_checker_ok()
+
+    @classmethod
+    def add_scenario(cls, parent, name, kind="拡張", listed=True):
+        condition = "開始条件" if kind == "主成功" else "分岐条件"
+        path = parent.parent / "scenarios" / (name + ".md")
+        cls.write_utf8(path, "# %s\n\n- 種別: %s\n- UI確認: 要\n\n"
+                       "## %s\n\n利用者が保存を指示する。\n\n"
+                       "## 手順\n\n1. %s。\n\n"
+                       "## 受け入れ条件\n\n処理結果を画面に表示する。\n"
+                       % (name, kind, condition, name))
+        if listed:
+            text = parent.read_text(encoding="utf-8")
+            cls.write_utf8(parent, text.replace("## シナリオ\n", "## シナリオ\n\n"
+                           "- [%s](scenarios/%s.md)\n" % (name, quote(name))))
+        return path
+
+    @classmethod
+    def add_usecase(cls, root, name="メモを保存する"):
+        parent = root / "docs" / "usecases" / name / "README.md"
+        cls.write_utf8(parent, "# %s\n\n## 主アクター\n\n利用者\n\n"
+                       "## 目的\n\n%s。\n\n## シナリオ\n\n"
+                       "## 実現パターン\n\n[UCP-1](../../design/UCP-1.md)\n" % (name, name))
+        cls.add_scenario(parent, "新規メモを保存する", "主成功")
+        project = root / "docs" / "project.md"
+        lines = project.read_text(encoding="utf-8").splitlines()
+        header = next(index for index, line in enumerate(lines)
+                      if line.startswith("| ユースケース |"))
+        lines.insert(header + 2, "| [%s](usecases/%s/README.md) | 利用者 | %s | 1 |"
+                     " [UCP-1](design/UCP-1.md) | 対象 |" % (name, quote(name), name))
+        cls.write_utf8(project, "\n".join(lines) + "\n")
+        return parent
+
+    def test_usecase_creation_and_extension_addition(self):
+        def change(root):
+            parent = self.add_usecase(root)
+            self.add_scenario(parent, "重複するタイトルを拒否する")
+
+        output = self.assert_checker_ok(change)
+        self.assertIn("ユースケース 1 件、シナリオ 2 件", output)
+        self.assertIn("メモを保存する シナリオ 2 本", output)
+
+    def test_names_with_spaces_and_renamed_scenario_links(self):
+        def change(root):
+            parent = self.add_usecase(root, "作業 メモを保存する")
+            original = parent.parent / "scenarios" / "新規メモを保存する.md"
+            renamed = original.with_name("新規 メモを保存する.md")
+            original.rename(renamed)
+            self.write_utf8(renamed, renamed.read_text(encoding="utf-8")
+                            .replace("新規メモを保存する", "新規 メモを保存する"))
+            self.write_utf8(parent, parent.read_text(encoding="utf-8")
+                            .replace(quote("新規メモを保存する"), quote("新規 メモを保存する"))
+                            .replace("[新規メモを保存する]", "[新規 メモを保存する]"))
+
+        self.assert_checker_ok(change)
+
+    def test_renamed_scenario_requires_updated_parent_link(self):
+        def change(root):
+            parent = self.add_usecase(root)
+            original = parent.parent / "scenarios" / "新規メモを保存する.md"
+            renamed = original.with_name("名前を変更したシナリオ.md")
+            original.rename(renamed)
+            self.write_utf8(renamed, renamed.read_text(encoding="utf-8")
+                            .replace("新規メモを保存する", renamed.stem))
+
+        self.assert_checker_ng(change, "リンク先が存在しない", "親のシナリオ一覧に参照がない")
+
+    def test_parent_and_scenario_names_must_match_their_paths(self):
+        for target in ("README.md", "scenarios/新規メモを保存する.md"):
+            with self.subTest(target=target):
+                def change(root, target=target):
+                    parent = self.add_usecase(root)
+                    path = parent.parent / target
+                    text = path.read_text(encoding="utf-8")
+                    self.write_utf8(path, "# 異なる名前\n" + text.split("\n", 1)[1])
+
+                self.assert_checker_ng(change, "先頭見出しは配置名と一致")
+
+    def test_required_sections_are_not_optional_or_empty(self):
+        cases = (
+            ("README.md", "主アクター"), ("README.md", "目的"),
+            ("README.md", "実現パターン"),
+            ("scenarios/新規メモを保存する.md", "開始条件"),
+            ("scenarios/新規メモを保存する.md", "手順"),
+            ("scenarios/新規メモを保存する.md", "受け入れ条件"),
+        )
+        for target, title in cases:
+            with self.subTest(target=target, title=title):
+                def change(root, target=target, title=title):
+                    parent = self.add_usecase(root)
+                    path = parent.parent / target
+                    text = path.read_text(encoding="utf-8")
+                    self.write_utf8(path, text.replace("## " + title, "## 記入漏れ"))
+
+                self.assert_checker_ng(change, "`## %s` は空でない節が1件必要" % title)
+
+    def test_empty_duplicate_and_placeholder_sections_are_rejected(self):
+        cases = (
+            ("## 目的\n\nメモを保存する。", "## 目的\n\n<!-- 未記入 -->", "空でない節"),
+            ("## 目的", "## 目的\n\n目的を記載する。\n\n## 目的", "空でない節"),
+            ("メモを保存する。", "{{GOAL}}", "未記入の {{...}}"),
+        )
+        for old, new, needle in cases:
+            with self.subTest(new=new):
+                def change(root, old=old, new=new):
+                    parent = self.add_usecase(root)
+                    self.write_utf8(parent, parent.read_text(encoding="utf-8").replace(old, new))
+
+                self.assert_checker_ng(change, needle)
+
+    def test_scenario_choice_fields_are_required_and_constrained(self):
+        for old, new in (("- 種別: 主成功", "- 種別: 正常"),
+                         ("- UI確認: 要", "- UI確認: 任意"),
+                         ("- UI確認: 要", ""),
+                         ("- UI確認: 要", "- UI確認: 要\n- UI確認: 不要")):
+            with self.subTest(new=new):
+                def change(root, old=old, new=new):
+                    parent = self.add_usecase(root)
+                    path = parent.parent / "scenarios" / "新規メモを保存する.md"
+                    self.write_utf8(path, path.read_text(encoding="utf-8").replace(old, new))
+
+                self.assert_checker_ng(change, "いずれかを1件記載する")
+
+    def test_extension_requires_its_branch_condition(self):
+        def change(root):
+            parent = self.add_usecase(root)
+            path = self.add_scenario(parent, "タイトル重複を拒否する")
+            self.write_utf8(path, path.read_text(encoding="utf-8").replace("## 分岐条件", "## 開始条件"))
+
+        self.assert_checker_ng(change, "`## 分岐条件` は空でない節が1件必要")
+
+    def test_parent_links_require_complete_unique_own_scenarios(self):
+        cases = ("unlisted", "duplicate", "other-parent", "prose")
+        for case in cases:
+            with self.subTest(case=case):
+                def change(root, case=case):
+                    parent = self.add_usecase(root)
+                    if case == "unlisted":
+                        self.add_scenario(parent, "未掲載シナリオ", listed=False)
+                    elif case == "duplicate":
+                        self.add_scenario(parent, "新規メモを保存する", "主成功")
+                    elif case == "other-parent":
+                        other = self.add_usecase(root, "メモを削除する")
+                        self.write_utf8(parent, parent.read_text(encoding="utf-8").replace(
+                            "## シナリオ\n", "## シナリオ\n\n- [別のユースケースのシナリオ]"
+                            "(../%s/scenarios/%s.md)\n" % (quote(other.parent.name), quote("新規メモを保存する"))))
+                    else:
+                        self.write_utf8(parent, parent.read_text(encoding="utf-8")
+                                        .replace("## シナリオ\n", "## シナリオ\n\n本文の転記。\n"))
+
+                needles = {"unlisted": "親のシナリオ一覧に参照がない", "duplicate": "重複した参照",
+                           "other-parent": "同じユースケース", "prose": "個別相対 Markdown リンクだけ"}
+                self.assert_checker_ng(change, needles[case])
+
+    def test_implementation_pattern_requires_a_design_link(self):
+        def change(root):
+            parent = self.add_usecase(root)
+            self.write_utf8(parent, parent.read_text(encoding="utf-8")
+                            .replace("[UCP-1](../../design/UCP-1.md)", "UCP-1"))
+
+        self.assert_checker_ng(change, "実現パターンには設計へのリンクが必要")
+
+    def test_exactly_one_main_success_scenario_is_required(self):
+        for count in (0, 2):
+            with self.subTest(count=count):
+                def change(root, count=count):
+                    parent = self.add_usecase(root)
+                    if count == 0:
+                        self.add_scenario(parent, "新規メモを保存する", "拡張", listed=False)
+                    else:
+                        self.add_scenario(parent, "別の主成功", "主成功")
+
+                self.assert_checker_ng(change, "主成功シナリオはちょうど1件必要")
+
+    def test_scenario_without_parent_and_legacy_placement_are_rejected(self):
+        def orphan(root):
+            self.add_scenario(root / "docs" / "usecases" / "親のない仕様" / "README.md",
+                              "孤立したシナリオ", listed=False)
+
+        self.assert_checker_ng(orphan, "所属するユースケースの README.md がない")
+        for relative in ("docs/usecases/UC-99.md", "docs/usecases/仕様/extra.md",
+                         "docs/usecases/仕様/scenarios/nested/深すぎる.md"):
+            with self.subTest(relative=relative):
+                self.assert_checker_ng(lambda root, relative=relative:
+                    self.write_extra(root, relative, "# 旧配置の仕様"), "配置は <名称>/README.md")
+
+    def test_catalog_allows_unstarted_names_but_requires_existing_parents(self):
+        output = self.assert_checker_ok()
+        self.assertIn("ユースケース 0 件、シナリオ 0 件", output)
+
+        def change(root):
+            parent = self.add_usecase(root)
+            project = root / "docs" / "project.md"
+            text = project.read_text(encoding="utf-8")
+            self.write_utf8(project, text.replace("[%s](usecases/%s/README.md)"
+                            % (parent.parent.name, quote(parent.parent.name)), parent.parent.name))
+
+        self.assert_checker_ng(change, "ユースケース一覧に参照がない")
+
+    def test_template_assets_are_excluded_but_skill_links_are_checked(self):
+        relative = ".agents/skills/usecase-docs/assets/unfinished.md"
+
+        def asset(root):
+            self.write_extra(root, relative, "# {{NAME}}\n\n[未記入](missing.md)\n\n## 合意記録")
+
+        self.assert_checker_ok(asset)
+
+        def skill(root):
+            asset(root)
+            self.write_extra(root, ".agents/skills/usecase-docs/SKILL.md", "# スキル\n\n[不足](missing.md)")
+
+        self.assert_checker_ng(skill, "SKILL.md", "リンク先が存在しない")
+
+    def test_encoded_absolute_paths_are_detected(self):
+        self.assert_checker_ng(lambda root: self.write_extra(root, "docs/path.md",
+                               "[端末内の文書](C%3A%2FUsers%2Fexample%2Fmemo.md)"), "ローカル絶対パス")
+
+    def test_old_identifiers_are_allowed_in_explanatory_prose(self):
+        def change(root):
+            parent = self.add_usecase(root)
+            self.append(root, str(parent.relative_to(root)), "この文書は旧 UC-1 の内容に対応する。")
+
+        self.assert_checker_ok(change)
 
     def test_reports_all_ucp_documents_but_not_other_design_documents(self):
         def change(root):

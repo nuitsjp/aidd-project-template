@@ -7,5 +7,5 @@ description = "共通テンプレートとReact差分を新しいディレクト
 run = "node scripts/init-template.mjs react"
 
 [tasks."update:common"]
-description = "採用先の共通資材4件を固定コミット間で更新する"
+description = "採用先の共通資材7件（標準・検査・文書スキル）を固定コミット間で更新する"
 run = "node scripts/update-common.mjs"

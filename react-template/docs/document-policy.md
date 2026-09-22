@@ -9,21 +9,21 @@
 
 | 項目 | 内容 |
 | --- | --- |
-| 配布元・版 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版21 |
+| 配布元・版 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版22 |
 | 採用元固定コミット | `{{SOURCE_COMMIT}}`（生成に使用した40桁SHAを記載） |
-| 設計・文書標準 | [版16](standards/design-and-documentation.md) |
-| モック標準 | [版19](standards/mock-driven-development.md) |
-| React拡張 | 0.2.5 / React・Node.js・SQLite・並列 E2E の参照実装 |
+| 設計・文書標準 | [版17](standards/design-and-documentation.md) |
+| モック標準 | [版20](standards/mock-driven-development.md) |
+| React拡張 | 0.2.6 / React・Node.js・SQLite・並列 E2E の参照実装 |
 | 固有差分 | React と Node.js の責務分担、SQLite の保存、実処理までの並列 E2E を提供します。具体設計は `design/`、共通構造は `architecture-react.md` に置きます |
 
-生成時は `template/` を先にコピーし、`react-template/` の内容で上書きします。共通資材（`AGENTS.md`、`docs/standards/`、検査スクリプト、`LICENSE`）は共通側から取得し、`docs/project.md` と本書を含む React 固有文書は React 差分側で個別管理します（共通版との部分マージは行いません）。
+生成時は `template/` を先にコピーし、`react-template/` の内容で上書きします。共通資材（`AGENTS.md`、`docs/standards/`、検査スクリプト、`.agents/skills/usecase-docs/`、`LICENSE`）は共通側から取得し、`docs/project.md` と本書を含む React 固有文書は React 差分側で個別管理します（共通版との部分マージは行いません）。
 
-生成後に配布元から一組で更新するのは `AGENTS.md`、標準2件、`scripts/doc_check.py` です。その他の文書、実装、設定、依存定義とロック、DB移行は採用先が管理し、雛形全文とは同期しません。
+生成後に配布元の同じ固定コミットから一組で更新するのは `AGENTS.md`、標準2件、`scripts/doc_check.py`、`.agents/skills/usecase-docs/` です。その他の文書、実装、設定、依存定義とロック、DB移行は採用先が管理し、雛形全文とは同期しません。
 
 <a id="mock-scope"></a>
 ## 2. モック駆動開発の適用範囲
 
-採用先で新設・変更する系列へ適用します。参照実装には仕様確認用の固定データを残さず、既定の実行経路は実処理とします。テスト用データと実処理の検証は区別します。
+採用先で新設・変更するシナリオへ適用します。参照実装には仕様確認用の固定データを残さず、既定の実行経路は実処理とします。テスト用データと実処理の検証は区別します。
 
 <a id="sources"></a>
 ## 3. 文書の役割
@@ -36,7 +36,9 @@
 | `design/UCP-n.md` | 実現パターンごとの役割、実装パス、シーケンス、結果確定点、モック境界、UC固有の逸脱 |
 | [design/data.md](design/data.md) | 保存方式、テーブル定義、データ制約 |
 | [architecture-react.md](architecture-react.md) | React・Node.js の責務と依存方向、起動単位、並列 E2E の分離原則 |
-| usecases/UC-n.md | 現在のシナリオと受け入れ条件 |
+| `usecases/<ユースケース名>/README.md` | 主アクター、目的、共通条件、シナリオ一覧、実現パターン |
+| `usecases/<ユースケース名>/scenarios/<シナリオ名>.md` | シナリオの条件、手順、受け入れ条件 |
+| `../.agents/skills/usecase-docs/` | 文書標準に従う作成手順と雛形 |
 | standards/ | 適用する標準の原文 |
 | [README.md](../README.md) | プロジェクト概要と参照案内 |
 | [AGENTS.md](../AGENTS.md) | 作業時の参照先と注意点 |
