@@ -5,25 +5,28 @@ namespace Aidd.ReactDotnet.Domain.Notes;
 
 internal static class NoteRules
 {
-    internal static string ValidateTitle(string value)
+    internal static void ValidateTitle(string value)
     {
-        var title = value.Trim();
-        if (title.Length == 0 || title.EnumerateRunes().Count() > 100)
+        if (!IsValidTitle(value))
         {
-            throw AppFaultException.Validation("タイトルは1〜100文字で入力してください。",
-                new Dictionary<string, string> { ["title"] = "1〜100文字で入力してください。" });
+            throw AppFaultException.Validation("タイトルは1〜100文字で入力してください。");
         }
-
-        return title;
     }
+
+    internal static bool IsValidTitle(string? value) =>
+        !string.IsNullOrWhiteSpace(value) && value.EnumerateRunes().Count() <= 100;
+
+    internal static string NormalizeTitle(string value) => value.Trim();
 
     internal static void ValidateBody(string value)
     {
-        if (value.EnumerateRunes().Count() > 10_000)
+        if (!IsValidBody(value))
         {
-            throw AppFaultException.Validation("本文は10,000文字以内で入力してください。",
-                new Dictionary<string, string> { ["body"] = "10,000文字以内で入力してください。" });
+            throw AppFaultException.Validation("本文は10,000文字以内で入力してください。");
         }
     }
+
+    internal static bool IsValidBody(string? value) =>
+        value is not null && value.EnumerateRunes().Count() <= 10_000;
 
 }

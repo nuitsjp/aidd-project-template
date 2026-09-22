@@ -1,35 +1,16 @@
-// 公開契約のみ。Node.js・DB・Reactへ依存しない。
-export interface Principal {
-    id: string;
-    name: string;
-}
-export interface Note {
-    id: string;
-    title: string;
-    body: string;
-    version: number;
-    updatedAt: string;
-}
-export interface SaveNote {
-    id?: string;
-    version?: number;
-    title: string;
-    body: string;
-}
-export interface BulkInput {
-    titles: string;
-    body: string;
-}
-export interface BulkPreview {
-    titles: string[];
-    body: string;
-}
-export interface BulkResult {
-    count: number;
-}
-export type FaultCode = 'VALIDATION' | 'TITLE_EXISTS' | 'NOT_FOUND' | 'EDIT_CONFLICT' | 'UNAUTHENTICATED' | 'INTERNAL';
-export interface PublicFault {
-    code: FaultCode;
-    message: string;
-    fieldErrors?: Record<string, string>;
-}
+// 型の正本はC#。mise run contractsで生成したOpenAPI型への別名だけを定義する。
+import type { components, paths } from './api.gen.ts';
+export type Principal = components['schemas']['Principal'];
+export type Note = components['schemas']['Note'];
+export type SaveNoteRequest = paths['/api/notes/save']['post']['requestBody']['content']['application/json'];
+export type SaveNoteResponse = paths['/api/notes/save']['post']['responses'][200]['content']['application/json'];
+export type BulkInput = components['schemas']['BulkInput'];
+export type BulkPreview = components['schemas']['BulkPreview'];
+export type BulkResult = components['schemas']['BulkResult'];
+export type Session = components['schemas']['SessionOutput'];
+export type SignInOutput = components['schemas']['SignInOutput'];
+export type SuccessOutput = components['schemas']['SuccessOutput'];
+export type RemoveNote = components['schemas']['RemoveNoteInput'];
+export type SignInInput = components['schemas']['DemoSignInInput'];
+export type ApiProblem = components['schemas']['ProblemDetails'];
+export type ValidationProblem = components['schemas']['HttpValidationProblemDetails'];

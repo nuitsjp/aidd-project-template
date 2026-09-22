@@ -16,13 +16,13 @@ internal sealed partial class IdentityService
     private static readonly FrozenDictionary<string, string> DemoUsers =
         new Dictionary<string, string>(StringComparer.Ordinal) { ["alice"] = "Alice", ["bob"] = "Bob" }
             .ToFrozenDictionary(StringComparer.Ordinal);
-    private readonly string databasePath;
+    private readonly Database database;
     private readonly string authMode;
     private readonly ConcurrentDictionary<string, Session> sessions = new(StringComparer.Ordinal);
 
-    internal IdentityService(string databasePath, string authMode)
+    internal IdentityService(Database database, string authMode)
     {
-        this.databasePath = databasePath;
+        this.database = database;
         this.authMode = authMode;
     }
 
@@ -100,11 +100,10 @@ internal sealed partial class IdentityService
 
     internal Principal EnsureUser(Principal user)
     {
-        using var connection = AppDatabase.OpenConnection(databasePath);
-        connection.Execute("""
-            INSERT INTO users(id,name) VALUES(@id,@name)
-            ON CONFLICT(id) DO UPDATE SET name=excluded.name WHERE users.name<>excluded.name
-            """, new { id = user.Id, name = user.Name });
+        database.WithConnection(connection => connection.Execute("""
+                INSERT INTO users(id,name) VALUES(@id,@name)
+                ON CONFLICT(id) DO UPDATE SET name=excluded.name WHERE users.name<>excluded.name
+                """, new { id = user.Id, name = user.Name }));
         return user;
     }
 

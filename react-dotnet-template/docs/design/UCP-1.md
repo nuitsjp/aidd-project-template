@@ -35,4 +35,4 @@ sequenceDiagram
 
 保存の状態更新主体および結果確定点は `SaveNote` の COMMIT です。失敗時はトランザクションをロールバックして下書きを維持します。再取得や SSE の失敗で確定済み保存を失敗扱いに変更しません。
 
-公開エラーは `{appError:{code,message,fieldErrors?}}` の形で返します。モック境界と合成点は [アーキテクチャ](../architecture.md) の UI→API の定義に従います。「メモを作成・編集して保存する」固有の逸脱はありません。
+公開エラーはHTTPステータスとASP.NET Core標準のProblem Detailsで返し、入力検証はフィールド別の `errors` を含めます。モック境界と合成点は [アーキテクチャ](../architecture.md) の UI→API の定義に従います。「メモを作成・編集して保存する」固有の逸脱はありません。

@@ -51,3 +51,5 @@ Visual Studio で source の F5 を使うときは、`react-dotnet-template/App.
 共通資材の更新対象と固有資材の管理範囲は [文書方針](docs/document-policy.md#adoption) に従います。
 
 `.github/workflows/react-dotnet-template.yml` は生成プロジェクト用の CI 例です（生成後のルートで実行することを前提としています）。
+
+API の入出力型は C# を正本とします。変更後は `mise run contracts` で OpenAPI と React 用の型を生成し、生成物もコミットしてください。`mise run verify` は型の生成漏れを検出します。詳細は [API契約の更新](docs/project.md#api契約の更新) を参照してください。

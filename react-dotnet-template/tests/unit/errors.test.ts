@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { readFault } from '../../frontend/src/shared/errors.ts';
+import { HttpError, readErrorMessage, readErrorMessages } from '../../frontend/src/shared/errors.ts';
 describe('公開エラー', () => {
-    it('コードと公開メッセージを扱う', () => { expect(readFault({ data: { appError: { code: 'TITLE_EXISTS', message: '重複' } } })).toEqual({ code: 'TITLE_EXISTS', message: '重複' }); });
-    it('内部エラー文字列を表示へ流さない', () => { expect(readFault(new Error('password=secret')).message).not.toContain('secret'); });
+    it('Problem Detailsの公開メッセージを扱う', () => {
+        expect(readErrorMessage(new HttpError(409, { status: 409, detail: '重複' }))).toBe('重複');
+        expect(readErrorMessages(new HttpError(400, {
+            status: 400,
+            errors: { title: ['タイトルを入力してください。'], body: ['本文が長すぎます。'] },
+        }))).toEqual(['タイトルを入力してください。', '本文が長すぎます。']);
+    });
+    it('内部エラー文字列を表示へ流さない', () => { expect(readErrorMessage(new Error('password=secret'))).not.toContain('secret'); });
 });

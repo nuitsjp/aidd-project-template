@@ -23,7 +23,7 @@ description = "Reactを同梱した.NET配布物をビルドする"
 run = "node scripts/build.mjs"
 
 [tasks."build:frontend"]
-description = "Reactの型検査とViteビルドだけを実行する"
+description = "API契約生成、Reactの型検査とViteビルドを実行する"
 run = "node scripts/build-frontend.mjs"
 
 [tasks."build:backend"]
@@ -81,3 +81,11 @@ run = "npm run format"
 [tasks."check:docs"]
 description = "文書の整合性を検査する"
 run = "node scripts/check-docs.mjs"
+
+[tasks.contracts]
+description = "C#からOpenAPIとReact用の型を生成する（DB・HTTP待受不要）"
+run = "node scripts/contracts.mjs"
+
+[tasks."contracts:check"]
+description = "コミット済みのAPI契約がC#と一致することを検査する"
+run = "node scripts/contracts.mjs --check"

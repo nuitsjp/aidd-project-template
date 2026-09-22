@@ -1,11 +1,8 @@
 import { postJson, requestJson } from '../client.ts';
-import type { BulkInput, BulkPreview, BulkResult, Note, SaveNote } from '../../../../contracts/notes.ts';
+import type { BulkInput, BulkPreview, BulkResult, Note, SaveNoteRequest, SaveNoteResponse, RemoveNote, SuccessOutput } from '../../../../contracts/notes.ts';
 export const listNotes = (signal?: AbortSignal) => requestJson<Note[]>('/api/notes', { signal });
-export const saveNote = (input: SaveNote) => postJson<Note>('/api/notes/save', input);
-export const removeNote = (input: {
-    id: string;
-    version: number;
-}) => postJson<{ ok: true }>('/api/notes/remove', input);
+export const saveNote = (input: SaveNoteRequest) => postJson<SaveNoteResponse>('/api/notes/save', input);
+export const removeNote = (input: RemoveNote) => postJson<SuccessOutput>('/api/notes/remove', input);
 export const previewMany = (input: BulkInput) => postJson<BulkPreview>('/api/notes/preview', input);
 export const importMany = (input: BulkInput) => postJson<BulkResult>('/api/notes/import', input);
 export function watchNotes(onChange: () => void, onStatus: (ready: boolean) => void): () => void {

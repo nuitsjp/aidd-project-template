@@ -28,7 +28,7 @@ test('メモを作成・編集して保存する / 更新競合で下書きを�
     await page.getByRole('button', { name: '保存する', exact: true }).click();
     await expect.poll(() => app.rows()[0]?.version).toBe(2);
     await second.getByRole('button', { name: '保存する', exact: true }).click();
-    await expect(second.getByRole('alert')).toContainText('EDIT_CONFLICT');
+    await expect(second.getByRole('alert')).toContainText('別の操作で更新されています。');
     await expect(second.getByLabel('本文', { exact: true })).toHaveValue('残す競合下書き');
     expect(app.rows()[0]?.body).toBe('先に確定');
     await second.close();

@@ -1,3 +1,6 @@
+using Microsoft.AspNetCore.OpenApi;
+using Microsoft.OpenApi;
+using System.Text.Json.Serialization;
 using Aidd.ReactDotnet.Presentation.Http;
 using Aidd.ReactDotnet.Infrastructure.Persistence;
 using Aidd.ReactDotnet.Infrastructure.Notifications;
@@ -18,6 +21,16 @@ public static class Program
     {
         try
         {
+            if (args is ["openapi", var output])
+            {
+                await using var schemaApp = BuildApp(AppConfig.FromValues(_ => null), initializeDatabase: false);
+                var provider = schemaApp.Services.GetRequiredKeyedService<IOpenApiDocumentProvider>("v1");
+                var document = await provider.GetOpenApiDocumentAsync();
+                await using var stream = File.Create(output);
+                await document.SerializeAsJsonAsync(stream, OpenApiSpecVersion.OpenApi3_0);
+                return 0;
+            }
+
             if (args.Length > 0)
             {
                 return RunCommand(args);
@@ -47,9 +60,10 @@ public static class Program
         }
     }
 
-    internal static WebApplication BuildApp(AppConfig config)
+    internal static WebApplication BuildApp(AppConfig config, bool initializeDatabase = true)
     {
-        AppDatabase.Initialize(config.DatabasePath);
+        var database = new Database(config.DatabasePath);
+        if (initializeDatabase) database.Initialize();
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
         {
             ContentRootPath = AppContext.BaseDirectory,
@@ -61,15 +75,43 @@ public static class Program
             options.Listen(config.BindAddress, config.Port);
         });
         builder.WebHost.UseShutdownTimeout(TimeSpan.FromSeconds(10));
+        builder.Services.AddProblemDetails();
+        builder.Services.AddOpenApi(options =>
+        {
+            options.CreateSchemaReferenceId = type => type.Type.IsNested
+                ? type.Type.DeclaringType!.Name + type.Type.Name
+                : OpenApiOptions.CreateDefaultSchemaReferenceId(type);
+            options.AddSchemaTransformer((schema, context, _) =>
+            {
+                foreach (var property in context.JsonTypeInfo.Type.GetProperties())
+                {
+                    if (property.SetMethod?.GetParameters().LastOrDefault()?.IsDefined(
+                            typeof(System.Diagnostics.CodeAnalysis.DisallowNullAttribute), true) == true
+                        && schema.Properties?.TryGetValue(JsonNamingPolicy.CamelCase.ConvertName(property.Name), out var propertySchema) == true
+                        && propertySchema is OpenApiSchema value)
+                        value.Type &= ~JsonSchemaType.Null;
+                }
+                return Task.CompletedTask;
+            });
+        });
+        builder.Services.Configure<RouteHandlerOptions>(options => options.ThrowOnBadRequest = true);
         builder.Services.ConfigureHttpJsonOptions(options =>
         {
             options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+            options.SerializerOptions.PropertyNameCaseInsensitive = false;
+            options.SerializerOptions.UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow;
+            options.SerializerOptions.AllowDuplicateProperties = false;
+            options.SerializerOptions.RespectNullableAnnotations = true;
+            options.SerializerOptions.NumberHandling = JsonNumberHandling.Strict;
         });
 
+        var contractSources = new List<EndpointDataSource>();
+        if (!initializeDatabase)
+            builder.Services.AddSingleton<EndpointDataSource>(_ => new CompositeEndpointDataSource(contractSources));
         var app = builder.Build();
         var notifications = new ChangeNotifications(error => app.Logger.LogWarning(error, "変更通知に失敗しました"));
-        var notes = new NotesService(config.DatabasePath, notifications, error => app.Logger.LogWarning(error, "変更通知に失敗しました"));
-        var identity = new IdentityService(config.DatabasePath, config.AuthMode);
+        var notes = new NotesService(database, notifications);
+        var identity = new IdentityService(database, config.AuthMode);
 
         app.Use(async (context, next) =>
         {
@@ -80,6 +122,17 @@ public static class Program
             try
             {
                 await next(context);
+                // 型付きバインディングが例外を投げずに返すサイズ超過等も公開エラー形式に統一する。
+                if (context.Request.Path.StartsWithSegments("/api") && !context.Response.HasStarted
+                    && context.Response.ContentType is null
+                    && context.Response.StatusCode is 400 or 413 or 415)
+                {
+                    if (context.Response.StatusCode == StatusCodes.Status400BadRequest)
+                        await WriteValidationProblem(context, "入力の形式を確認してください。");
+                    else
+                        await WriteProblem(context, context.Response.StatusCode,
+                            context.Response.StatusCode == 413 ? "リクエストが大きすぎます。" : "入力の形式を確認してください。");
+                }
             }
             catch (AppFaultException fault)
             {
@@ -96,19 +149,25 @@ public static class Program
                     "VALIDATION" => StatusCodes.Status400BadRequest,
                     _ => StatusCodes.Status500InternalServerError,
                 };
-                await WriteError(context, status, new PublicAppError(fault.Code, fault.Message, fault.FieldErrors));
+                if (status == StatusCodes.Status400BadRequest)
+                    await WriteValidationProblem(context, fault.Message);
+                else
+                    await WriteProblem(context, status, fault.Message);
             }
-            catch (BadHttpRequestException error) when (error.StatusCode == StatusCodes.Status413PayloadTooLarge)
+            catch (BadHttpRequestException error) when (error.StatusCode is StatusCodes.Status400BadRequest or StatusCodes.Status413PayloadTooLarge or StatusCodes.Status415UnsupportedMediaType)
             {
                 if (context.Response.HasStarted)
                 {
                     throw;
                 }
 
-                await WriteError(
-                    context,
-                    StatusCodes.Status413PayloadTooLarge,
-                    new PublicAppError("VALIDATION", "リクエストが大きすぎます。"));
+                if (error.StatusCode == StatusCodes.Status400BadRequest)
+                    await WriteValidationProblem(context, "入力の形式を確認してください。");
+                else
+                    await WriteProblem(
+                        context,
+                        error.StatusCode,
+                        error.StatusCode == 413 ? "リクエストが大きすぎます。" : "入力の形式を確認してください。");
             }
             catch (Exception error)
             {
@@ -118,10 +177,10 @@ public static class Program
                 }
 
                 app.Logger.LogError(error, "機能操作に失敗しました");
-                await WriteError(
+                await WriteProblem(
                     context,
                     StatusCodes.Status500InternalServerError,
-                    new PublicAppError("INTERNAL", "処理を完了できませんでした。"));
+                    "処理を完了できませんでした。");
             }
         });
 
@@ -142,10 +201,10 @@ public static class Program
                 !requestHost.Equals($"localhost:{port}", StringComparison.OrdinalIgnoreCase) &&
                 (publicHost is null || !requestHost.Equals(publicHost, StringComparison.OrdinalIgnoreCase)))
             {
-                await WriteError(
+                await WriteProblem(
                     context,
                     StatusCodes.Status403Forbidden,
-                    new PublicAppError("VALIDATION", "接続先が不正です。"));
+                    "接続先が不正です。");
                 return;
             }
 
@@ -155,17 +214,17 @@ public static class Program
             if ((!string.IsNullOrEmpty(origin) && origin != expectedOrigin && !config.AllowedOrigins.Contains(origin)) ||
                 (HttpMethods.IsPost(context.Request.Method) && string.IsNullOrEmpty(origin)))
             {
-                await WriteError(
+                await WriteProblem(
                     context,
                     StatusCodes.Status403Forbidden,
-                    new PublicAppError("VALIDATION", "同一サイトから操作してください。"));
+                    "同一サイトから操作してください。");
                 return;
             }
 
             await next(context);
         });
 
-        new SaveNote(config.DatabasePath, notifications, error => app.Logger.LogWarning(error, "変更通知に失敗しました")).Map(app, identity);
+        new SaveNote(database, notifications).Map(app, identity);
         ApiEndpoints.Map(app, config, identity, notes, notifications, app.Lifetime.ApplicationStopping);
         app.UseDefaultFiles();
         app.UseStaticFiles();
@@ -186,11 +245,13 @@ public static class Program
                 }
             }
 
-            await WriteError(
+            await WriteProblem(
                 context,
                 StatusCodes.Status404NotFound,
-                new PublicAppError("NOT_FOUND", "見つかりません。"));
+                "見つかりません。");
         });
+        if (!initializeDatabase)
+            contractSources.AddRange(((IEndpointRouteBuilder)app).DataSources);
         return app;
     }
 
@@ -198,14 +259,14 @@ public static class Program
     {
         if (args is ["db:backup", var destination])
         {
-            AppDatabase.Backup(AppConfig.DatabasePathFromEnvironment(), destination);
+            new Database(AppConfig.DatabasePathFromEnvironment()).Backup(destination);
             Console.WriteLine("整合したバックアップを作成しました。");
             return 0;
         }
 
         if (args is ["db:check", var path])
         {
-            var result = AppDatabase.Check(path);
+            var result = new Database(path).Check();
             Console.WriteLine(JsonSerializer.Serialize(new { version = result.Version, result = result.Result }));
             return result.IsHealthy ? 0 : 1;
         }
@@ -225,10 +286,25 @@ public static class Program
         }
     });
 
-    private static async Task WriteError(HttpContext context, int status, PublicAppError error)
-    {
-        context.Response.StatusCode = status;
-        context.Response.ContentType = "application/json; charset=utf-8";
-        await context.Response.WriteAsJsonAsync(new AppErrorEnvelope(error));
-    }
+    private static Task WriteProblem(HttpContext context, int status, string detail) =>
+        Results.Problem(
+            statusCode: status,
+            title: status switch
+            {
+                StatusCodes.Status401Unauthorized => "認証が必要です。",
+                StatusCodes.Status403Forbidden => "操作できません。",
+                StatusCodes.Status404NotFound => "見つかりません。",
+                StatusCodes.Status409Conflict => "競合が発生しました。",
+                StatusCodes.Status413PayloadTooLarge => "リクエストが大きすぎます。",
+                StatusCodes.Status415UnsupportedMediaType => "対応していない形式です。",
+                _ => "処理を完了できませんでした。",
+            },
+            detail: detail)
+        .ExecuteAsync(context);
+
+    private static Task WriteValidationProblem(HttpContext context, string message) =>
+        Results.ValidationProblem(
+            new Dictionary<string, string[]> { ["request"] = [message] },
+            title: "入力内容を確認してください。")
+        .ExecuteAsync(context);
 }

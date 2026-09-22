@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { createServer } from 'vite';
 import { root, run } from './lib.mjs';
 
+await run(process.execPath, ['scripts/contracts.mjs']);
 await run(process.execPath, ['scripts/build-backend.mjs']);
 const host = process.env.HOST ?? '127.0.0.1';
 const port = process.env.PORT ?? '3000';

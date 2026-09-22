@@ -16,7 +16,7 @@ test('メモを作成・編集して保存する / 不正な入力の保存を�
     await page.getByLabel('タイトル', { exact: true }).fill('   ');
     await page.getByLabel('本文', { exact: true }).fill('残す下書き');
     await page.getByRole('button', { name: '保存する', exact: true }).click();
-    await expect(page.getByRole('alert')).toContainText('VALIDATION');
+    await expect(page.getByRole('alert')).toContainText('タイトルは1〜100文字で入力してください。');
     expect(app.rows()).toHaveLength(0);
     await expect(page.getByLabel('本文', { exact: true })).toHaveValue('残す下書き');
 });

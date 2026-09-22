@@ -21,7 +21,7 @@ test('複数のメモを確認して一括登録する / 一括登録の失敗�
     await page.getByLabel('タイトル一覧').fill('新規の先行行\n既存');
     await page.getByRole('button', { name: '内容を確認する' }).click();
     await page.getByRole('button', { name: '一括登録する', exact: true }).click();
-    await expect(page.getByRole('alert')).toContainText('TITLE_EXISTS');
+    await expect(page.getByRole('alert')).toContainText('同じタイトルのメモが既にあります。');
     expect(app.rows()).toEqual([{ owner_id: 'alice', title: '既存', body: '変更されない', version: 1 }]);
     await page.getByRole('button', { name: '入力に戻る' }).click();
     await expect(page.getByLabel('タイトル一覧')).toHaveValue('新規の先行行\n既存');

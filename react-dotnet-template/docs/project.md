@@ -27,7 +27,7 @@ SPA、単一 ASP.NET Core サーバー、同一 origin、SQLite を既定とし�
 - **ASP.NET Core / .NET SDK**: .NET SDK 10.0.401 と ASP.NET Core .NET 10 を使用します。`backend/App.csproj` が単一サーバーの実行単位で、UI のビルドと静的ファイルの配置も所有します。ルートの `App.slnx` は `frontend/Frontend.esproj`、バックエンド、バックエンドテストを束ねます。
 - **HTTP JSON / SSE**: ブラウザとサーバーは HTTP JSON の公開エンドポイントで通信し、`/events/notes` は確定後の変更通知に SSE を使用します。エンドポイント、DTO、エラー形状は [React + .NET アーキテクチャ](architecture-react-dotnet.md) に記録します。
 - **SQLite**: `Microsoft.Data.Sqlite` と Dapper で実 SQLite を操作し、マイグレーションは `backend/Infrastructure/Persistence/Migrations` に配置します。WAL、外部キー制約、有限の busy timeout を設定し、短い書込みトランザクションで確定します（[SQLite WAL](https://sqlite.org/wal.html)）。
-- **公開契約**: ブラウザ側の JSON 型は `contracts/notes.ts`、サーバー側は C# DTO で管理し、境界テストで整合を確認します。
+- **公開契約**: C# の API 入出力型を正本とし、OpenAPI と React 用の型を `mise run contracts` で生成します。`contracts/openapi.json` と `contracts/api.gen.ts` はコミットし、`contracts/notes.ts` は生成型の別名だけを定義します。
 - **Playwright fixtures**: 開発サーバー形式と配布形式で同じシナリオを実行します。環境生成と破棄を一体化し、fullyParallel と複数 worker を利用します（[fixtures](https://playwright.dev/docs/test-fixtures)）。各 E2E は .NET プロセス、ポート、一時 DB、ブラウザ、Cookie を分離し、独立した Node.js `node:sqlite` 読取専用接続で DB を確認します。
 
 <a id="commands"></a>
@@ -125,3 +125,9 @@ mise run db:check -- ./backups/manual.sqlite
 ```
 
 上記の mise タスクは、それぞれ `dotnet App.dll db:backup <path>` と `dotnet App.dll db:check <path>` に引数を渡します。バックアップは整合性のあるスナップショットを作成します。復元時はサーバー停止後、既存 DB と WAL/SHM を退避し、チェック済みバックアップを配置して起動します。
+
+## API契約の更新
+
+C# の入出力型を変更したら `mise run contracts` を実行し、生成された `contracts/openapi.json` と `contracts/api.gen.ts` を同じ変更に含めます。生成ファイルは手で編集しません。`mise run contracts:check` は C# から再生成した内容との差分を検出し、ずれていれば失敗します。`mise run verify` も最初にこの検査を行います。
+
+Visual Studio の F5、React ビルド、`mise run dev` は起動前に型を再生成します。`mise run setup` は生成済み契約を書き換えないため、CI でも古い型を検出できます。生成コマンドは UI ビルドを省いた .NET を `dist/contracts/backend` に作り、`App.dll openapi <出力先>` で契約を出力します。HTTP の待受と DB の初期化・接続は行いません。フロントエンド単体テストはコミット済みの型を利用し、.NET 上で動かす必要はありません。

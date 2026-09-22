@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { importMany, listNotes, previewMany, removeNote, saveNote } from '../../frontend/src/features/notes/access.ts';
 import { requestJson } from '../../frontend/src/features/client.ts';
-import { readFault } from '../../frontend/src/shared/errors.ts';
+import { readErrorMessage } from '../../frontend/src/shared/errors.ts';
 
 const fetchMock = vi.fn<typeof fetch>();
 
@@ -43,10 +43,10 @@ describe('メモHTTPアクセス', () => {
         ]);
     });
 
-    it('HTTPエラーの公開appErrorをreadFaultへ渡す', async () => {
-        fetchMock.mockResolvedValue(response({ appError: { code: 'EDIT_CONFLICT', message: '版が古くなっています。', fieldErrors: { version: '更新してください。' } } }, 409));
+    it('HTTPエラーの公開メッセージを保持する', async () => {
+        fetchMock.mockResolvedValue(response({ title: '更新が競合しました。', status: 409, detail: '版が古くなっています。' }, 409));
         await expect(saveNote({ title: '題名', body: '本文', id: 'note-1', version: 1 })).rejects.toSatisfy(error => {
-            expect(readFault(error)).toEqual({ code: 'EDIT_CONFLICT', message: '版が古くなっています。', fieldErrors: { version: '更新してください。' } });
+            expect(readErrorMessage(error)).toBe('版が古くなっています。');
             return true;
         });
     });

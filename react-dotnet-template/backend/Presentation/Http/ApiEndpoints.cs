@@ -5,6 +5,7 @@ using Aidd.ReactDotnet.Application.Authentication;
 using Aidd.ReactDotnet.Domain;
 using System.Threading.Channels;
 using Aidd.ReactDotnet.Features.Notes;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Aidd.ReactDotnet.Presentation.Http;
 
@@ -19,23 +20,23 @@ internal static class ApiEndpoints
         CancellationToken applicationStopping)
     {
         app.MapGet("/api/session", (HttpRequest request) =>
-            Results.Ok(new { user = identity.Resolve(request), mode = config.AuthMode }));
+            TypedResults.Ok(new SessionOutput(identity.Resolve(request), config.AuthMode)));
 
         if (config.AuthMode == "demo")
         {
-            app.MapPost("/api/demo/sign-in", async (HttpContext context) =>
-            {
-                var id = await JsonInput.ReadDemoUser(context.Request, context.RequestAborted);
-                return Results.Ok(new { user = identity.SignIn(context.Request, context.Response, id) });
-            });
+            app.MapAnonymousPost<DemoSignInInput, SignInOutput>(
+                "/api/demo/sign-in",
+                "DemoSignIn",
+                (context, input) => Task.FromResult(
+                    new SignInOutput(identity.SignIn(context.Request, context.Response, input.User))));
             app.MapPost("/api/demo/sign-out", (HttpContext context) =>
             {
                 identity.SignOut(context.Request, context.Response);
-                return Results.Ok(new { ok = true });
+                return TypedResults.Ok(new SuccessOutput(true));
             });
         }
 
-        app.MapGet("/api/notes", (HttpRequest request) => Results.Ok(notes.List(RequireUser(identity, request).Id)));
+        app.MapGet("/api/notes", (HttpRequest request) => TypedResults.Ok(notes.List(RequireUser(identity, request).Id)));
         app.MapGet("/api/notes/{id}", (string id, HttpRequest request) =>
         {
             if (!JsonRequest.IsUuid(id))
@@ -43,27 +44,31 @@ internal static class ApiEndpoints
                 throw AppFaultException.Validation();
             }
 
-            return Results.Ok(notes.Get(RequireUser(identity, request).Id, id));
+            return TypedResults.Ok(notes.Get(RequireUser(identity, request).Id, id));
         });
-        app.MapPost("/api/notes/remove", async (HttpContext context) =>
-        {
-            var user = RequireUser(identity, context.Request);
-            var input = await JsonInput.ReadRemove(context.Request, context.RequestAborted);
-            notes.Remove(user.Id, input.Id, input.Version);
-            return Results.Ok(new { ok = true });
-        });
-        app.MapPost("/api/notes/preview", async (HttpContext context) =>
-        {
-            RequireUser(identity, context.Request);
-            return Results.Ok(NotesService.Preview(await JsonInput.ReadBulk(context.Request, context.RequestAborted)));
-        });
-        app.MapPost("/api/notes/import", async (HttpContext context) =>
-        {
-            var user = RequireUser(identity, context.Request);
-            return Results.Ok(notes.ImportMany(
-                user.Id,
-                await JsonInput.ReadBulk(context.Request, context.RequestAborted)));
-        });
+        app.MapAuthenticatedPost<RemoveNoteInput, SuccessOutput>(
+            "/api/notes/remove",
+            "RemoveNote",
+            identity,
+            (user, input) =>
+            {
+                if (!JsonRequest.IsUuid(input.Id) || input.Version <= 0) throw AppFaultException.Validation();
+                notes.Remove(user.Id, input.Id, input.Version);
+                return Task.FromResult(new SuccessOutput(true));
+            })
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict, "application/problem+json");
+        app.MapAuthenticatedPost<BulkInput, BulkPreview>(
+            "/api/notes/preview",
+            "PreviewNotes",
+            identity,
+            (_, input) => Task.FromResult(NotesService.Preview(input)));
+        app.MapAuthenticatedPost<BulkInput, BulkResult>(
+            "/api/notes/import",
+            "ImportNotes",
+            identity,
+            (user, input) => Task.FromResult(notes.ImportMany(user.Id, input)))
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict, "application/problem+json");
 
         app.MapGet("/events/notes", async (HttpContext context) =>
         {
@@ -111,7 +116,7 @@ internal static class ApiEndpoints
             }
         });
 
-        app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+        app.MapGet("/health", () => TypedResults.Ok(new HealthOutput("ok")));
     }
 
     private static Principal RequireUser(IdentityService identity, HttpRequest request) =>

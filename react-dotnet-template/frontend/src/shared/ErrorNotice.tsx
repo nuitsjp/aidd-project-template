@@ -1,14 +1,15 @@
 import { Alert } from '@mantine/core';
-import { readFault } from './errors.ts';
+import { readErrorMessages } from './errors.ts';
 export function ErrorNotice({ error, title = '処理を完了できませんでした' }: {
     error: unknown;
     title?: string;
 }) {
     if (!error)
         return null;
-    const fault = readFault(error);
+    const messages = readErrorMessages(error);
     return <Alert color="red" title={title} role="alert">
-    <span>{fault.message}</span>
-    <small style={{ display: 'block' }}>{fault.code}</small>
+    {messages.length === 1
+        ? <span>{messages[0]}</span>
+        : <ul>{messages.map(message => <li key={message}>{message}</li>)}</ul>}
     </Alert>;
 }

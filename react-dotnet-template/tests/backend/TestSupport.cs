@@ -13,15 +13,18 @@ internal sealed class TestDatabase : IDisposable
     internal TestDatabase()
     {
         Path = System.IO.Path.Combine(directory, "app.sqlite");
-        AppDatabase.Initialize(Path);
+        Database = new Database(Path);
+        Database.Initialize();
         EnsureUser("alice", "Alice");
         EnsureUser("bob", "Bob");
         Notifications = new ChangeNotifications(NotificationErrors.Add);
-        Notes = new NotesService(Path, Notifications, NotificationErrors.Add);
-        Save = new SaveNote(Path, Notifications, NotificationErrors.Add);
+        Notes = new NotesService(Database, Notifications);
+        Save = new SaveNote(Database, Notifications);
     }
 
     internal string Path { get; }
+
+    internal Database Database { get; }
 
     internal ChangeNotifications Notifications { get; }
 
@@ -38,7 +41,7 @@ internal sealed class TestDatabase : IDisposable
 
     private void EnsureUser(string id, string name)
     {
-        using var connection = AppDatabase.OpenConnection(Path);
+        using var connection = Database.Open();
         using var command = connection.CreateCommand();
         command.CommandText = "INSERT INTO users(id,name) VALUES($id,$name)";
         command.Parameters.AddWithValue("$id", id);
@@ -54,6 +57,21 @@ internal static class TestAssert
         try
         {
             action();
+        }
+        catch (T error)
+        {
+            return error;
+        }
+
+        Assert.Fail($"{typeof(T).Name} が発生しませんでした。");
+        throw new InvalidOperationException();
+    }
+
+    internal static async Task<T> ThrowsAsync<T>(Func<Task> action) where T : Exception
+    {
+        try
+        {
+            await action();
         }
         catch (T error)
         {
