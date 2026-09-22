@@ -9,7 +9,7 @@ namespace Aidd.ReactDotnet.Tests;
 public sealed class OpenApiTests
 {
     [TestMethod]
-    public async Task ContractGenerationIncludesSaveWithoutCreatingDatabaseOrStartingServer()
+    public async Task ContractGenerationIncludesSaveWithoutCreatingDatabaseOrStartingServerAsync()
     {
         var directory = Path.Combine(Path.GetTempPath(), $"aidd-openapi-{Guid.NewGuid():N}");
         var config = AppConfig.FromValues(key => key == "DB_PATH" ? Path.Combine(directory, "app.sqlite") : null);

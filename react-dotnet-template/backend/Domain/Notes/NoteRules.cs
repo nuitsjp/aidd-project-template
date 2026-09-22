@@ -7,16 +7,11 @@ internal static class NoteRules
 {
     internal static void ValidateTitle(string value)
     {
-        if (!IsValidTitle(value))
+        if (string.IsNullOrWhiteSpace(value) || value.EnumerateRunes().Count() > 100)
         {
             throw AppFaultException.Validation("タイトルは1〜100文字で入力してください。");
         }
     }
-
-    internal static bool IsValidTitle(string? value) =>
-        !string.IsNullOrWhiteSpace(value) && value.EnumerateRunes().Count() <= 100;
-
-    internal static string NormalizeTitle(string value) => value.Trim();
 
     internal static void ValidateBody(string value)
     {

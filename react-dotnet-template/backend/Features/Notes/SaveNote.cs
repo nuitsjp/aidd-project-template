@@ -11,7 +11,6 @@ using Microsoft.Data.Sqlite;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Aidd.ReactDotnet.Features.Notes;
@@ -26,40 +25,33 @@ internal sealed class SaveNote
 
     internal PresentationLayer Presentation { get; }
 
-    internal void Map(WebApplication app, IdentityService identity) => Presentation.Map(app, identity);
+    internal void Map(WebApplication app, IdentityService identity)
+    {
+        app.MapPost("/api/notes/save", async (HttpContext context, SaveNoteRequest request) =>
+        {
+            var principal = identity.Resolve(context.Request)
+                ?? throw new AppFaultException("UNAUTHENTICATED", "利用者を確認できません。");
+            return await Presentation.HandleAsync(principal, request);
+        })
+        .WithName(nameof(SaveNote))
+        .Produces<SaveNoteResponse>(StatusCodes.Status200OK)
+        .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")
+        .Produces<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")
+        .Produces<ProblemDetails>(StatusCodes.Status409Conflict, "application/problem+json")
+        .ProducesCommonPostErrors();
+    }
 
     internal sealed class PresentationLayer
     {
         internal PresentationLayer(IApplicationLayer<SaveNoteRequest, SaveResult> application)
         {
-            TryValidate = application.TryValidate;
             ExecuteAsync = application.ExecuteAsync;
         }
 
-        internal TryValidateDelegate<SaveNoteRequest> TryValidate { get; set; }
         internal Func<Principal, SaveNoteRequest, Task<SaveResult>> ExecuteAsync { get; set; }
-
-        internal void Map(WebApplication app, IdentityService identity)
-        {
-            app.MapAuthenticatedPost<SaveNoteRequest>(
-                "/api/notes/save",
-                nameof(SaveNote),
-                identity,
-                HandleAsync)
-            .Produces<SaveNoteResponse>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")
-            .Produces<ProblemDetails>(StatusCodes.Status409Conflict, "application/problem+json");
-        }
 
         internal async Task<IResult> HandleAsync(Principal principal, SaveNoteRequest request)
         {
-            if (!TryValidate(request, out var errors))
-            {
-                return TypedResults.ValidationProblem(
-                    errors.ToDictionary(item => item.Key, item => item.Value),
-                    title: "入力内容を確認してください。");
-            }
-
             return await ExecuteAsync(principal, request) switch
             {
                 SaveResult.Success success => TypedResults.Ok(success.Response),
@@ -78,90 +70,57 @@ internal sealed class SaveNote
 
     internal sealed class ApplicationLayer : IApplicationLayer<SaveNoteRequest, SaveResult>
     {
+        private readonly Database database;
+
         internal ApplicationLayer(
             Database database,
             ChangeNotifications notifications)
         {
-            BeginTransaction = () => database.BeginTransactionAsync();
-            Read = PersistenceLayer.Read;
-            Insert = PersistenceLayer.Insert;
-            Update = PersistenceLayer.Update;
+            this.database = database;
+            ReadAsync = PersistenceLayer.ReadAsync;
+            InsertAsync = PersistenceLayer.InsertAsync;
+            UpdateAsync = PersistenceLayer.UpdateAsync;
             TranslateError = PersistenceLayer.TranslateError;
-            NewId = Guid.NewGuid;
-            UtcNow = () => DateTimeOffset.UtcNow;
             PublishChange = notifications.Publish;
         }
 
-        internal Func<Task<ITransaction>> BeginTransaction { get; set; }
-        internal Func<SqliteConnection, string, string, Task<Note?>> Read { get; set; }
-        internal Func<SqliteConnection, PreparedSave, Task<int>> Insert { get; set; }
-        internal Func<SqliteConnection, PreparedSave, Task<int>> Update { get; set; }
+        internal Func<SqliteConnection, string, string, Task<Note?>> ReadAsync { get; set; }
+        internal Func<SqliteConnection, string, string, string, Task<Note>> InsertAsync { get; set; }
+        internal Func<SqliteConnection, string, Note, Task<Note>> UpdateAsync { get; set; }
         internal Func<Exception, Exception> TranslateError { get; set; }
-        internal Func<Guid> NewId { get; set; }
-        internal Func<DateTimeOffset> UtcNow { get; set; }
         internal Func<string, bool> PublishChange { get; set; }
-
-        public bool TryValidate(
-            SaveNoteRequest input,
-            [NotNullWhen(false)] out IReadOnlyDictionary<string, string[]>? errors)
-        {
-            var results = new List<ValidationResult>();
-            Validator.TryValidateObject(input, new ValidationContext(input), results, validateAllProperties: true);
-            var found = new Dictionary<string, List<string>>(StringComparer.Ordinal);
-            foreach (var result in results)
-            {
-                var members = result.MemberNames.Take(2).ToArray();
-                var key = members.Length == 1
-                    ? JsonNamingPolicy.CamelCase.ConvertName(members[0])
-                    : string.Empty;
-                if (!found.TryGetValue(key, out var messages))
-                {
-                    messages = [];
-                    found[key] = messages;
-                }
-
-                messages.Add(result.ErrorMessage ?? "入力内容を確認してください。");
-            }
-
-            errors = found.Count == 0
-                ? null
-                : found.ToDictionary(item => item.Key, item => item.Value.ToArray());
-            return errors is null;
-        }
 
         public async Task<SaveResult> ExecuteAsync(Principal principal, SaveNoteRequest input)
         {
-            var title = NoteRules.NormalizeTitle(input.Title);
-            var prepared = new PreparedSave(principal.Id, input.Id ?? NewId().ToString("D"), input.Version,
-                title, input.Body, UtcNow());
-            await using var transaction = await BeginTransaction();
+            var ownerId = principal.Id;
+            var title = input.Title.Trim();
+            await using var transaction = await database.BeginTransactionAsync();
             Note saved;
             try
             {
-                if (prepared.Version is not null)
+                if (input.Version is not null)
                 {
-                    var current = await Read(transaction.Connection, prepared.OwnerId, prepared.Id);
+                    var current = await ReadAsync(transaction.Connection, ownerId, input.Id!);
                     if (current is null)
                     {
                         await transaction.RollbackAsync();
                         return new SaveResult.NotFound();
                     }
 
-                    if (current.Version != prepared.Version)
+                    if (current.Version != input.Version)
                     {
                         await transaction.RollbackAsync();
                         return new SaveResult.Conflict();
                     }
 
-                    await Update(transaction.Connection, prepared);
+                    saved = await UpdateAsync(transaction.Connection, ownerId,
+                        current with { Title = title, Body = input.Body });
                 }
                 else
                 {
-                    await Insert(transaction.Connection, prepared);
+                    saved = await InsertAsync(transaction.Connection, ownerId, title, input.Body);
                 }
 
-                saved = await Read(transaction.Connection, prepared.OwnerId, prepared.Id)
-                    ?? throw new InvalidOperationException("保存結果を取得できませんでした。");
                 await transaction.CommitAsync();
             }
             catch (Exception error)
@@ -179,33 +138,68 @@ internal sealed class SaveNote
 
     internal static class PersistenceLayer
     {
-        internal static Task<Note?> Read(SqliteConnection connection, string ownerId, string id) =>
+        internal static Task<Note?> ReadAsync(SqliteConnection connection, string ownerId, string id) =>
             connection.QuerySingleOrDefaultAsync<Note>(
-                "SELECT id AS Id,title AS Title,body AS Body,version AS Version,updated_at AS UpdatedAt FROM notes WHERE owner_id=@ownerId AND id=@id",
+                """
+                SELECT
+                    id AS Id,
+                    title AS Title,
+                    body AS Body,
+                    version AS Version,
+                    updated_at AS UpdatedAt
+                FROM
+                    notes
+                WHERE
+                    owner_id = @ownerId AND id = @id
+                """,
                 new { ownerId, id });
 
-        internal static Task<int> Insert(SqliteConnection connection, PreparedSave input) =>
-            connection.ExecuteAsync(
-                "INSERT INTO notes(id,owner_id,title,body,version,updated_at) VALUES(@Id,@OwnerId,@Title,@Body,1,@UpdatedAt)",
+        internal static Task<Note> InsertAsync(SqliteConnection connection, string ownerId, string title,
+            string body) =>
+            connection.QuerySingleAsync<Note>(
+                """
+                INSERT INTO notes (id, owner_id, title, body, version, updated_at)
+                VALUES
+                    (@Id, @OwnerId, @Title, @Body, 1, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+                RETURNING
+                    id AS Id,
+                    title AS Title,
+                    body AS Body,
+                    version AS Version,
+                    updated_at AS UpdatedAt
+                """,
                 new
                 {
-                    OwnerId = input.OwnerId,
-                    Id = input.Id,
-                    Title = input.Title,
-                    Body = input.Body,
-                    UpdatedAt = input.UpdatedAt.ToUniversalTime().ToString("O"),
+                    OwnerId = ownerId,
+                    Id = Guid.NewGuid().ToString("D"),
+                    Title = title,
+                    Body = body,
                 });
 
-        internal static Task<int> Update(SqliteConnection connection, PreparedSave input) =>
-            connection.ExecuteAsync(
-                "UPDATE notes SET title=@Title,body=@Body,version=version+1,updated_at=@UpdatedAt WHERE owner_id=@OwnerId AND id=@Id",
+        internal static Task<Note> UpdateAsync(SqliteConnection connection, string ownerId, Note note) =>
+            connection.QuerySingleAsync<Note>(
+                """
+                UPDATE notes
+                SET
+                    title = @Title,
+                    body = @Body,
+                    version = version + 1,
+                    updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+                WHERE
+                    owner_id = @OwnerId AND id = @Id
+                RETURNING
+                    id AS Id,
+                    title AS Title,
+                    body AS Body,
+                    version AS Version,
+                    updated_at AS UpdatedAt
+                """,
                 new
                 {
-                    OwnerId = input.OwnerId,
-                    Id = input.Id,
-                    Title = input.Title,
-                    Body = input.Body,
-                    UpdatedAt = input.UpdatedAt.ToUniversalTime().ToString("O"),
+                    OwnerId = ownerId,
+                    note.Id,
+                    note.Title,
+                    note.Body,
                 });
 
         internal static Exception TranslateError(Exception error)
@@ -216,8 +210,6 @@ internal sealed class SaveNote
         }
     }
 
-    internal sealed record PreparedSave(string OwnerId, string Id, long? Version, string Title, string Body, DateTimeOffset UpdatedAt);
-
     internal abstract record SaveResult
     {
         internal sealed record Success(SaveNoteResponse Response) : SaveResult;
@@ -226,7 +218,7 @@ internal sealed class SaveNote
     }
 }
 
-internal sealed record SaveNoteRequest : IValidatableObject
+public sealed record SaveNoteRequest : IValidatableObject
 {
     private string? id;
     private long? version;
@@ -267,7 +259,8 @@ internal sealed record SaveNoteResponse(string Id, string Title, string Body, lo
 
 internal sealed class NoteTitleAttribute : ValidationAttribute
 {
-    public override bool IsValid(object? value) => value is string title && NoteRules.IsValidTitle(title);
+    public override bool IsValid(object? value) =>
+        value is string title && !string.IsNullOrWhiteSpace(title) && title.EnumerateRunes().Count() <= 100;
 
     public override string FormatErrorMessage(string name) => "タイトルは1〜100文字で入力してください。";
 }

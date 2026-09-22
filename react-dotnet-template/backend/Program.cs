@@ -47,7 +47,7 @@ public static class Program
 
             if (Environment.GetEnvironmentVariable("AIDD_CONTROL_STDIN") == "1")
             {
-                _ = ReadControlInput(app.Lifetime);
+                _ = ReadControlInputAsync(app.Lifetime);
             }
 
             await app.WaitForShutdownAsync();
@@ -76,6 +76,7 @@ public static class Program
         });
         builder.WebHost.UseShutdownTimeout(TimeSpan.FromSeconds(10));
         builder.Services.AddProblemDetails();
+        builder.Services.AddValidation();
         builder.Services.AddOpenApi(options =>
         {
             options.CreateSchemaReferenceId = type => type.Type.IsNested
@@ -128,9 +129,9 @@ public static class Program
                     && context.Response.StatusCode is 400 or 413 or 415)
                 {
                     if (context.Response.StatusCode == StatusCodes.Status400BadRequest)
-                        await WriteValidationProblem(context, "入力の形式を確認してください。");
+                        await WriteValidationProblemAsync(context, "入力の形式を確認してください。");
                     else
-                        await WriteProblem(context, context.Response.StatusCode,
+                        await WriteProblemAsync(context, context.Response.StatusCode,
                             context.Response.StatusCode == 413 ? "リクエストが大きすぎます。" : "入力の形式を確認してください。");
                 }
             }
@@ -150,9 +151,9 @@ public static class Program
                     _ => StatusCodes.Status500InternalServerError,
                 };
                 if (status == StatusCodes.Status400BadRequest)
-                    await WriteValidationProblem(context, fault.Message);
+                    await WriteValidationProblemAsync(context, fault.Message);
                 else
-                    await WriteProblem(context, status, fault.Message);
+                    await WriteProblemAsync(context, status, fault.Message);
             }
             catch (BadHttpRequestException error) when (error.StatusCode is StatusCodes.Status400BadRequest or StatusCodes.Status413PayloadTooLarge or StatusCodes.Status415UnsupportedMediaType)
             {
@@ -162,9 +163,9 @@ public static class Program
                 }
 
                 if (error.StatusCode == StatusCodes.Status400BadRequest)
-                    await WriteValidationProblem(context, "入力の形式を確認してください。");
+                    await WriteValidationProblemAsync(context, "入力の形式を確認してください。");
                 else
-                    await WriteProblem(
+                    await WriteProblemAsync(
                         context,
                         error.StatusCode,
                         error.StatusCode == 413 ? "リクエストが大きすぎます。" : "入力の形式を確認してください。");
@@ -177,7 +178,7 @@ public static class Program
                 }
 
                 app.Logger.LogError(error, "機能操作に失敗しました");
-                await WriteProblem(
+                await WriteProblemAsync(
                     context,
                     StatusCodes.Status500InternalServerError,
                     "処理を完了できませんでした。");
@@ -201,7 +202,7 @@ public static class Program
                 !requestHost.Equals($"localhost:{port}", StringComparison.OrdinalIgnoreCase) &&
                 (publicHost is null || !requestHost.Equals(publicHost, StringComparison.OrdinalIgnoreCase)))
             {
-                await WriteProblem(
+                await WriteProblemAsync(
                     context,
                     StatusCodes.Status403Forbidden,
                     "接続先が不正です。");
@@ -214,7 +215,7 @@ public static class Program
             if ((!string.IsNullOrEmpty(origin) && origin != expectedOrigin && !config.AllowedOrigins.Contains(origin)) ||
                 (HttpMethods.IsPost(context.Request.Method) && string.IsNullOrEmpty(origin)))
             {
-                await WriteProblem(
+                await WriteProblemAsync(
                     context,
                     StatusCodes.Status403Forbidden,
                     "同一サイトから操作してください。");
@@ -245,7 +246,7 @@ public static class Program
                 }
             }
 
-            await WriteProblem(
+            await WriteProblemAsync(
                 context,
                 StatusCodes.Status404NotFound,
                 "見つかりません。");
@@ -274,7 +275,7 @@ public static class Program
         throw new InvalidOperationException("使用方法: App db:backup <新規ファイル> | App db:check <DBファイル>");
     }
 
-    private static Task ReadControlInput(IHostApplicationLifetime lifetime) => Task.Run(async () =>
+    private static Task ReadControlInputAsync(IHostApplicationLifetime lifetime) => Task.Run(async () =>
     {
         while (await Console.In.ReadLineAsync() is { } line)
         {
@@ -286,7 +287,7 @@ public static class Program
         }
     });
 
-    private static Task WriteProblem(HttpContext context, int status, string detail) =>
+    private static Task WriteProblemAsync(HttpContext context, int status, string detail) =>
         Results.Problem(
             statusCode: status,
             title: status switch
@@ -302,7 +303,7 @@ public static class Program
             detail: detail)
         .ExecuteAsync(context);
 
-    private static Task WriteValidationProblem(HttpContext context, string message) =>
+    private static Task WriteValidationProblemAsync(HttpContext context, string message) =>
         Results.ValidationProblem(
             new Dictionary<string, string[]> { ["request"] = [message] },
             title: "入力内容を確認してください。")

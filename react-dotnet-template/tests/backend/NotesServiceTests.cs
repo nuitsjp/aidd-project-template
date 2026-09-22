@@ -8,6 +8,7 @@ using Aidd.ReactDotnet.Features.Notes;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Data.Sqlite;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.ComponentModel.DataAnnotations;
 
 namespace Aidd.ReactDotnet.Tests;
 
@@ -18,10 +19,9 @@ public sealed class NotesServiceTests
     private static readonly Principal Bob = new("bob", "Bob");
 
     [TestMethod]
-    public void TitleValidationAndNormalizationAreIndependent()
+    public void TitleAndBodyValidationUseRuneCounts()
     {
         NoteRules.ValidateTitle("  対象  ");
-        Assert.AreEqual("対象", NoteRules.NormalizeTitle("  対象  "));
         NoteRules.ValidateTitle(string.Concat(Enumerable.Repeat("😀", 100)));
         Assert.AreEqual("VALIDATION", TestAssert.Throws<AppFaultException>(() =>
             NoteRules.ValidateTitle(string.Concat(Enumerable.Repeat("😀", 101)))).Code);
@@ -40,7 +40,7 @@ public sealed class NotesServiceTests
     }
 
     [TestMethod]
-    public async Task CreateEditRemovePersistsAndDetectsStaleVersion()
+    public async Task CreateEditRemovePersistsAndDetectsStaleVersionAsync()
     {
         using var fixture = new TestDatabase();
         var created = Success(await ExecuteAsync(fixture.Save.Presentation, Alice, new SaveNoteRequest(null, null, "対象", "initial")));
@@ -56,7 +56,7 @@ public sealed class NotesServiceTests
     }
 
     [TestMethod]
-    public async Task ConcurrentEditsSerializeAndOnlyOneVersionWins()
+    public async Task ConcurrentEditsSerializeAndOnlyOneVersionWinsAsync()
     {
         using var fixture = new TestDatabase();
         var original = Success(await ExecuteAsync(fixture.Save.Presentation, Alice, new SaveNoteRequest(null, null, "parallel", "v1")));
@@ -81,7 +81,7 @@ public sealed class NotesServiceTests
     }
 
     [TestMethod]
-    public async Task OwnerBoundaryAppliesToReadWriteAndDelete()
+    public async Task OwnerBoundaryAppliesToReadWriteAndDeleteAsync()
     {
         using var fixture = new TestDatabase();
         var alice = Success(await ExecuteAsync(fixture.Save.Presentation, Alice, new SaveNoteRequest(null, null, "同じタイトル", "private")));
@@ -109,30 +109,7 @@ public sealed class NotesServiceTests
     }
 
     [TestMethod]
-    public async Task InstanceIoDelegatesDoNotLeakToAnotherService()
-    {
-        using var fixture = new TestDatabase();
-        var firstId = Guid.Parse("20000000-0000-0000-0000-000000000001");
-        var secondId = Guid.Parse("20000000-0000-0000-0000-000000000002");
-        var firstApplication = new SaveNote.ApplicationLayer(
-            fixture.Database, fixture.Notifications);
-        firstApplication.NewId = () => firstId;
-        firstApplication.UtcNow = () => DateTimeOffset.Parse("2026-01-01T00:00:00Z");
-        var secondApplication = new SaveNote.ApplicationLayer(
-            fixture.Database, fixture.Notifications);
-        secondApplication.NewId = () => secondId;
-        secondApplication.UtcNow = () => DateTimeOffset.Parse("2026-02-01T00:00:00Z");
-
-        var a = Success(await ExecuteAsync(firstApplication, Alice, new SaveNoteRequest(null, null, "first", string.Empty)));
-        var b = Success(await ExecuteAsync(secondApplication, Alice, new SaveNoteRequest(null, null, "second", string.Empty)));
-        Assert.AreEqual(firstId.ToString("D"), a.Id);
-        Assert.AreEqual(secondId.ToString("D"), b.Id);
-        Assert.AreEqual("2026-01-01T00:00:00.0000000+00:00", a.UpdatedAt);
-        Assert.AreEqual("2026-02-01T00:00:00.0000000+00:00", b.UpdatedAt);
-    }
-
-    [TestMethod]
-    public async Task SaveCanReplaceItsResultIoAndNotifiesOnlyAfterPersistence()
+    public async Task SaveCanReplaceItsResultIoAndNotifiesOnlyAfterPersistenceAsync()
     {
         var errors = new List<Exception>();
         var notifications = new ChangeNotifications(errors.Add);
@@ -143,17 +120,16 @@ public sealed class NotesServiceTests
         using var fixture = new TestDatabase();
         var application = new SaveNote.ApplicationLayer(
             fixture.Database, notifications);
-        application.NewId = () => expectedId;
-        application.UtcNow = () => expectedTime;
-        application.Insert = (_, command) =>
+        application.InsertAsync = (_, ownerId, title, body) =>
         {
-            Assert.AreEqual("正規化", command.Title);
+            Assert.AreEqual("alice", ownerId);
+            Assert.AreEqual("正規化", title);
+            Assert.AreEqual("本文", body);
             Assert.IsFalse(notified);
             persisted = true;
-            return Task.FromResult(1);
+            return Task.FromResult(new Note(expectedId.ToString("D"), title, body, 1, expectedTime.ToString("O")));
         };
-        application.Read = (_, ownerId, id) => Task.FromResult<Note?>(
-            new Note(id, "正規化", "本文", 1, expectedTime.ToString("O")));
+        application.ReadAsync = (_, _, _) => throw new AssertFailedException("新規保存後の読み直しは不要です。");
         application.PublishChange = ownerId =>
         {
             Assert.AreEqual("alice", ownerId);
@@ -169,7 +145,7 @@ public sealed class NotesServiceTests
     }
 
     [TestMethod]
-    public async Task PresentationExecuteCanBeReplacedBeforeHttpConversion()
+    public async Task PresentationExecuteCanBeReplacedBeforeHttpConversionAsync()
     {
         var notifications = new ChangeNotifications(_ => { });
         var application = new SaveNote.ApplicationLayer(
@@ -186,77 +162,24 @@ public sealed class NotesServiceTests
     }
 
     [TestMethod]
-    public async Task SaveValidationFailureDoesNotRunIo()
-    {
-        var errors = new List<Exception>();
-        var notifications = new ChangeNotifications(errors.Add);
-        var generated = false;
-        var clockRead = false;
-        var persisted = false;
-        var notified = false;
-        var application = new SaveNote.ApplicationLayer(
-            new Database("unused.sqlite"), notifications);
-        application.NewId = () =>
-        {
-            generated = true;
-            return Guid.Empty;
-        };
-        application.UtcNow = () =>
-        {
-            clockRead = true;
-            return DateTimeOffset.UtcNow;
-        };
-        application.Read = (_, _, _) =>
-        {
-            persisted = true;
-            return Task.FromResult<Note?>(null);
-        };
-        application.Insert = (_, _) =>
-        {
-            persisted = true;
-            return Task.FromResult(0);
-        };
-        application.Update = (_, _) =>
-        {
-            persisted = true;
-            return Task.FromResult(0);
-        };
-        application.PublishChange = _ =>
-        {
-            notified = true;
-            return true;
-        };
-
-        var isValid = application.TryValidate(
-            new SaveNoteRequest(null, null, "  ", "本文"), out var validationErrors);
-
-        Assert.IsFalse(isValid);
-        Assert.AreEqual("タイトルは1〜100文字で入力してください。", validationErrors!["title"].Single());
-        Assert.IsFalse(generated);
-        Assert.IsFalse(clockRead);
-        Assert.IsFalse(persisted);
-        Assert.IsFalse(notified);
-        Assert.AreEqual(0, errors.Count);
-    }
-
-    [TestMethod]
     public void RequestAnnotationsReportFieldErrorsWithoutChangingInput()
     {
-        var application = new SaveNote.ApplicationLayer(
-            new Database("unused.sqlite"), new ChangeNotifications(_ => { }));
         var request = new SaveNoteRequest("invalid-id", 0, "  ", new string('x', 10_001));
-
-        Assert.IsFalse(application.TryValidate(request, out var errors));
-        CollectionAssert.AreEquivalent(new[] { "title", "body", "id", "version" }, errors!.Keys.ToArray());
+        var errors = new List<ValidationResult>();
+        Assert.IsFalse(Validator.TryValidateObject(request, new ValidationContext(request), errors, true));
+        CollectionAssert.AreEquivalent(new[] { "Title", "Body", "Id", "Version" },
+            errors.SelectMany(error => error.MemberNames).ToArray());
         Assert.AreEqual("  ", request.Title);
 
         var missingVersion = new SaveNoteRequest("00000000-0000-4000-8000-000000000001", null, "対象", "");
-        Assert.IsFalse(application.TryValidate(missingVersion, out errors));
-        Assert.AreEqual("編集対象と版を指定してください。", errors![string.Empty].Single());
+        errors.Clear();
+        Assert.IsFalse(Validator.TryValidateObject(missingVersion, new ValidationContext(missingVersion), errors, true));
+        Assert.AreEqual("編集対象と版を指定してください。", errors.Single().ErrorMessage);
+        CollectionAssert.AreEquivalent(new[] { "Id", "Version" }, errors.Single().MemberNames.ToArray());
     }
 
     [TestMethod]
-    public async Task NotificationRunsAfterCommitAndFailureDoesNotUndoSave()
+    public async Task NotificationRunsAfterCommitAndFailureDoesNotUndoSaveAsync()
     {
         using var fixture = new TestDatabase();
         var observedCount = -1;
@@ -273,7 +196,6 @@ public sealed class NotesServiceTests
         Principal principal,
         SaveNoteRequest request)
     {
-        Assert.IsTrue(presentation.TryValidate(request, out var errors), Format(errors));
         return await presentation.ExecuteAsync(principal, request);
     }
 
@@ -282,7 +204,6 @@ public sealed class NotesServiceTests
         Principal principal,
         SaveNoteRequest request)
     {
-        Assert.IsTrue(application.TryValidate(request, out var errors), Format(errors));
         return await application.ExecuteAsync(principal, request);
     }
 
@@ -291,6 +212,4 @@ public sealed class NotesServiceTests
             ? success.Response
             : throw new AssertFailedException($"保存成功ではなく {result.GetType().Name} が返されました。");
 
-    private static string Format(IReadOnlyDictionary<string, string[]>? errors) =>
-        errors is null ? string.Empty : string.Join("; ", errors.SelectMany(item => item.Value));
 }

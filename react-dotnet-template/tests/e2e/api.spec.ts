@@ -35,7 +35,9 @@ test('HTTP境界は不正なJSONと入力形状を拒否しDBを変更しない'
         { title: '大小文字', body: '', Title: '別名' },
         { title: '版文字列', body: '', id: '00000000-0000-4000-8000-000000000001', version: '1' },
         { title: '不正ID', body: '', id: 'not-a-uuid', version: 1 },
-        { title: '不正版', body: '', id: '00000000-0000-4000-8000-000000000001', version: 0 }]) {
+        { title: '不正版', body: '', id: '00000000-0000-4000-8000-000000000001', version: 0 },
+        { title: '版欠落', body: '', id: '00000000-0000-4000-8000-000000000001' },
+        { title: 'ID欠落', body: '', version: 1 }]) {
         const response = await request.post('/api/notes/save', {
             headers: { ...headers, 'Content-Type': 'application/json' }, data: JSON.stringify(input),
         });
@@ -57,8 +59,8 @@ test('HTTP境界は不正なJSONと入力形状を拒否しDBを変更しない'
     expect(await multiple.json()).toMatchObject({
         status: 400,
         errors: {
-            title: ['タイトルは1〜100文字で入力してください。'],
-            body: ['本文は10,000文字以内で入力してください。'],
+            Title: ['タイトルは1〜100文字で入力してください。'],
+            Body: ['本文は10,000文字以内で入力してください。'],
         },
     });
     const broken = await request.post('/api/notes/save', {

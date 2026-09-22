@@ -91,7 +91,7 @@ internal static class ApiEndpoints
             using var keepalive = new Timer(_ => pending.Writer.TryWrite(false), null, TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(15));
             try
             {
-                await WriteEvent(context.Response, "ready", cancellationToken);
+                await WriteEventAsync(context.Response, "ready", cancellationToken);
                 while (await pending.Reader.WaitToReadAsync(cancellationToken))
                 {
                     var changed = false;
@@ -102,7 +102,7 @@ internal static class ApiEndpoints
 
                     if (changed)
                     {
-                        await WriteEvent(context.Response, "notes.changed", cancellationToken);
+                        await WriteEventAsync(context.Response, "notes.changed", cancellationToken);
                     }
                     else
                     {
@@ -122,7 +122,7 @@ internal static class ApiEndpoints
     private static Principal RequireUser(IdentityService identity, HttpRequest request) =>
         identity.Resolve(request) ?? throw new AppFaultException("UNAUTHENTICATED", "利用者を確認できません。");
 
-    private static async Task WriteEvent(HttpResponse response, string eventName, CancellationToken cancellationToken)
+    private static async Task WriteEventAsync(HttpResponse response, string eventName, CancellationToken cancellationToken)
     {
         await response.WriteAsync($"event: {eventName}\ndata: {{}}\n\n", cancellationToken);
         await response.Body.FlushAsync(cancellationToken);

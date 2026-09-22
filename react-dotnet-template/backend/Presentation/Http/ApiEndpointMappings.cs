@@ -63,7 +63,7 @@ internal static class ApiEndpointMappings
         return ProducesCommonPostErrors(builder);
     }
 
-    private static RouteHandlerBuilder ProducesCommonPostErrors(RouteHandlerBuilder builder) => builder
+    internal static RouteHandlerBuilder ProducesCommonPostErrors(this RouteHandlerBuilder builder) => builder
         .Produces<HttpValidationProblemDetails>(StatusCodes.Status400BadRequest, "application/problem+json")
         .Produces<ProblemDetails>(StatusCodes.Status403Forbidden, "application/problem+json")
         .Produces<ProblemDetails>(StatusCodes.Status413PayloadTooLarge, "application/problem+json")

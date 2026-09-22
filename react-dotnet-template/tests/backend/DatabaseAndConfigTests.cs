@@ -23,14 +23,26 @@ public sealed class DatabaseAndConfigTests
             first.WithConnection(connection =>
             {
                 using var command = connection.CreateCommand();
-                command.CommandText = "INSERT INTO users VALUES('first','First');";
+                command.CommandText = """
+                    INSERT INTO users
+                    VALUES
+                        ('first', 'First');
+                    """;
                 return command.ExecuteNonQuery();
             });
 
             using var firstConnection = first.Open();
             using var secondConnection = second.Open();
-            Assert.AreEqual(1L, Scalar<long>(firstConnection, "SELECT COUNT(*) FROM users"));
-            Assert.AreEqual(0L, Scalar<long>(secondConnection, "SELECT COUNT(*) FROM users"));
+            Assert.AreEqual(1L, Scalar<long>(firstConnection, """
+                SELECT COUNT(*)
+                FROM
+                    users
+                """));
+            Assert.AreEqual(0L, Scalar<long>(secondConnection, """
+                SELECT COUNT(*)
+                FROM
+                    users
+                """));
         }
         finally
         {
@@ -46,34 +58,64 @@ public sealed class DatabaseAndConfigTests
     {
         using var fixture = new TestDatabase();
         using var connection = fixture.Database.Open();
-        Assert.AreEqual(1L, Scalar<long>(connection, "PRAGMA user_version"));
-        Assert.AreEqual("wal", Scalar<string>(connection, "PRAGMA journal_mode"));
-        Assert.AreEqual(1L, Scalar<long>(connection, "PRAGMA foreign_keys"));
+        Assert.AreEqual(1L, Scalar<long>(connection, """
+            PRAGMA user_version
+            """));
+        Assert.AreEqual("wal", Scalar<string>(connection, """
+            PRAGMA journal_mode
+            """));
+        Assert.AreEqual(1L, Scalar<long>(connection, """
+            PRAGMA foreign_keys
+            """));
         using var command = connection.CreateCommand();
-        command.CommandText = "INSERT INTO notes VALUES('n','missing','a','',1,'time')";
+        command.CommandText = """
+            INSERT INTO notes
+            VALUES
+                ('n', 'missing', 'a', '', 1, 'time')
+            """;
         TestAssert.Throws<SqliteException>(() => command.ExecuteNonQuery());
     }
 
     [TestMethod]
-    public async Task TransactionExposesConnectionAndSupportsCommitRollbackAndMode()
+    public async Task TransactionExposesConnectionAndSupportsCommitRollbackAndModeAsync()
     {
         using var fixture = new TestDatabase();
 
         await using (var transaction = await fixture.Database.BeginTransactionAsync())
         {
-            await transaction.Connection.ExecuteAsync("INSERT INTO users VALUES('committed','Committed');");
+            await transaction.Connection.ExecuteAsync("""
+                INSERT INTO users
+                VALUES
+                    ('committed', 'Committed');
+                """);
             await transaction.CommitAsync();
         }
 
         await using (var transaction = await fixture.Database.BeginTransactionAsync(TransactionMode.Deferred))
         {
-            await transaction.Connection.ExecuteAsync("INSERT INTO users VALUES('rolled-back','Rolled Back');");
+            await transaction.Connection.ExecuteAsync("""
+                INSERT INTO users
+                VALUES
+                    ('rolled-back', 'Rolled Back');
+                """);
             await transaction.RollbackAsync();
         }
 
         using var connection = fixture.Database.Open();
-        Assert.AreEqual(1L, Scalar<long>(connection, "SELECT COUNT(*) FROM users WHERE id='committed'"));
-        Assert.AreEqual(0L, Scalar<long>(connection, "SELECT COUNT(*) FROM users WHERE id='rolled-back'"));
+        Assert.AreEqual(1L, Scalar<long>(connection, """
+            SELECT COUNT(*)
+            FROM
+                users
+            WHERE
+                id = 'committed'
+            """));
+        Assert.AreEqual(0L, Scalar<long>(connection, """
+            SELECT COUNT(*)
+            FROM
+                users
+            WHERE
+                id = 'rolled-back'
+            """));
     }
 
     [TestMethod]
@@ -88,15 +130,28 @@ public sealed class DatabaseAndConfigTests
             using (var connection = database.Open())
             {
                 using var command = connection.CreateCommand();
-                command.CommandText = "INSERT INTO users VALUES('id','name'); PRAGMA user_version=99;";
+                command.CommandText = """
+                    INSERT INTO users
+                    VALUES
+                        ('id', 'name');
+                    PRAGMA user_version = 99;
+                    """;
                 command.ExecuteNonQuery();
             }
 
             TestAssert.Throws<InvalidOperationException>(() => database.Initialize());
             using var readonlyConnection = new SqliteConnection($"Data Source={path};Mode=ReadOnly;Pooling=False");
             readonlyConnection.Open();
-            Assert.AreEqual("name", Scalar<string>(readonlyConnection, "SELECT name FROM users WHERE id='id'"));
-            Assert.AreEqual(99L, Scalar<long>(readonlyConnection, "PRAGMA user_version"));
+            Assert.AreEqual("name", Scalar<string>(readonlyConnection, """
+                SELECT name
+                FROM
+                    users
+                WHERE
+                    id = 'id'
+                """));
+            Assert.AreEqual(99L, Scalar<long>(readonlyConnection, """
+                PRAGMA user_version
+                """));
         }
         finally
         {
@@ -108,12 +163,10 @@ public sealed class DatabaseAndConfigTests
     }
 
     [TestMethod]
-    public async Task BackupCopiesCommittedWalStateAndPassesQuickCheck()
+    public async Task BackupCopiesCommittedWalStateAndPassesQuickCheckAsync()
     {
         using var fixture = new TestDatabase();
         var request = new Aidd.ReactDotnet.Features.Notes.SaveNoteRequest(null, null, "backup", "copy");
-        Assert.IsTrue(fixture.Save.Presentation.TryValidate(request, out var errors),
-            errors is null ? string.Empty : string.Join("; ", errors.SelectMany(item => item.Value)));
         await fixture.Save.Presentation.ExecuteAsync(
             new Aidd.ReactDotnet.Application.Authentication.Principal("alice", "Alice"), request);
         var backup = Path.Combine(Path.GetDirectoryName(fixture.Path)!, "backup.sqlite");
@@ -122,7 +175,11 @@ public sealed class DatabaseAndConfigTests
         Assert.IsTrue(check.IsHealthy);
         using var connection = new SqliteConnection($"Data Source={backup};Mode=ReadOnly;Pooling=False");
         connection.Open();
-        Assert.AreEqual("copy", Scalar<string>(connection, "SELECT body FROM notes"));
+        Assert.AreEqual("copy", Scalar<string>(connection, """
+            SELECT body
+            FROM
+                notes
+            """));
     }
 
     [TestMethod]

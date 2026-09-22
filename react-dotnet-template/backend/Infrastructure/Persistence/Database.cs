@@ -21,11 +21,18 @@ internal sealed class Database
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         using var connection = Open();
-        connection.Execute("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;");
-        connection.Execute("BEGIN IMMEDIATE;");
+        connection.Execute("""
+            PRAGMA journal_mode = WAL;
+            PRAGMA synchronous = FULL;
+            """);
+        connection.Execute("""
+            BEGIN IMMEDIATE;
+            """);
         try
         {
-            var version = connection.ExecuteScalar<int>("PRAGMA user_version;");
+            var version = connection.ExecuteScalar<int>("""
+                PRAGMA user_version;
+                """);
             if (version is < 0 or > 1)
             {
                 throw new InvalidOperationException("未対応のDBスキーマです。");
@@ -37,14 +44,20 @@ internal sealed class Database
                     ?? throw new InvalidOperationException("DB migrationが見つかりません。");
                 using var reader = new StreamReader(stream);
                 connection.Execute(reader.ReadToEnd());
-                connection.Execute("PRAGMA user_version=1;");
+                connection.Execute("""
+                    PRAGMA user_version = 1;
+                    """);
             }
 
-            connection.Execute("COMMIT;");
+            connection.Execute("""
+                COMMIT;
+                """);
         }
         catch
         {
-            connection.Execute("ROLLBACK;");
+            connection.Execute("""
+                ROLLBACK;
+                """);
             throw;
         }
     }
@@ -61,7 +74,11 @@ internal sealed class Database
         try
         {
             connection.Open();
-            connection.Execute("PRAGMA foreign_keys=ON; PRAGMA busy_timeout=2000; PRAGMA synchronous=FULL;");
+            connection.Execute("""
+                PRAGMA foreign_keys = ON;
+                PRAGMA busy_timeout = 2000;
+                PRAGMA synchronous = FULL;
+                """);
             return connection;
         }
         catch
@@ -80,16 +97,22 @@ internal sealed class Database
     internal T WithImmediateTransaction<T>(Func<SqliteConnection, T> execute)
     {
         using var connection = Open();
-        connection.Execute("BEGIN IMMEDIATE;");
+        connection.Execute("""
+            BEGIN IMMEDIATE;
+            """);
         try
         {
             var result = execute(connection);
-            connection.Execute("COMMIT;");
+            connection.Execute("""
+                COMMIT;
+                """);
             return result;
         }
         catch
         {
-            connection.Execute("ROLLBACK;");
+            connection.Execute("""
+                ROLLBACK;
+                """);
             throw;
         }
     }
@@ -101,9 +124,15 @@ internal sealed class Database
         {
             var begin = mode switch
             {
-                TransactionMode.Deferred => "BEGIN DEFERRED;",
-                TransactionMode.Immediate => "BEGIN IMMEDIATE;",
-                TransactionMode.Exclusive => "BEGIN EXCLUSIVE;",
+                TransactionMode.Deferred => """
+                    BEGIN DEFERRED;
+                    """,
+                TransactionMode.Immediate => """
+                    BEGIN IMMEDIATE;
+                    """,
+                TransactionMode.Exclusive => """
+                    BEGIN EXCLUSIVE;
+                    """,
                 _ => throw new ArgumentOutOfRangeException(nameof(mode)),
             };
             await connection.ExecuteAsync(begin);
@@ -147,8 +176,12 @@ internal sealed class Database
     internal DatabaseCheck Check()
     {
         using var connection = OpenReadOnly(path);
-        var version = connection.ExecuteScalar<int>("PRAGMA user_version;");
-        var results = connection.Query<string>("PRAGMA quick_check;").AsList();
+        var version = connection.ExecuteScalar<int>("""
+            PRAGMA user_version;
+            """);
+        var results = connection.Query<string>("""
+            PRAGMA quick_check;
+            """).AsList();
 
         return new DatabaseCheck(version, results);
     }
@@ -165,7 +198,9 @@ internal sealed class Database
         try
         {
             connection.Open();
-            connection.Execute("PRAGMA busy_timeout=2000;");
+            connection.Execute("""
+                PRAGMA busy_timeout = 2000;
+                """);
             return connection;
         }
         catch
@@ -187,7 +222,11 @@ internal sealed class Database
         try
         {
             await connection.OpenAsync();
-            await connection.ExecuteAsync("PRAGMA foreign_keys=ON; PRAGMA busy_timeout=2000; PRAGMA synchronous=FULL;");
+            await connection.ExecuteAsync("""
+                PRAGMA foreign_keys = ON;
+                PRAGMA busy_timeout = 2000;
+                PRAGMA synchronous = FULL;
+                """);
             return connection;
         }
         catch
@@ -223,14 +262,18 @@ internal sealed class DatabaseTransaction(SqliteConnection connection) : ITransa
     public async Task CommitAsync()
     {
         if (completed) return;
-        await Connection.ExecuteAsync("COMMIT;");
+        await Connection.ExecuteAsync("""
+            COMMIT;
+            """);
         completed = true;
     }
 
     public async Task RollbackAsync()
     {
         if (completed) return;
-        await Connection.ExecuteAsync("ROLLBACK;");
+        await Connection.ExecuteAsync("""
+            ROLLBACK;
+            """);
         completed = true;
     }
 

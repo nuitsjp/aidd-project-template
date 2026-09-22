@@ -101,8 +101,14 @@ internal sealed partial class IdentityService
     internal Principal EnsureUser(Principal user)
     {
         database.WithConnection(connection => connection.Execute("""
-                INSERT INTO users(id,name) VALUES(@id,@name)
-                ON CONFLICT(id) DO UPDATE SET name=excluded.name WHERE users.name<>excluded.name
+                INSERT INTO users (id, name)
+                VALUES
+                    (@id, @name)
+                ON CONFLICT (id) DO UPDATE
+                SET
+                    name = excluded.name
+                WHERE
+                    users.name <> excluded.name
                 """, new { id = user.Id, name = user.Name }));
         return user;
     }

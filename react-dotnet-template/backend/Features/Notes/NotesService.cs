@@ -60,7 +60,7 @@ internal sealed class NotesService
             throw AppFaultException.Validation("タイトルは1〜100件で入力してください。");
         }
 
-        var titles = rawTitles.Select(NoteRules.NormalizeTitle).ToArray();
+        var titles = rawTitles.Select(title => title.Trim()).ToArray();
         foreach (var title in titles)
         {
             NoteRules.ValidateTitle(title);
@@ -86,7 +86,20 @@ internal sealed class NotesService
 
     internal static IReadOnlyList<Note> ReadAllCore(SqliteConnection connection, string ownerId) =>
         connection.Query<Note>(
-            "SELECT id AS Id,title AS Title,body AS Body,version AS Version,updated_at AS UpdatedAt FROM notes WHERE owner_id=@ownerId ORDER BY updated_at DESC,id",
+            """
+            SELECT
+                id AS Id,
+                title AS Title,
+                body AS Body,
+                version AS Version,
+                updated_at AS UpdatedAt
+            FROM
+                notes
+            WHERE
+                owner_id = @ownerId
+            ORDER BY
+                updated_at DESC, id
+            """,
             new { ownerId }).AsList();
 
     internal static Note ReadOneCore(SqliteConnection connection, string ownerId, string id) =>
@@ -100,7 +113,11 @@ internal sealed class NotesService
             throw new AppFaultException("EDIT_CONFLICT", "対象が更新されています。最新版を確認してください。");
         }
 
-        connection.Execute("DELETE FROM notes WHERE owner_id=@OwnerId AND id=@Id", new { input.OwnerId, input.Id });
+        connection.Execute("""
+            DELETE FROM notes
+            WHERE
+                owner_id = @OwnerId AND id = @Id
+            """, new { input.OwnerId, input.Id });
         return true;
     }
 
@@ -119,14 +136,29 @@ internal sealed class NotesService
 
     private static Note ReadOneFromDatabase(SqliteConnection connection, string ownerId, string id) =>
         connection.QuerySingleOrDefault<Note>(
-            "SELECT id AS Id,title AS Title,body AS Body,version AS Version,updated_at AS UpdatedAt FROM notes WHERE owner_id=@ownerId AND id=@id",
+            """
+            SELECT
+                id AS Id,
+                title AS Title,
+                body AS Body,
+                version AS Version,
+                updated_at AS UpdatedAt
+            FROM
+                notes
+            WHERE
+                owner_id = @ownerId AND id = @id
+            """,
             new { ownerId, id })
         ?? throw new AppFaultException("NOT_FOUND", "対象のメモが見つかりません。");
 
     private static void Insert(SqliteConnection connection, string ownerId, string id, string title, string body,
         DateTimeOffset updatedAt) =>
         connection.Execute(
-            "INSERT INTO notes(id,owner_id,title,body,version,updated_at) VALUES(@id,@ownerId,@title,@body,1,@updatedAt)",
+            """
+            INSERT INTO notes (id, owner_id, title, body, version, updated_at)
+            VALUES
+                (@id, @ownerId, @title, @body, 1, @updatedAt)
+            """,
             new { ownerId, id, title, body, updatedAt = updatedAt.ToUniversalTime().ToString("O") });
 
     private static Exception TranslateDatabaseError(Exception error)

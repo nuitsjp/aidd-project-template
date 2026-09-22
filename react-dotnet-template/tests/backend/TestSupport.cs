@@ -43,7 +43,11 @@ internal sealed class TestDatabase : IDisposable
     {
         using var connection = Database.Open();
         using var command = connection.CreateCommand();
-        command.CommandText = "INSERT INTO users(id,name) VALUES($id,$name)";
+        command.CommandText = """
+            INSERT INTO users (id, name)
+            VALUES
+                ($id, $name)
+            """;
         command.Parameters.AddWithValue("$id", id);
         command.Parameters.AddWithValue("$name", name);
         command.ExecuteNonQuery();
