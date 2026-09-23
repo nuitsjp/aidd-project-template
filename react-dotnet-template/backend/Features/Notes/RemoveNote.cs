@@ -6,6 +6,7 @@ using Aidd.ReactDotnet.Infrastructure.Authentication;
 using Aidd.ReactDotnet.Infrastructure.Notifications;
 using Aidd.ReactDotnet.Infrastructure.Persistence;
 using Aidd.ReactDotnet.Presentation.Http;
+using Aidd.ReactDotnet.Presentation.Http.Validation;
 using Dapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
@@ -25,14 +26,18 @@ internal sealed class RemoveNote
 
     internal void Map(WebApplication app, IdentityService identity)
     {
-        app.MapAuthenticatedPost<RemoveNoteInput>(
-            "/api/notes/remove",
-            nameof(RemoveNote),
-            identity,
-            Presentation.ExecuteAsync)
+        app.MapPost("/api/notes/remove", async (HttpContext context, RemoveNoteInput input) =>
+        {
+            var principal = identity.Resolve(context.Request)
+                ?? throw new AppFaultException("UNAUTHENTICATED", "利用者を確認できません。");
+            return await Presentation.ExecuteAsync(principal, input);
+        })
+            .WithName(nameof(RemoveNote))
             .Produces<SuccessOutput>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")
-            .Produces<ProblemDetails>(StatusCodes.Status409Conflict, "application/problem+json");
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict, "application/problem+json")
+            .ProducesCommonPostErrors();
     }
 
     internal sealed class PresentationLayer(IApplicationLayer<RemoveNoteInput, RemoveResult> application)

@@ -1,4 +1,5 @@
 using Aidd.ReactDotnet.Presentation.Http;
+using Aidd.ReactDotnet.Presentation.Http.Validation;
 using Aidd.ReactDotnet.Application;
 using Aidd.ReactDotnet.Application.Authentication;
 using Aidd.ReactDotnet.Infrastructure.Persistence;
@@ -252,25 +253,3 @@ public sealed record SaveNoteRequest : IValidatableObject
 }
 
 internal sealed record SaveNoteResponse(string Id, string Title, string Body, long Version, string UpdatedAt);
-
-internal sealed class NoteTitleAttribute : ValidationAttribute
-{
-    public override bool IsValid(object? value) =>
-        value is string title && !string.IsNullOrWhiteSpace(title) && title.EnumerateRunes().Count() <= 100;
-
-    public override string FormatErrorMessage(string name) => "タイトルは1〜100文字で入力してください。";
-}
-
-internal sealed class RuneMaxLengthAttribute(int maximum) : ValidationAttribute
-{
-    public override bool IsValid(object? value) =>
-        value is string text && text.EnumerateRunes().Count() <= maximum;
-}
-
-internal sealed class UuidAttribute : ValidationAttribute
-{
-    public override bool IsValid(object? value) =>
-        value is null || value is string id && JsonRequest.IsUuid(id);
-
-    public override string FormatErrorMessage(string name) => "IDの形式を確認してください。";
-}

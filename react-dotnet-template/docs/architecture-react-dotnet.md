@@ -1,91 +1,50 @@
 # React / ASP.NET Core アーキテクチャ
 
-[architecture.md](architecture.md) の技術固有構造を補足する文書です。ユースケース固有の仕様は各 UC、実現パターンは `design/UCP-n.md`、保存方式とテーブルは [データ設計](design/data.md) に記録し、本書への転記は行いません。
+[全体構成](architecture.md)の技術固有の判断を記録します。ユースケースの振る舞いは各 UC、実現パターンは `design/UCP-n.md`、テーブルと値の制約は[データ設計](design/data.md)を正本とします。
 
-## 1. 構成・責務
+## 1. 実行単位と責務
 
-React・TypeScript・Vite、TanStack Router/Query、Mantine・CSS Modules を用いる SPA と、HTTP JSON と SSE を提供する ASP.NET Core（.NET 10）で構成します。運用時と Visual Studio の F5 は、`backend/App.csproj` が UI をビルドして静的ファイルを配置し、単一の .NET プロセスから UI と API を同じ origin で配信します。コンソール開発では `mise run dev` が Vite（`127.0.0.1:5173`）と ASP.NET Core（`127.0.0.1:3000`）を起動し、Vite の HMR と `/api`・`/events`・`/health` のプロキシを使用します。開発時も実 DB を使用します。
+運用時と Visual Studio の F5 では `backend/App.csproj` が React をビルド・配置し、UI と API を単一の .NET プロセスから同じ origin で配信します。コンソール開発では `mise run dev` が Vite と .NET を別々に起動し、Vite が API と SSE をプロキシします。どちらも実 SQLite を使用します。`frontend/Frontend.esproj` は Visual Studio のソリューション表示用で、UI ビルドは所有しません。
 
-対話制御はユースケース中心、バックエンドは画面非依存の機能領域中心に分離します。ユースケースと機能は n:n で対応し、Service や画面との 1:1 対応は要求しません。
+フロントエンドの `usecases/` は対話と下書き、`features/` は API 呼び出しとイベント購読を担当します。バックエンドは画面単位ではなく API エンドポイント単位で `backend/Features/Notes/` にファイルを分けます。画面やユースケースと API は 1:1 に対応させません。
 
-| 配置 | 責務 |
-| --- | --- |
-| `frontend/src/app/`, `frontend/src/routes/` | Provider・Router・画面の組み立て |
-| `frontend/src/usecases/` | 対話進行、下書き保持、機能の組み合わせ |
-| `frontend/src/features/` | HTTP JSON 呼び出し、Query、機能別イベント購読 |
-| `frontend/src/shared/` | 機能非依存の共用 UI |
-| `contracts/api.gen.ts`、`contracts/notes.ts` | C# の OpenAPI から生成した公開入出力型と別名 |
-| `frontend/Frontend.esproj` | ソリューション上で frontend を表示するための登録。依存取得と UI ビルドは所有しない |
-| `backend/App.csproj` | ASP.NET Core サーバー、UI ビルド、静的 UI 配信の実行単位 |
-| `backend/Features/Notes/SaveNote.cs` | メモ保存 API の HTTP 受付、入力検証、業務判断、SQL、トランザクションをレイヤー別にまとめたクラス |
-| `backend/Features/Notes/ListNotes.cs` | メモ一覧 API の HTTP 受付、業務判断、SQLをレイヤー別にまとめたクラス |
-| `backend/Features/Notes/GetNote.cs` | メモ単件取得 API の HTTP 受付、業務判断、SQLをレイヤー別にまとめたクラス |
-| `backend/Features/Notes/RemoveNote.cs` | メモ削除 API の HTTP 受付、入力検証、業務判断、SQL、トランザクションをレイヤー別にまとめたクラス |
-| `backend/Features/Notes/PreviewNotes.cs` | 一括登録プレビュー API の HTTP 受付と入力検証をレイヤー別にまとめたクラス |
-| `backend/Features/Notes/ImportNotes.cs` | 一括登録 API の HTTP 受付、業務判断、SQL、トランザクションをレイヤー別にまとめたクラス |
-| `backend/Features/Notes/BulkInput.cs` | プレビュー API と一括登録 API で共有する入力型 |
-| `backend/Domain/` | `AppFaultException` を置くドメイン名前空間 |
-| `backend/Domain/Notes/` | `Note` と `NoteRules` を置くドメイン名前空間 |
-| `backend/Application/Authentication/` | `Principal` を置くアプリケーション名前空間 |
-| `backend/Infrastructure/Persistence/` | `Database` と SQLite マイグレーションを置く永続化名前空間 |
-| `backend/Infrastructure/Authentication/` | `IdentityService` を置く認証名前空間 |
-| `backend/Infrastructure/Notifications/` | `ChangeNotifications` を置く通知名前空間 |
-| `backend/Infrastructure/Configuration/` | `AppConfig` を置く設定名前空間 |
-| `backend/Presentation/Http/` | `ApiEndpoints`、`JsonRequest`を置く HTTP プレゼンテーション名前空間 |
-| `tests/backend/Backend.Tests.csproj` | サーバー境界と実 DB を使う .NET テスト |
+## 2. API 単位の実装
 
-呼び出し経路は `usecases → API ごとの feature class → HTTP JSON → ASP.NET Core エンドポイント → PresentationLayer → ApplicationLayer → Dapper / Microsoft.Data.Sqlite` とし、フロントエンドは公開契約と型定義のみを参照します。メモの各 API は `SaveNote.cs`、`ListNotes.cs`、`GetNote.cs`、`RemoveNote.cs`、`PreviewNotes.cs`、`ImportNotes.cs` に一つずつ分けます。各ファイル内で `PresentationLayer` が HTTP 受付と応答変換を担当し、`ApplicationLayer` が共通の `IApplicationLayer<TRequest, TResult>` を実装します。DBを使わないプレビュー API は `PersistenceLayer` を持ちません。共有入力型の `BulkInput` は `BulkInput.cs` に置き、その他のAPI専用 record は担当ファイルに同居させます。`AppFaultException` は `Aidd.ReactDotnet.Domain`、`Note` とタイトル・本文の検証規則 `NoteRules` は `Aidd.ReactDotnet.Domain.Notes`、`Principal` は `Aidd.ReactDotnet.Application.Authentication`、共通の `IApplicationLayer<TRequest, TResult>` は `Aidd.ReactDotnet.Application`、`Database` とマイグレーションは `Aidd.ReactDotnet.Infrastructure.Persistence`、`IdentityService` は `Aidd.ReactDotnet.Infrastructure.Authentication`、`ChangeNotifications` は `Aidd.ReactDotnet.Infrastructure.Notifications`、`AppConfig` は `Aidd.ReactDotnet.Infrastructure.Configuration`、`JsonRequest`、`ApiEndpointMappings`、`ApiEndpoints` は `Aidd.ReactDotnet.Presentation.Http` 名前空間に置きます。認証あり・なしの JSON POST に共通する受付、成功応答、HTTP エラー契約は `ApiEndpointMappings` にまとめ、機能固有のエラー契約は各APIファイルに残します。HTTP ルートは各機能クラスの `Map` で登録し、`ApiEndpoints` はセッション、認証設定、SSE、ヘルスチェックを登録します。DBを扱う各機能は状態を持たないSQL関数を含む static `PersistenceLayer` を定義します。トランザクション境界はApplicationLayerが管理し、差し替え可能な依存関数は呼び出し側のレイヤーが所有します。`SaveNoteRequest` と `RemoveNoteInput` はASP.NET Core DataAnnotationsで自動検証し、検証後に `PresentationLayer` へ渡します。タイトルのトリムは検証から分離し、保存値を組み立てるApplicationLayerで行います。保存・削除APIは対象なしと競合を結果型で返し、`PresentationLayer` が `404 Not Found` または `409 Conflict` に変換します。汎用 Repository、独自の DI コンテナ、static の共有可変状態は設けません。
+各 API ファイルにはルート登録の `Map` と、責務を明示する内部 `PresentationLayer`、`ApplicationLayer` を置きます。DB を使う API には、1関数が1つの SQL を実行する static `PersistenceLayer` も置きます。`ApplicationLayer` は共通の `IApplicationLayer<TRequest, TResult>` を実装し、トランザクションと業務判断を担当します。`PresentationLayer` は公開応答への変換を担当します。DB を使わない `PreviewNotes` に永続化レイヤーは置きません。
 
-新規メモの ID は `PersistenceLayer.InsertAsync` が発行します。更新日時は `PersistenceLayer.InsertAsync` と `PersistenceLayer.UpdateAsync` が SQLite の `strftime(..., 'now')` で UTC の ISO 8601 文字列として設定します。両 SQL は `RETURNING` で保存後の `Note` を返し、`ApplicationLayer` は読み直さずに応答を組み立てます。
+テストで差し替える関数は、それを呼ぶレイヤーの `Func` または `Action` メンバーに既定実装を保持します。`Database` は起動時に生成して必要な `ApplicationLayer` に渡し、static `PersistenceLayer` には状態を持たせません。API 専用の入出力型は担当ファイルに置き、プレビューと一括登録が共有する `BulkInput` だけを独立させます。一括登録はプレビューのアプリケーション処理を再利用し、確認時と確定時に同じ内容を検証します。
 
-## 2. HTTP 契約と状態
+API 間で共有する DataAnnotations 属性は `backend/Presentation/Http/Validation/` に1クラス1ファイルで置きます。現在の対象は `NoteTitleAttribute`、`RuneMaxLengthAttribute`、`UuidAttribute` です。認証、永続化、通知などの共通処理は、それぞれ `Infrastructure/Authentication/`、`Infrastructure/Persistence/`、`Infrastructure/Notifications/` に置きます。
 
-C# の API 入出力型を正本とし、ASP.NET Core の OpenAPI から `contracts/api.gen.ts` を生成します。React は `contracts/notes.ts` の別名を通じて生成型を参照します。Save の専用 `SaveNoteRequest`・`SaveNoteResponse` は `SaveNote.cs` に置きます。`SaveNoteRequest` は .NET 10 の検証ジェネレーターが対象として検出できるよう public にします。JSON は型付きバインディングで読み取り、必須項目・null・未知項目・重複項目・型をサーバー側で検査します。保存 API のタイトル・本文・UUID・版番号は DataAnnotations 属性、項目間の整合性は `IValidatableObject` で定義します。`AddValidation` による自動検証の結果を ASP.NET Core 標準の `HttpValidationProblemDetails.errors` で返し、キーはフレームワークの形式を維持します。タイトルのトリムは検証とは別に保存時に行います。その他の公開エラーは `ProblemDetails` で返します。独自のエラーコードは設けず、分類には HTTP ステータスを使います。
+## 3. HTTP 契約と状態
 
-```json
-"対象のメモが見つかりません。"
-```
+C# の API 入出力型を契約の正本とし、OpenAPI から `contracts/api.gen.ts` を生成します。React は `contracts/notes.ts` の別名を通じて生成型を使います。保存と削除の入力は DataAnnotations で自動検証し、フィールド別のエラーを標準の Validation Problem Details で返します。保存入力の項目間条件は `IValidatableObject` で定義し、タイトルのトリムは検証後の保存処理で行います。
 
-| メソッド | パス | 役割 |
+| HTTP | パス | このアプリでの役割 |
 | --- | --- | --- |
-| GET | `/api/notes` | 現在の利用者のメモ一覧を取得 |
-| GET | `/api/notes/{id}` | 現在の利用者のメモを 1 件取得 |
-| POST | `/api/notes/save` | メモを新規作成または版を検査して更新 |
-| POST | `/api/notes/remove` | 現在の利用者のメモを削除 |
-| POST | `/api/notes/preview` | 一括登録内容を検証してプレビュー |
-| POST | `/api/notes/import` | 確認済み入力を再検証し一括登録 |
-| GET | `/api/session` | 現在のセッションと認証モードを取得 |
-| POST | `/api/demo/sign-in` | `demo` モードで利用者を選択 |
-| POST | `/api/demo/sign-out` | `demo` モードのセッションを終了 |
-| GET | `/events/notes` | 確定後のメモ変更を SSE で通知 |
+| GET | `/api/notes`、`/api/notes/{id}` | 利用者のメモの一覧・単件取得 |
+| POST | `/api/notes/save`、`/api/notes/remove` | 版を検査した保存・削除 |
+| POST | `/api/notes/preview`、`/api/notes/import` | 一括入力の確認・確定 |
+| GET | `/api/session`、`/events/notes` | セッション取得・変更通知 |
+| POST | `/api/demo/sign-in`、`/api/demo/sign-out` | ローカル参照用の利用者切替 |
 
-業務状態はサーバー、キャッシュは Query、遷移状態は Router、下書きは React が所有します。複数段階の対話では共通親が下書きを保持し、保存失敗や再取得で下書きを上書きしません。
+属性検証が必要な保存・削除 POST は、入力型を明示した `MapPost` ハンドラーで登録します。このテンプレートでは汎用 `MapAuthenticatedPost<TRequest>` 経由の削除入力に属性検証が適用されず、不正な UUID が 404 になったためです。認証結果は文字列 ID ではなく `Principal` としてアプリケーションレイヤーへ渡します。
 
-成功応答と変更通知は DB 確定後に返します。`ChangeNotifications` が購読処理の例外を捕捉してログへ報告し、機能サービスや HTTP 境界へ再送出しません。保存後の再取得や SSE の失敗で、確定済み保存を失敗扱いにはしません。所有者条件と版検査はサーバー側の機能サービスで行います。
+公開エラーは HTTP ステータスと標準の Problem Details で表し、独自の FaultCode を応答に含めません。保存・削除の対象なしと版競合はアプリケーションの結果型で表し、プレゼンテーションで 404・409 に変換します。確定後にだけ `ChangeNotifications` が利用者のタブへ変更を通知し、購読側の失敗で確定済みの操作を失敗扱いにはしません。下書きは React が保持し、再取得や保存失敗で上書きしません。
 
 <a id="persistence"></a>
-## 3. 永続化と起動単位
+## 4. 永続化
 
-C# に埋め込む SQL は `"""` の raw string literal を使い、`SELECT`・`FROM`・`WHERE` などの句を単独行に置き、内容を次行にインデントして記述します。
+`Database` が DB パスと接続の生成を管理し、`ApplicationLayer` が `BeginTransactionAsync` で `ITransaction` を取得して確定します。開始モードは既定の `IMMEDIATE` を必要に応じて指定変更できます。SQL は API ファイル内の `PersistenceLayer` に置き、Dapper で実行します。
 
-ASP.NET Core の起動処理が設定、`Database`、認証、通知、機能サービスを所有します。`DB_PATH` は `Database` の生成時に渡し、同じインスタンスを認証と機能サービスへ注入します。static の共有可変状態やSingletonでDBを切り替えません。アプリケーションはマイグレーション成功後に listen を開始し、終了時は SSE 購読を閉じて処理を drain し、DB 資源を解放します。F5 と hosted 起動では `App.csproj` のビルド処理が React の成果物を .NET の静的ファイル領域へ配置します。`Frontend.esproj` はソリューション表示用で、UI ビルドの責務を持ちません。
-
-SQL の実行と結果のマッピングには Dapper を使い、SQL は各 API の実装ファイルに置きます。`Database` がDBパス、接続設定、接続の破棄をカプセル化します。非同期の書込みは `BeginTransactionAsync` で `ITransaction` を取得し、その `Connection` でSQLを実行して明示的に `CommitAsync` または `RollbackAsync` を呼びます。開始モードは既定を `IMMEDIATE` とし、`DEFERRED` と `EXCLUSIVE` も指定できます。既存の同期処理は `WithConnection` または `WithImmediateTransaction` を使います。DB 操作ごとに `Microsoft.Data.Sqlite` の接続を開き、WAL、外部キー制約、有限の busy timeout を設定します。書込みは外部 I/O や利用者の確認待ちを含まない短いトランザクションで確定します。SQL 移行は `backend/Infrastructure/Persistence/Migrations` に置きます。保存時のテーブルと値の制約は [データ設計](design/data.md) に従います。
-
-`.NET 10 SDK 10.0.401`、Node.js `24.21.0`、Python `3.13.15` は生成先の `mise.toml` の `[tools]` で固定します。Node.js は Vite の開発サーバー、UI のビルド、Vitest、Playwright、独立した DB 確認に使用します。配布物の起動に Node.js は必要ありません。
+新規メモの ID と更新日時は永続化レイヤーが発行し、日時には SQLite の UTC 時刻を使います。INSERT・UPDATE は `RETURNING` で保存後の `Note` を返し、保存後の読み直しを行いません。書込みは利用者の確認待ちを含まない短いトランザクションで確定します。
 
 <a id="test-boundary"></a>
-## 4. 並列 E2E
+## 5. 並列 E2E と検証境界
 
-E2E は同じシナリオを `dev` と `hosted` の2つの起動形式で実行します。`mise run test:e2e:dev` はバックエンドだけをビルドし、Vite の開発サーバー、HMR、API プロキシを経由して実 DB を操作します。`mise run test:e2e:hosted` は UI と API を一体ビルドし、ビルド済み UI を配信する単一 .NET プロセスで同じシナリオを実行します。
-
-どちらの形式でも、1 テストごとにブラウザ Context、.NET プロセス、OS 自動割当ポート、一時 SQLite ファイル、Cookie、セッション、SSE 購読を分離します。dev 形式のブラウザ試験だけが、追加で個別の Vite サーバーとキャッシュを使用します。HTTP 契約の試験は両形式とも .NET に直接接続します。サイズ上限超過などで上流が接続を閉じた場合、Vite の開発プロキシはAPIの応答をそのまま中継できないためです。マイグレーションと業務処理は本番と同じ .NET コードを実行し、UI 操作後は独立した Node.js `node:sqlite` の読取専用接続でコミット済みデータを確認します。fixture は成否を問わずサーバー停止、接続解放、一時領域削除を行います。共有 DB の全削除、テスト用リセット API、外側トランザクションは使用しません。
-
-テスト間分離と同一 DB 競合の検証は区別します。同一 DB の競合は 1 テスト内で複数 Page または Context を作成して検証します。
+E2E は Vite と .NET を分離する `dev`、UI を .NET に同梱する `hosted` の両方で同じシナリオを実行します。各テストは .NET プロセスと一時 SQLite ファイルを分離し、UI 操作後は別接続から確定済みデータを確認します。HTTP 契約テストは両モードとも .NET に直接接続します。同一 DB の競合は一つのテスト内で複数の対話を動かして確認します。
 
 <a id="deployment"></a>
-## 5. 配備・認証
+## 6. 配備・認証
 
-本番環境は同一版の UI と ASP.NET Core サーバーを一体で配備し、DB 領域を配布物から分離します。`mise run package` は `dist/server` の内容と `LICENSE` を `release/app` 直下へ配置し、配布先では .NET 10 ASP.NET Core runtime の `dotnet App.dll` で起動します。配布先に Node.js は要求しません。
-
-`AUTH_MODE=demo` の利用者選択はローカル参照用であり、認証ではありません。共有環境では認証プロキシと HTTPS を経由させ、クライアント由来の認証ヘッダーを除去してから検証済みの利用者 ID だけを API へ渡します。ID 基盤はアプリ内へ再実装しません。プロキシ側で TLS 終端、SSE バッファリング無効化、適切なタイムアウトを設定します。
+`mise run package` は UI を含む .NET 配布物を作り、DB 領域は配布物から分離します。配布先に Node.js は不要です。`AUTH_MODE=demo` はローカル参照用であり、共有環境では既存の認証プロキシと HTTPS を使い、検証済みの利用者 ID のみをサーバーに渡します。

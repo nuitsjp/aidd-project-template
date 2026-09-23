@@ -76,6 +76,31 @@ test('HTTP境界は不正なJSONと入力形状を拒否しDBを変更しない'
     expect(app.rows()).toEqual([]);
 });
 
+test('削除入力のUUIDと版を検証し、不正入力ではDBを変更しない', async ({ request, app }) => {
+    const headers = { Origin: app.url };
+    expect((await request.post('/api/demo/sign-in', { headers, data: { user: 'alice' } })).ok()).toBe(true);
+    const saved = await request.post('/api/notes/save', {
+        headers, data: { title: '削除しないメモ', body: '本文' },
+    });
+    expect(saved.status()).toBe(200);
+    const note = await saved.json();
+
+    for (const { input, field } of [
+        { input: { id: 'not-a-uuid', version: note.version }, field: 'Id' },
+        { input: { id: note.id, version: 0 }, field: 'Version' },
+    ]) {
+        const response = await request.post('/api/notes/remove', { headers, data: input });
+        expect(response.status(), JSON.stringify(input)).toBe(400);
+        expect(await response.json()).toMatchObject({
+            status: 400,
+            errors: { [field]: expect.any(Array) },
+        });
+    }
+    expect(app.rows()).toEqual([{
+        owner_id: 'alice', title: '削除しないメモ', body: '本文', version: 1,
+    }]);
+});
+
 test('HTTP境界は未認証操作と異なるoriginからの更新を拒否する', async ({ request, app }) => {
     expect(await (await request.get('/api/session')).json()).toEqual({ user: null, mode: 'demo' });
     const anonymous = await request.get('/api/notes');
