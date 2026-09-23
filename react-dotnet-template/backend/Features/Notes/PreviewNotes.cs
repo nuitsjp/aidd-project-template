@@ -1,0 +1,68 @@
+using Aidd.ReactDotnet.Application;
+using Aidd.ReactDotnet.Application.Authentication;
+using Aidd.ReactDotnet.Domain;
+using Aidd.ReactDotnet.Domain.Notes;
+using Aidd.ReactDotnet.Infrastructure.Authentication;
+using Aidd.ReactDotnet.Presentation.Http;
+
+namespace Aidd.ReactDotnet.Features.Notes;
+
+internal sealed class PreviewNotes
+{
+    internal PreviewNotes()
+    {
+        Application = new ApplicationLayer();
+        Presentation = new PresentationLayer(Application);
+    }
+
+    internal ApplicationLayer Application { get; }
+
+    internal PresentationLayer Presentation { get; }
+
+    internal void Map(WebApplication app, IdentityService identity) =>
+        app.MapAuthenticatedPost<BulkInput, BulkPreview>(
+            "/api/notes/preview",
+            "PreviewNotes",
+            identity,
+            Presentation.ExecuteAsync);
+
+    internal sealed class PresentationLayer(IApplicationLayer<BulkInput, BulkPreview> application)
+    {
+        internal Func<Principal, BulkInput, Task<BulkPreview>> ExecuteAsync { get; set; } = application.ExecuteAsync;
+    }
+
+    internal sealed class ApplicationLayer : IApplicationLayer<BulkInput, BulkPreview>
+    {
+        internal Func<BulkInput, BulkPreview> Prepare { get; set; } = PrepareCore;
+
+        public Task<BulkPreview> ExecuteAsync(Principal principal, BulkInput input) =>
+            Task.FromResult(Prepare(input));
+
+        internal static BulkPreview PrepareCore(BulkInput input)
+        {
+            NoteRules.ValidateBody(input.Body);
+            var rawTitles = input.Titles.Split('\n')
+                .Select(line => line.EndsWith('\r') ? line[..^1] : line)
+                .Where(line => line.Trim().Length > 0).ToArray();
+            if (rawTitles.Length is < 1 or > 100)
+            {
+                throw AppFaultException.Validation("タイトルは1〜100件で入力してください。");
+            }
+
+            var titles = rawTitles.Select(title => title.Trim()).ToArray();
+            foreach (var title in titles)
+            {
+                NoteRules.ValidateTitle(title);
+            }
+
+            if (titles.Distinct(StringComparer.Ordinal).Count() != titles.Length)
+            {
+                throw AppFaultException.Validation("入力内でタイトルが重複しています。");
+            }
+
+            return new BulkPreview(titles, input.Body);
+        }
+    }
+}
+
+internal sealed record BulkPreview(IReadOnlyList<string> Titles, string Body);

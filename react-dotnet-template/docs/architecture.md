@@ -23,7 +23,7 @@ flowchart LR
 | --- | --- | --- | --- |
 | 画面 | React / TanStack / Mantine | ユースケースの対話 | `frontend/src` |
 | サーバー | ASP.NET Core / .NET 10 | 認証境界、HTTP JSON、SSE、機能、結果確定、静的 UI 配信 | `backend` |
-| 永続化 | SQLite / Microsoft.Data.Sqlite / Dapper | 所有者別データと制約 | `backend/Infrastructure/Persistence/Migrations`、`backend/Features/Notes/SaveNote.cs`、`backend/Features/Notes/NotesService.cs` |
+| 永続化 | SQLite / Microsoft.Data.Sqlite / Dapper | 所有者別データと制約 | `backend/Infrastructure/Persistence/Migrations`、`backend/Features/Notes/SaveNote.cs`、`backend/Features/Notes/ListNotes.cs`、`backend/Features/Notes/GetNote.cs`、`backend/Features/Notes/RemoveNote.cs`、`backend/Features/Notes/ImportNotes.cs` |
 
 UI→API のモック差し替え境界は、Vite の `@notes-access` 参照先です。実処理では HTTP JSON の公開エンドポイントへ接続します。C# の入出力型から OpenAPI と `contracts/api.gen.ts` を生成し、ブラウザは `contracts/notes.ts` の別名を通して利用します。生成結果の一致と HTTP 境界テストで契約を検証します。
 

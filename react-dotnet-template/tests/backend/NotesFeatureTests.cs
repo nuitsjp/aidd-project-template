@@ -8,12 +8,13 @@ using Aidd.ReactDotnet.Features.Notes;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Data.Sqlite;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Dapper;
 using System.ComponentModel.DataAnnotations;
 
 namespace Aidd.ReactDotnet.Tests;
 
 [TestClass]
-public sealed class NotesServiceTests
+public sealed class NotesFeatureTests
 {
     private static readonly Principal Alice = new("alice", "Alice");
     private static readonly Principal Bob = new("bob", "Bob");
@@ -29,12 +30,14 @@ public sealed class NotesServiceTests
     }
 
     [TestMethod]
-    public void PurePreviewRejectsDuplicatesAfterTrimming()
+    public async Task PurePreviewRejectsDuplicatesAfterTrimmingAsync()
     {
-        var preview = NotesService.Preview(new BulkInput(" 一件目 \r\n\r\n二件目", "本文"));
+        var service = new PreviewNotes();
+        var preview = await service.Presentation.ExecuteAsync(
+            Alice, new BulkInput(" 一件目 \r\n\r\n二件目", "本文"));
         CollectionAssert.AreEqual(new[] { "一件目", "二件目" }, preview.Titles.ToArray());
-        var error = TestAssert.Throws<AppFaultException>(() =>
-            NotesService.Preview(new BulkInput("同じ\n 同じ ", string.Empty)));
+        var error = await TestAssert.ThrowsAsync<AppFaultException>(async () =>
+            await service.Presentation.ExecuteAsync(Alice, new BulkInput("同じ\n 同じ ", string.Empty)));
         Assert.AreEqual("VALIDATION", error.Code);
         Assert.AreEqual("入力内でタイトルが重複しています。", error.Message);
     }
@@ -47,12 +50,13 @@ public sealed class NotesServiceTests
         Assert.AreEqual(1L, created.Version);
         var updated = Success(await ExecuteAsync(fixture.Save.Presentation, Alice, new SaveNoteRequest(created.Id, created.Version, created.Title, "updated")));
         Assert.AreEqual(2L, updated.Version);
-        Assert.AreEqual("updated", fixture.Notes.List("alice").Single().Body);
+        Assert.AreEqual("updated", (await ListAsync(fixture.ListNotes, Alice)).Single().Body);
         Assert.IsInstanceOfType<SaveNote.SaveResult.Conflict>(await ExecuteAsync(fixture.Save.Presentation,
             Alice, new SaveNoteRequest(created.Id, created.Version, created.Title, "stale")));
-        Assert.AreEqual("updated", fixture.Notes.Get("alice", created.Id).Body);
-        fixture.Notes.Remove("alice", updated.Id, updated.Version);
-        Assert.AreEqual(0, fixture.Notes.List("alice").Count);
+        Assert.AreEqual("updated", (await GetAsync(fixture.GetNote, Alice, created.Id)).Body);
+        Assert.IsInstanceOfType<RemoveNote.RemoveResult.Success>(await fixture.RemoveNote.Presentation.ExecuteApplicationAsync(
+            Alice, new RemoveNoteInput(updated.Id, updated.Version)));
+        Assert.AreEqual(0, (await ListAsync(fixture.ListNotes, Alice)).Count);
     }
 
     [TestMethod]
@@ -77,7 +81,7 @@ public sealed class NotesServiceTests
         var results = await Task.WhenAll(attempts);
 
         CollectionAssert.AreEquivalent(new[] { "saved", "EDIT_CONFLICT" }, results);
-        Assert.AreEqual(2L, fixture.Notes.Get("alice", original.Id).Version);
+        Assert.AreEqual(2L, (await GetAsync(fixture.GetNote, Alice, original.Id)).Version);
     }
 
     [TestMethod]
@@ -86,26 +90,24 @@ public sealed class NotesServiceTests
         using var fixture = new TestDatabase();
         var alice = Success(await ExecuteAsync(fixture.Save.Presentation, Alice, new SaveNoteRequest(null, null, "同じタイトル", "private")));
         Success(await ExecuteAsync(fixture.Save.Presentation, Bob, new SaveNoteRequest(null, null, "同じタイトル", "other")));
-        Assert.AreEqual("NOT_FOUND", TestAssert.Throws<AppFaultException>(() => fixture.Notes.Get("bob", alice.Id)).Code);
-        Assert.IsInstanceOfType<SaveNote.SaveResult.NotFound>(await ExecuteAsync(fixture.Save.Presentation,
-            Bob, new SaveNoteRequest(alice.Id, alice.Version, alice.Title, "attack")));
-        TestAssert.Throws<AppFaultException>(() => fixture.Notes.Remove("bob", alice.Id, alice.Version));
-        Assert.AreEqual("private", fixture.Notes.Get("alice", alice.Id).Body);
-        Assert.AreEqual("other", fixture.Notes.List("bob").Single().Body);
+        Assert.AreEqual("NOT_FOUND", (await TestAssert.ThrowsAsync<AppFaultException>(
+            () => GetAsync(fixture.GetNote, Bob, alice.Id))).Code);
+        Assert.IsInstanceOfType<RemoveNote.RemoveResult.NotFound>(await fixture.RemoveNote.Presentation.ExecuteApplicationAsync(
+            Bob, new RemoveNoteInput(alice.Id, alice.Version)));
+        Assert.AreEqual("private", (await GetAsync(fixture.GetNote, Alice, alice.Id)).Body);
+        Assert.AreEqual("other", (await ListAsync(fixture.ListNotes, Bob)).Single().Body);
     }
 
     [TestMethod]
-    public void ImportRollsBackEveryRowWhenLaterInsertFails()
+    public async Task ImportRollsBackEveryRowWhenLaterInsertFailsAsync()
     {
         using var fixture = new TestDatabase();
-        var fixedId = Guid.Parse("10000000-0000-0000-0000-000000000001");
-        fixture.Notes = new NotesService(fixture.Database, fixture.Notifications)
-        {
-            NewId = () => fixedId,
-        };
-        TestAssert.Throws<SqliteException>(() =>
-            fixture.Notes.ImportMany("alice", new BulkInput("一件目\n二件目", "本文")));
-        Assert.AreEqual(0, fixture.Notes.List("alice").Count);
+        await fixture.ImportNotes.Presentation.ExecuteAsync(Alice, new BulkInput("二件目", "既存"));
+        var error = await TestAssert.ThrowsAsync<AppFaultException>(() =>
+            fixture.ImportNotes.Presentation.ExecuteAsync(Alice, new BulkInput("一件目\n二件目", "本文")));
+        Assert.AreEqual("TITLE_EXISTS", error.Code);
+        CollectionAssert.AreEqual(new[] { "二件目" },
+            (await ListAsync(fixture.ListNotes, Alice)).Select(note => note.Title).ToArray());
     }
 
     [TestMethod]
@@ -182,12 +184,18 @@ public sealed class NotesServiceTests
     {
         using var fixture = new TestDatabase();
         var observedCount = -1;
-        using var successful = fixture.Notifications.Subscribe("alice", () => observedCount = fixture.Notes.List("alice").Count);
+        using var successful = fixture.Notifications.Subscribe("alice", () =>
+            observedCount = fixture.Database.WithConnection(connection =>
+                connection.ExecuteScalar<int>("""
+                    SELECT COUNT(*)
+                    FROM notes
+                    WHERE owner_id = @ownerId
+                    """, new { ownerId = "alice" })));
         using var failing = fixture.Notifications.Subscribe("alice", () => throw new InvalidOperationException("notification failed"));
         var note = Success(await ExecuteAsync(fixture.Save.Presentation, Alice, new SaveNoteRequest(null, null, "committed", string.Empty)));
         Assert.AreEqual(1, observedCount);
         Assert.AreEqual(1, fixture.NotificationErrors.Count);
-        Assert.AreEqual(1L, fixture.Notes.Get("alice", note.Id).Version);
+        Assert.AreEqual(1L, (await GetAsync(fixture.GetNote, Alice, note.Id)).Version);
     }
 
     private static async Task<SaveNote.SaveResult> ExecuteAsync(
@@ -197,6 +205,12 @@ public sealed class NotesServiceTests
     {
         return await presentation.ExecuteAsync(principal, request);
     }
+
+    private static Task<IReadOnlyList<Note>> ListAsync(ListNotes notes, Principal principal) =>
+        notes.Presentation.ExecuteAsync(principal);
+
+    private static Task<Note> GetAsync(GetNote note, Principal principal, string id) =>
+        note.Presentation.ExecuteAsync(principal, id);
 
     private static async Task<SaveNote.SaveResult> ExecuteAsync(
         IApplicationLayer<SaveNoteRequest, SaveNote.SaveResult> application,

@@ -210,7 +210,7 @@ internal sealed class Database
         }
     }
 
-    private async Task<SqliteConnection> OpenAsync()
+    internal async Task<SqliteConnection> OpenAsync()
     {
         var connection = new SqliteConnection(new SqliteConnectionStringBuilder
         {

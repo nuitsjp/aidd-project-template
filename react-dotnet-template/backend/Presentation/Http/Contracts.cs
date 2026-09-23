@@ -6,6 +6,4 @@ internal sealed record SessionOutput(Aidd.ReactDotnet.Application.Authentication
 internal sealed record SignInOutput(Aidd.ReactDotnet.Application.Authentication.Principal User);
 internal sealed record SuccessOutput(bool Ok);
 internal sealed record DemoSignInInput([property: JsonRequired] string User);
-internal sealed record RemoveNoteInput([property: JsonRequired] string Id, [property: JsonRequired] long Version);
-
 internal sealed record HealthOutput(string Status);

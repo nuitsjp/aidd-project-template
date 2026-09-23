@@ -4,20 +4,12 @@ using Aidd.ReactDotnet.Infrastructure.Authentication;
 using Aidd.ReactDotnet.Application.Authentication;
 using Aidd.ReactDotnet.Domain;
 using System.Threading.Channels;
-using Aidd.ReactDotnet.Features.Notes;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Aidd.ReactDotnet.Presentation.Http;
 
 internal static class ApiEndpoints
 {
-    internal static void Map(
-        WebApplication app,
-        AppConfig config,
-        IdentityService identity,
-        NotesService notes,
-        ChangeNotifications notifications,
-        CancellationToken applicationStopping)
+    internal static void MapApplicationEndpoints(WebApplication app, AppConfig config, IdentityService identity)
     {
         app.MapGet("/api/session", (HttpRequest request) =>
             TypedResults.Ok(new SessionOutput(identity.Resolve(request), config.AuthMode)));
@@ -35,41 +27,14 @@ internal static class ApiEndpoints
                 return TypedResults.Ok(new SuccessOutput(true));
             });
         }
+    }
 
-        app.MapGet("/api/notes", (HttpRequest request) => TypedResults.Ok(notes.List(RequireUser(identity, request).Id)));
-        app.MapGet("/api/notes/{id}", (string id, HttpRequest request) =>
-        {
-            if (!JsonRequest.IsUuid(id))
-            {
-                throw AppFaultException.Validation();
-            }
-
-            return TypedResults.Ok(notes.Get(RequireUser(identity, request).Id, id));
-        });
-        app.MapAuthenticatedPost<RemoveNoteInput, SuccessOutput>(
-            "/api/notes/remove",
-            "RemoveNote",
-            identity,
-            (user, input) =>
-            {
-                if (!JsonRequest.IsUuid(input.Id) || input.Version <= 0) throw AppFaultException.Validation();
-                notes.Remove(user.Id, input.Id, input.Version);
-                return Task.FromResult(new SuccessOutput(true));
-            })
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")
-            .Produces<ProblemDetails>(StatusCodes.Status409Conflict, "application/problem+json");
-        app.MapAuthenticatedPost<BulkInput, BulkPreview>(
-            "/api/notes/preview",
-            "PreviewNotes",
-            identity,
-            (_, input) => Task.FromResult(NotesService.Preview(input)));
-        app.MapAuthenticatedPost<BulkInput, BulkResult>(
-            "/api/notes/import",
-            "ImportNotes",
-            identity,
-            (user, input) => Task.FromResult(notes.ImportMany(user.Id, input)))
-            .Produces<ProblemDetails>(StatusCodes.Status409Conflict, "application/problem+json");
-
+    internal static void MapEventEndpoints(
+        WebApplication app,
+        IdentityService identity,
+        ChangeNotifications notifications,
+        CancellationToken applicationStopping)
+    {
         app.MapGet("/events/notes", async (HttpContext context) =>
         {
             var user = RequireUser(identity, context.Request);

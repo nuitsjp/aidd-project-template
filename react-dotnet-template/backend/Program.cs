@@ -111,7 +111,6 @@ public static class Program
             builder.Services.AddSingleton<EndpointDataSource>(_ => new CompositeEndpointDataSource(contractSources));
         var app = builder.Build();
         var notifications = new ChangeNotifications(error => app.Logger.LogWarning(error, "変更通知に失敗しました"));
-        var notes = new NotesService(database, notifications);
         var identity = new IdentityService(database, config.AuthMode);
 
         app.Use(async (context, next) =>
@@ -226,7 +225,14 @@ public static class Program
         });
 
         new SaveNote(database, notifications).Map(app, identity);
-        ApiEndpoints.Map(app, config, identity, notes, notifications, app.Lifetime.ApplicationStopping);
+        ApiEndpoints.MapApplicationEndpoints(app, config, identity);
+        new ListNotes(database).Map(app, identity);
+        new GetNote(database).Map(app, identity);
+        new RemoveNote(database, notifications).Map(app, identity);
+        var previewNotes = new PreviewNotes();
+        previewNotes.Map(app, identity);
+        new ImportNotes(database, notifications, previewNotes.Application).Map(app, identity);
+        ApiEndpoints.MapEventEndpoints(app, identity, notifications, app.Lifetime.ApplicationStopping);
         app.UseDefaultFiles();
         app.UseStaticFiles();
         app.MapFallback(async context =>

@@ -9,8 +9,9 @@
 | 対話 | 入力、下書き、失敗時の再入力 | `frontend/src/usecases/edit-notes/EditNotes.tsx` |
 | 機能アクセス | Query、mutation、変更通知の購読 | `frontend/src/features/notes/queries.ts` |
 | 保存 API | HTTP 受付、入力検証、所有者条件、版検査、SQL 確定 | `backend/Features/Notes/SaveNote.cs` |
-| その他の HTTP 境界 | JSON 入出力、利用者、公開エラーの検証 | `backend/Presentation/Http/ApiEndpoints.cs` |
-| 取得・削除 | 所有者条件、版検査、SQL 確定 | `backend/Features/Notes/NotesService.cs` |
+| HTTP 共通境界 | セッション、認証、SSE、公開エラーの検証 | `backend/Presentation/Http/ApiEndpoints.cs` |
+| 一覧・単件取得 | 所有者条件と SQL 読み取り | `backend/Features/Notes/ListNotes.cs`、`GetNote.cs` |
+| 削除 API | HTTP 受付、所有者条件、版検査、SQL 確定 | `backend/Features/Notes/RemoveNote.cs` |
 
 ```mermaid
 sequenceDiagram

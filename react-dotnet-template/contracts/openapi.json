@@ -797,6 +797,8 @@
             "type": "string"
           },
           "version": {
+            "maximum": 9223372036854776000,
+            "minimum": 1,
             "type": "integer",
             "format": "int64"
           }

@@ -18,7 +18,11 @@ internal sealed class TestDatabase : IDisposable
         EnsureUser("alice", "Alice");
         EnsureUser("bob", "Bob");
         Notifications = new ChangeNotifications(NotificationErrors.Add);
-        Notes = new NotesService(Database, Notifications);
+        ListNotes = new ListNotes(Database);
+        GetNote = new GetNote(Database);
+        RemoveNote = new RemoveNote(Database, Notifications);
+        PreviewNotes = new PreviewNotes();
+        ImportNotes = new ImportNotes(Database, Notifications, PreviewNotes.Application);
         Save = new SaveNote(Database, Notifications);
     }
 
@@ -28,7 +32,15 @@ internal sealed class TestDatabase : IDisposable
 
     internal ChangeNotifications Notifications { get; }
 
-    internal NotesService Notes { get; set; }
+    internal ListNotes ListNotes { get; set; }
+
+    internal GetNote GetNote { get; set; }
+
+    internal RemoveNote RemoveNote { get; set; }
+
+    internal PreviewNotes PreviewNotes { get; set; }
+
+    internal ImportNotes ImportNotes { get; set; }
 
     internal SaveNote Save { get; set; }
 

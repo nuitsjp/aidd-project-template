@@ -8,26 +8,30 @@
 | --- | --- | --- |
 | 対話の親 | 段階をまたぐ入力の保持 | `frontend/src/usecases/import-notes/ImportDialogue.tsx` |
 | 入力・確認 | プレビューと最終実行 | `frontend/src/usecases/import-notes/ImportInput.tsx`、`ImportConfirm.tsx` |
-| 共通のメモ機能 | 検証と一括 INSERT | `backend/Features/Notes/NotesService.cs` |
+| プレビュー API | 入力検証と正規化 | `backend/Features/Notes/PreviewNotes.cs` |
+| 一括登録 API | 再検証とトランザクション内の INSERT | `backend/Features/Notes/ImportNotes.cs` |
 
 ```mermaid
 sequenceDiagram
   actor U as 利用者
   participant D as 対話
   participant H as HTTP JSON
-  participant S as NotesService
+  participant P as PreviewNotes
+  participant I as ImportNotes
   participant DB as SQLite
   U->>D: 複数タイトルを入力
   D->>H: POST /api/notes/preview
-  H->>S: 入力と利用者を渡す
-  S-->>H: 検証済みの確認内容
+  H->>P: 入力と利用者を渡す
+  P-->>H: 検証済みの確認内容
   H-->>D: プレビュー JSON
   D-->>U: 確認画面
   U->>D: 一括登録を指示
   D->>H: POST /api/notes/import
-  H->>S: 元の入力を再送
-  S->>DB: 再検証・BEGIN・全件 INSERT・COMMIT
-  S-->>H: 確定件数
+  H->>I: 元の入力を再送
+  I->>P: 入力を再検証
+  P-->>I: 正規化済みタイトル
+  I->>DB: BEGIN・全件 INSERT・COMMIT
+  I-->>H: 確定件数
   H-->>D: 登録結果
   D-->>U: 登録完了
 ```
