@@ -48,6 +48,12 @@ class InitTemplateTests(unittest.TestCase):
                     self.assertTrue((destination / "reference/App.slnx").is_file())
                     self.assertEqual(list((destination / "docs/usecases").glob("*/README.md")), [])
                     self.assertEqual(len(list((destination / "reference/docs/usecases").glob("*/README.md"))), 2)
+                    root_tasks = (destination / "mise.toml").read_text(encoding="utf-8")
+                    reference_tasks = (destination / "reference/mise.toml").read_text(encoding="utf-8")
+                    self.assertIn('[tasks."check:docs"]', root_tasks)
+                    self.assertNotIn("[tasks.verify]", root_tasks)
+                    self.assertIn("[tasks.verify]", reference_tasks)
+                    self.assertFalse((destination / "scripts/reference-task.mjs").exists())
                 for name, content in expected.items():
                     self.assertEqual(actual[name], content, str(name))
                 for name in ("AGENTS.md", "scripts/doc_check.py",

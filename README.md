@@ -89,13 +89,17 @@ mise run init:react-dotnet ../my-react-dotnet-app
 cd ../my-react-dotnet-app
 mise trust
 mise run setup
+mise run check:docs
+cd reference
+mise trust
+mise run setup
 mise run setup:browser
 mise run verify
 ```
 
-`template/`、`react-dotnet-template/`、ルートの `LICENSE` の順に配置します。共通資材の継承、同名ファイルの全体上書き、新規出力先限定の規則は他の拡張と同じです。生成後のルートの mise タスクは `reference/` のサンプルを実行・検証します。`mise run dev` は Vite と .NET を分離し、`mise run build` と `mise run start` は UI を .NET に同梱します。Visual Studio では `reference/App.slnx` を開き、`reference/backend/App.csproj` をスタートアッププロジェクトにします。
+`template/`、`react-dotnet-template/`、ルートの `LICENSE` の順に配置します。共通資材の継承、同名ファイルの全体上書き、新規出力先限定の規則は他の拡張と同じです。生成先ルートの `mise.toml` は実プロジェクト用で、現時点ではツール導入と製品文書の検査を定義します。アプリのタスクは製品実装時に追加します。`reference/mise.toml` はサンプル専用です。`reference/` で実行する `mise run dev` は Vite と .NET を分離し、`mise run build` と `mise run start` は UI を .NET に同梱します。Visual Studio では `reference/App.slnx` を開き、`reference/backend/App.csproj` をスタートアッププロジェクトにします。
 
-テンプレート開発時も `react-dotnet-template/` を作業ディレクトリにして同じタスクを実行できます。source の文書検査は共通の `template/` と拡張側を一時生成先へ重ね、アプリの build・test は `reference/` で行います。生成・起動・検証の詳細は [参照実装の実行手順](react-dotnet-template/reference/docs/project.md#commands) に従います。
+テンプレート開発時も `react-dotnet-template/` で製品文書、`react-dotnet-template/reference/` で参照アプリを検証できます。source の文書検査は共通の `template/` と拡張側を一時生成先へ重ねます。生成・起動・検証の詳細は [参照実装の実行手順](react-dotnet-template/reference/docs/project.md#commands) に従います。
 
 ## 3. 初期セットアップと最初のユースケース
 

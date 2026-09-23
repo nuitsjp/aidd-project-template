@@ -22,9 +22,9 @@ SPA、単一 ASP.NET Core サーバー、同一 origin、SQLite を既定とし�
 <a id="design"></a>
 ## 4. 確認した事実
 
-共通資材の配布元と適用版は [ルートの文書方針](../../docs/document-policy.md#adoption) に従います。直接依存は `package.json` と各 `.csproj`、実行ツールの固定版とタスクは生成先の `mise.toml` に記載します。`mise.toml` の `[tools]` は Node.js 24.21.0、.NET SDK 10.0.401、Python 3.13.15 です。
+共通資材の配布元と適用版は [ルートの文書方針](../../docs/document-policy.md#adoption) に従います。直接依存は `package.json` と各 `.csproj`、参照アプリの実行ツールとタスクはこのディレクトリの `mise.toml` に記載します。`mise.toml` の `[tools]` は Node.js 24.21.0、.NET SDK 10.0.401、Python 3.13.15 です。
 
-- **ASP.NET Core / .NET SDK**: .NET SDK 10.0.401 と ASP.NET Core .NET 10 を使用します。`backend/App.csproj` が単一サーバーの実行単位で、UI のビルドと静的ファイルの配置も所有します。ルートの `reference/App.slnx` は `frontend/Frontend.esproj`、バックエンド、バックエンドテストを束ねます。
+- **ASP.NET Core / .NET SDK**: .NET SDK 10.0.401 と ASP.NET Core .NET 10 を使用します。`backend/App.csproj` が単一サーバーの実行単位で、UI のビルドと静的ファイルの配置も所有します。`App.slnx` は `frontend/Frontend.esproj`、バックエンド、バックエンドテストを束ねます。
 - **HTTP JSON / SSE**: ブラウザとサーバーは HTTP JSON の公開エンドポイントで通信し、`/events/notes` は確定後の変更通知に SSE を使用します。エンドポイント、DTO、エラー形状は [React + .NET アーキテクチャ](architecture-react-dotnet.md) に記録します。
 - **SQLite**: `Microsoft.Data.Sqlite` と Dapper で実 SQLite を操作し、マイグレーションは `backend/Infrastructure/Persistence/Migrations` に配置します。WAL、外部キー制約、有限の busy timeout を設定し、短い書込みトランザクションで確定します（[SQLite WAL](https://sqlite.org/wal.html)）。
 - **公開契約**: C# の API 入出力型を正本とし、OpenAPI と React 用の型を `mise run contracts` で生成します。`contracts/openapi.json` と `contracts/api.gen.ts` はコミットし、`contracts/notes.ts` は生成型の別名だけを定義します。
@@ -33,9 +33,9 @@ SPA、単一 ASP.NET Core サーバー、同一 origin、SQLite を既定とし�
 <a id="commands"></a>
 ## 5. 実行・切り替え・検証手順
 
-mise タスクは生成先または source のルートから実行します。以下の `backend/`、`frontend/`、`contracts/`、`dist/` などのパスは `reference/` を起点とします。
+参照アプリの mise タスクは生成先または source の `reference/` から実行します。以下の `backend/`、`frontend/`、`contracts/`、`dist/` などのパスも `reference/` を起点とします。
 
-採用先では生成したプロジェクトのルートを作業ディレクトリとします。テンプレート開発では `react-dotnet-template/` を source の作業ディレクトリとします。どちらも Docker や外部 DB は不要で、`mise.toml` の `[tools]` に固定した Node.js 24.21.0、.NET SDK 10.0.401、Python 3.13.15 を使用します。生成先または source の初回セットアップ前に `mise.toml` の内容を確認して信頼し、ツールと依存を導入します。
+採用先では生成したプロジェクトの `reference/`、テンプレート開発では `react-dotnet-template/reference/` を作業ディレクトリとします。どちらも Docker や外部 DB は不要で、サンプルの `mise.toml` に固定した Node.js 24.21.0、.NET SDK 10.0.401、Python 3.13.15 を使用します。初回セットアップ前にこの `mise.toml` の内容を確認して信頼し、ツールと依存を導入します。
 
 ```powershell
 mise trust
@@ -44,7 +44,7 @@ mise run setup
 
 `mise run setup` は `mise install`、npm 依存の `ci`、`.env` の作成、ルートツリーの生成、`dotnet restore App.slnx --locked-mode` を行い、PATH 上の mise の実体パスを絶対パスで `backend/mise.local.props` に記録します。このローカルファイルは Git 管理と配布物から除外されます。`mise run setup` は source と生成先の初回セットアップ時に必要で、mise を移動した後も再実行してください。F5 は npm の依存取得を行いません。依存更新時などに setup を再実行する場合は npm の依存定義とロックを併せて更新し、NuGet は `.csproj` の版を変更してロックを更新します。更新後は `mise run setup` と `mise run verify` で確認します。採用後の依存とロックは採用先で管理します。
 
-Visual Studio で F5 を使う場合は `reference/App.slnx` を開き、`backend/App.csproj` の App をスタートアッププロジェクトに設定します。採用先では生成先ルートの `reference/App.slnx`、source では `react-dotnet-template/reference/App.slnx` を開きます。source の場合はリポジトリのルートから拡張ディレクトリへ移動して `mise trust` と初回の `mise run setup` を完了してから、Visual Studio でその `reference/App.slnx` を開いてください。既存の `.suo` に保存された利用者設定がソリューションのプロジェクト順より優先されるため、App の選択を確認してください。frontend（`frontend/Frontend.esproj`）はソリューションの表示用であり、依存取得や UI ビルドを所有しません。`App.csproj` は `backend/mise.local.props` に記録された mise の絶対パスで `mise exec` を実行し、固定版 Node.js を選択します。Visual Studio 起動時の PATH に mise を追加する必要はありません。F5 のたびに npm の依存を再取得する必要はありません。
+Visual Studio で F5 を使う場合はこのディレクトリの `App.slnx` を開き、`backend/App.csproj` の App をスタートアッププロジェクトに設定します。source の場合は `react-dotnet-template/reference/` へ移動して `mise trust` と初回の `mise run setup` を完了してから開いてください。既存の `.suo` に保存された利用者設定がソリューションのプロジェクト順より優先されるため、App の選択を確認してください。frontend（`frontend/Frontend.esproj`）はソリューションの表示用であり、依存取得や UI ビルドを所有しません。`App.csproj` は `backend/mise.local.props` に記録された mise の絶対パスで `mise exec` を実行し、固定版 Node.js を選択します。Visual Studio 起動時の PATH に mise を追加する必要はありません。F5 のたびに npm の依存を再取得する必要はありません。
 
 F5 は `backend/Properties/launchSettings.json` の App プロファイルで `backend/App.csproj` を起動します。App が React をビルドして静的ファイルを配置し、単一の .NET プロセスで UI と API を配信します。固定の URL は `http://127.0.0.1:3000/notes` です。ソリューションの frontend プロジェクトに依存取得や事前の UI ビルドをさせる必要はありません。
 
@@ -70,12 +70,12 @@ mise run dev
 | `mise run typecheck` | ルートツリー生成と TypeScript 型検査 |
 | `mise run lint` | ESLint による検査 |
 | `mise run format` | Prettier による整形 |
-| `mise run check:docs` | Python の文書検査。source では共通の `template/` と拡張側を一時生成先へ配置して文書だけを検査 |
+| `mise run check:docs` | 参照文書の検査。source では共通の `template/` と拡張側を一時生成先へ配置して検査 |
 | `mise run test:frontend` | Vitest の単体テスト |
 | `mise run test:backend` | UI ビルドを除外した .NET テスト |
 | `mise run test:e2e:dev` | バックエンドだけをビルドし、Vite 開発サーバーで E2E |
 | `mise run test:e2e:hosted` | 一体ビルドを行い、単一 .NET 配信で E2E |
-| `mise run verify` | 型、Lint、文書、単体、バックエンド、dev/hosted E2E。source では文書を一時生成先、アプリの build・test を source で検査 |
+| `mise run verify` | 型、Lint、参照文書、単体、バックエンド、dev/hosted E2E。source では文書を一時生成先、アプリの build・test を `reference/` で検査 |
 | `mise run package` | `verify` 後に配布物を生成 |
 | `mise run db:backup -- <path>` | 実 DB の整合したバックアップを作成 |
 | `mise run db:check [-- <path>]` | 指定 DB（省略時は設定済み DB）を検査 |

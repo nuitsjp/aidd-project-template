@@ -17,7 +17,7 @@
 
 共通側を変更した際は、同一変更内で各拡張側への影響を確認します。`project.md` は必須項目・文書構造の変更を必要最小限で反映し、固有内容は維持します。`document-policy.md` は生成物に入る配布版・標準版と適用版を一致させ、適用範囲・固有差分・正本配置・仕様変更の扱いが新しい共通規則と整合するか確認します（記載する版は実際に生成へ使用する版とし、過去のコミットを現在の適用版の代用にしません）。
 
-`wails-template/` と `react-template/` は拡張ディレクトリ単体では実行・配布・文書検査を行わず、生成先で開発・検証して保守変更を正本へ反映します。`react-dotnet-template/` は source checkout でもルートの mise タスクで `reference/` の参照アプリを実行・検証できます。Visual Studio の F5 は `reference/App.slnx` の App を使用します。source の `check:docs` と `verify` は共通の `template/` と拡張側を一時生成先へ配置して文書を検査し、アプリの build・test は `reference/` で実行します。source の package はルートの `LICENSE` を使います。共通の文書・検査資材を拡張側へ複製せず、採用先では生成先の `scripts/doc_check.py` と `LICENSE` を使います。生成物や依存取得物はコミットしません。生成によって参照実装の仕様合意や未実施の検証が完了したとは扱いません。
+`wails-template/` と `react-template/` は拡張ディレクトリ単体では実行・配布・文書検査を行わず、生成先で開発・検証して保守変更を正本へ反映します。`react-dotnet-template/` のルート `mise.toml` は実プロジェクト用で、現時点のタスクはツール導入と製品文書検査です。参照アプリの全タスクは `reference/mise.toml` に置き、source checkout と生成先の両方で `reference/` から実行します。Visual Studio の F5 は `reference/App.slnx` の App を使用します。source の各 `check:docs` は共通の `template/` と拡張側を一時生成先へ配置し、それぞれ製品文書と参照文書を検査します。アプリの build・test は `reference/` で実行します。source の package はルートの `LICENSE` を使います。共通の文書・検査資材を拡張側へ複製せず、採用先では生成先の `scripts/doc_check.py` と `LICENSE` を使います。生成物や依存取得物はコミットしません。生成によって参照実装の仕様合意や未実施の検証が完了したとは扱いません。
 
 生成後のプロジェクト文書・実装・設定・DB移行履歴は採用先が管理し、初期雛形との全文同期は行いません。継続更新する規則は既存標準に集約し、必要な書式移行は変更履歴に記載します。依存ロックは再現に必要な配布資材として、生成先で検証したものを正本に保存します。
 
@@ -38,4 +38,4 @@
 - `template/` 配下の Markdown 合計行数が 410 行以下であること。
 - テンプレート全文に、他ユースケースへの横展開を許可する記述（「独立した機能」「先行して進め」等）が含まれていないこと。
 - 共通側や共有生成処理を変更した場合は全拡張、拡張固有の差分を変更した場合は対象拡張の初期状態を一時ディレクトリへ生成します。隠しファイルを含む配置、拡張側の上書き、共通ファイルと LICENSE の一致、既存出力先の拒否を確認し、生成先で `python scripts/doc_check.py .` が NG なく通ることを確認します。採用版と固有文書の整合性もレビューします。
-- 拡張の実装を変更した場合は、生成先で Wails は `node scripts/run.mjs verify`、React は `npm run verify`、React・.NET は source で `mise run verify` または生成先で `npm run verify` を実行し、実機確認の範囲と分けて報告します。共通側や生成内容・共通継承の確認は、引き続き生成先で行います（文書・生成のみの変更ではアプリ全体の検証を必須とせず、未実施の検証を明記）。
+- 拡張の実装を変更した場合は、生成先で Wails は `node scripts/run.mjs verify`、React は `npm run verify`、React・.NET は source または生成先の `reference/` で `mise run verify` を実行し、実機確認の範囲と分けて報告します。共通側や生成内容・共通継承の確認は、引き続き生成先で行います（文書・生成のみの変更ではアプリ全体の検証を必須とせず、未実施の検証を明記）。

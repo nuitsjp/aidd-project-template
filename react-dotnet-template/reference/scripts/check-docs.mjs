@@ -9,7 +9,6 @@ if (isTemplateSource) {
     const project = join(temporary, 'app');
     try {
         await run(process.execPath, [resolve(root, '../../scripts/init-template.mjs'), 'react-dotnet', project]);
-        await run(process.env.PYTHON ?? 'python', ['scripts/doc_check.py', '.'], { cwd: project });
         await run(process.env.PYTHON ?? 'python', ['scripts/doc_check.py', 'reference'], { cwd: project });
     }
     finally {
@@ -17,6 +16,5 @@ if (isTemplateSource) {
     }
 }
 else {
-    await run(process.env.PYTHON ?? 'python', ['../scripts/doc_check.py', '..']);
     await run(process.env.PYTHON ?? 'python', ['../scripts/doc_check.py', '.']);
 }
