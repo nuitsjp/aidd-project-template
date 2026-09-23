@@ -4,7 +4,6 @@ using Microsoft.Data.Sqlite;
 using NotesSample.Application.Authentication;
 using NotesSample.Features.Notes;
 using NotesSample.Infrastructure.Notifications;
-using NotesSample.Infrastructure.Persistence;
 using Shouldly;
 using Xunit;
 
@@ -19,11 +18,12 @@ public sealed class RemoveNoteTests
     [Fact]
     public async Task MatchingVersion_DeletesNoteAndPublishesChangeAsync()
     {
-        using var fixture = await TestDatabase.CreateAsync();
-        await fixture.InsertNoteAsync();
+        using var fixture = await CreateDatabaseWithNoteAsync();
+        var changes = new ChangeNotifications(_ => { });
+        var removeNote = new RemoveNote(fixture.Database, changes);
         var notifications = 0;
         var remainingWhenNotified = -1;
-        using var subscription = fixture.Notifications.Subscribe("alice", () =>
+        using var subscription = changes.Subscribe("alice", () =>
         {
             notifications++;
             using var connection = new SqliteConnection($"Data Source={fixture.Path};Mode=ReadOnly;Pooling=False");
@@ -31,10 +31,10 @@ public sealed class RemoveNoteTests
             remainingWhenNotified = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM notes WHERE id = @Id", new { Id = NoteId });
         });
 
-        var result = await fixture.RemoveNote.Presentation.ExecuteAsync(Alice, new RemoveNoteInput(NoteId, 1));
+        var result = await removeNote.Presentation.ExecuteAsync(Alice, new RemoveNoteInput(NoteId, 1));
 
         ((IStatusCodeHttpResult)result).StatusCode.ShouldBe(StatusCodes.Status200OK);
-        (await fixture.CountNotesAsync()).ShouldBe(0);
+        (await CountNotesAsync(fixture)).ShouldBe(0);
         notifications.ShouldBe(1);
         remainingWhenNotified.ShouldBe(0);
     }
@@ -42,72 +42,46 @@ public sealed class RemoveNoteTests
     [Fact]
     public async Task StaleVersion_ReturnsConflictAndKeepsNoteAsync()
     {
-        using var fixture = await TestDatabase.CreateAsync();
-        await fixture.InsertNoteAsync();
+        using var fixture = await CreateDatabaseWithNoteAsync();
+        var changes = new ChangeNotifications(_ => { });
+        var removeNote = new RemoveNote(fixture.Database, changes);
         var notifications = 0;
-        using var subscription = fixture.Notifications.Subscribe("alice", () => notifications++);
+        using var subscription = changes.Subscribe("alice", () => notifications++);
 
-        var result = await fixture.RemoveNote.Presentation.ExecuteAsync(Alice, new RemoveNoteInput(NoteId, 2));
+        var result = await removeNote.Presentation.ExecuteAsync(Alice, new RemoveNoteInput(NoteId, 2));
 
         ((IStatusCodeHttpResult)result).StatusCode.ShouldBe(StatusCodes.Status409Conflict);
-        (await fixture.CountNotesAsync()).ShouldBe(1);
+        (await CountNotesAsync(fixture)).ShouldBe(1);
         notifications.ShouldBe(0);
     }
 
     [Fact]
     public async Task OtherOwner_ReturnsNotFoundAndKeepsNoteAsync()
     {
-        using var fixture = await TestDatabase.CreateAsync();
-        await fixture.InsertNoteAsync();
+        using var fixture = await CreateDatabaseWithNoteAsync();
+        var removeNote = new RemoveNote(fixture.Database, new ChangeNotifications(_ => { }));
 
-        var result = await fixture.RemoveNote.Presentation.ExecuteAsync(Bob, new RemoveNoteInput(NoteId, 1));
+        var result = await removeNote.Presentation.ExecuteAsync(Bob, new RemoveNoteInput(NoteId, 1));
 
         ((IStatusCodeHttpResult)result).StatusCode.ShouldBe(StatusCodes.Status404NotFound);
-        (await fixture.CountNotesAsync()).ShouldBe(1);
+        (await CountNotesAsync(fixture)).ShouldBe(1);
     }
 
-    private sealed class TestDatabase : IDisposable
+    private static async Task<TestSqliteDatabase> CreateDatabaseWithNoteAsync()
     {
-        private readonly string directory = System.IO.Path.Combine(
-            System.IO.Path.GetTempPath(), $"aidd-remove-note-{Guid.NewGuid():N}");
+        var fixture = await TestSqliteDatabase.CreateAsync();
+        await using var connection = await fixture.Database.OpenAsync();
+        await connection.ExecuteAsync("INSERT INTO users (id, name) VALUES ('alice', 'Alice'), ('bob', 'Bob')");
+        await connection.ExecuteAsync("""
+            INSERT INTO notes (id, owner_id, title, body, version, updated_at)
+            VALUES (@Id, 'alice', 'target', 'body', 1, '2026-01-01T00:00:00Z')
+            """, new { Id = NoteId });
+        return fixture;
+    }
 
-        private TestDatabase()
-        {
-            Path = System.IO.Path.Combine(directory, "app.sqlite");
-            Database = new Database(Path);
-            Notifications = new ChangeNotifications(_ => { });
-            RemoveNote = new RemoveNote(Database, Notifications);
-        }
-
-        internal string Path { get; }
-        private Database Database { get; }
-        internal ChangeNotifications Notifications { get; }
-        internal RemoveNote RemoveNote { get; }
-
-        internal static async Task<TestDatabase> CreateAsync()
-        {
-            var fixture = new TestDatabase();
-            await fixture.Database.InitializeAsync();
-            await using var connection = await fixture.Database.OpenAsync();
-            await connection.ExecuteAsync("INSERT INTO users (id, name) VALUES ('alice', 'Alice'), ('bob', 'Bob')");
-            return fixture;
-        }
-
-        internal async Task InsertNoteAsync()
-        {
-            await using var connection = await Database.OpenAsync();
-            await connection.ExecuteAsync("""
-                INSERT INTO notes (id, owner_id, title, body, version, updated_at)
-                VALUES (@Id, 'alice', 'target', 'body', 1, '2026-01-01T00:00:00Z')
-                """, new { Id = NoteId });
-        }
-
-        internal async Task<int> CountNotesAsync()
-        {
-            await using var connection = await Database.OpenAsync();
-            return await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM notes WHERE id = @Id", new { Id = NoteId });
-        }
-
-        public void Dispose() => Directory.Delete(directory, true);
+    private static async Task<int> CountNotesAsync(TestSqliteDatabase fixture)
+    {
+        await using var connection = await fixture.Database.OpenAsync();
+        return await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM notes WHERE id = @Id", new { Id = NoteId });
     }
 }

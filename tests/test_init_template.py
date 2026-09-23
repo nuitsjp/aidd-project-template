@@ -17,7 +17,8 @@ PRODUCT_FILES = (
 )
 PRODUCT_NAME = "Acme.Notes"
 PRODUCT_RENAMES = (
-    (b"Backend.Tests", b"Acme.Notes.Tests"),
+    (b"Backend.IntegrationTests", b"Acme.Notes.IntegrationTests"),
+    (b"Backend.UnitTests", b"Acme.Notes.UnitTests"),
     (b"Frontend.esproj", b"Acme.Notes.Frontend.esproj"),
     (b"App.slnx", b"Acme.Notes.slnx"),
     (b"App.csproj", b"Acme.Notes.csproj"),
@@ -29,7 +30,8 @@ PRODUCT_RENAMES = (
 PRODUCT_PATHS = {
     "App.slnx": "Acme.Notes.slnx",
     "backend/App.csproj": "backend/Acme.Notes.csproj",
-    "tests/backend/Backend.Tests.csproj": "tests/backend/Acme.Notes.Tests.csproj",
+    "tests/dotnet-unit/Backend.UnitTests.csproj": "tests/dotnet-unit/Acme.Notes.UnitTests.csproj",
+    "tests/dotnet-integration/Backend.IntegrationTests.csproj": "tests/dotnet-integration/Acme.Notes.IntegrationTests.csproj",
     "frontend/Frontend.esproj": "frontend/Acme.Notes.Frontend.esproj",
 }
 
@@ -80,7 +82,7 @@ class InitTemplateTests(unittest.TestCase):
                                 content = content.replace(before, after)
                             if source_name.as_posix() == "backend/Properties/launchSettings.json":
                                 content = content.replace(b'"App": {', b'"Acme.Notes": {')
-                            if source_name.as_posix() == "tests/backend/packages.lock.json":
+                            if source_name.as_posix() in ("tests/dotnet-unit/packages.lock.json", "tests/dotnet-integration/packages.lock.json"):
                                 content = content.replace(b'"app": {', b'"acme.notes": {')
                             if source_name.as_posix() == "contracts/openapi.json":
                                 content = content.replace(b'"App | v1"', b'"Acme.Notes | v1"')
@@ -99,7 +101,8 @@ class InitTemplateTests(unittest.TestCase):
                     self.assertTrue((destination / "reference/App.slnx").is_file())
                     self.assertTrue((destination / "backend/Acme.Notes.csproj").is_file())
                     self.assertTrue((destination / "Acme.Notes.slnx").is_file())
-                    self.assertTrue((destination / "tests/backend/Acme.Notes.Tests.csproj").is_file())
+                    self.assertTrue((destination / "tests/dotnet-unit/Acme.Notes.UnitTests.csproj").is_file())
+                    self.assertTrue((destination / "tests/dotnet-integration/Acme.Notes.IntegrationTests.csproj").is_file())
                     self.assertTrue((destination / "frontend/Acme.Notes.Frontend.esproj").is_file())
                     self.assertFalse((destination / "backend/App.csproj").exists())
                     self.assertFalse((destination / "App.slnx").exists())

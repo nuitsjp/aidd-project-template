@@ -38,7 +38,6 @@ function copyProduct(reference, destination, namespace) {
   const projectNames = [
     ['Backend.IntegrationTests', `${namespace}.IntegrationTests`],
     ['Backend.UnitTests', `${namespace}.UnitTests`],
-    ['Backend.Tests', `${namespace}.Tests`],
     ['Frontend.esproj', `${namespace}.Frontend.esproj`],
     ['App.slnx', `${namespace}.slnx`],
     ['App.csproj', `${namespace}.csproj`],
@@ -78,7 +77,7 @@ function copyProduct(reference, destination, namespace) {
   if (replacements === 0) throw new Error('製品用名前空間の置換対象が見つかりません。');
   const launchSettings = resolve(destination, 'backend/Properties/launchSettings.json');
   writeFileSync(launchSettings, readFileSync(launchSettings, 'utf8').replace('"App": {', `"${namespace}": {`));
-  for (const testDirectory of ['backend', 'dotnet-unit', 'dotnet-integration']) {
+  for (const testDirectory of ['dotnet-unit', 'dotnet-integration']) {
     const testLock = resolve(destination, `tests/${testDirectory}/packages.lock.json`);
     writeFileSync(testLock, readFileSync(testLock, 'utf8').replace('"app": {', `"${namespace.toLowerCase()}": {`));
   }
@@ -89,7 +88,6 @@ function copyProduct(reference, destination, namespace) {
   for (const [before, after] of [
     ['App.slnx', `${namespace}.slnx`],
     ['backend/App.csproj', `backend/${namespace}.csproj`],
-    ['tests/backend/Backend.Tests.csproj', `tests/backend/${namespace}.Tests.csproj`],
     ['tests/dotnet-unit/Backend.UnitTests.csproj', `tests/dotnet-unit/${namespace}.UnitTests.csproj`],
     ['tests/dotnet-integration/Backend.IntegrationTests.csproj', `tests/dotnet-integration/${namespace}.IntegrationTests.csproj`],
     ['frontend/Frontend.esproj', `frontend/${namespace}.Frontend.esproj`],

@@ -98,7 +98,7 @@ mise run setup:browser
 mise run verify
 ```
 
-`template/`、`react-dotnet-template/`、ルートの `LICENSE` を配置し、参照アプリから `backend/`、`frontend/`、`contracts/`、`tests/`、アプリの設定とスクリプトを製品ルートへコピーします。`--name` には `Company.Product` のような ASCII の C# 識別子をドットで区切って指定します。C# の予約語は使用できません。製品側には `<製品名>.slnx`、`backend/<製品名>.csproj`、`frontend/<製品名>.Frontend.esproj`、`tests/backend/<製品名>.Tests.csproj` を配置し、.NET アセンブリを `<製品名>.dll` と `<製品名>.Tests.dll` にします。生成先ルートと `reference/` にそれぞれ完全な `mise` アプリタスクがあり、`mise run dev` は Vite と .NET を起動し、`mise run build` と `mise run start` は UI を .NET に同梱します。Visual Studio では製品ルートの `<製品名>.slnx` を開き、`backend/<製品名>.csproj` をスタートアッププロジェクトにします。サンプルは `reference/App.slnx` から同様に起動できます。生成は依存取得やコード生成を行わず、既存の出力先は拒否します。
+`template/`、`react-dotnet-template/`、ルートの `LICENSE` を配置し、参照アプリから `backend/`、`frontend/`、`contracts/`、`tests/`、アプリの設定とスクリプトを製品ルートへコピーします。`--name` には `Company.Product` のような ASCII の C# 識別子をドットで区切って指定します。C# の予約語は使用できません。製品側には `<製品名>.slnx`、`backend/<製品名>.csproj`、`frontend/<製品名>.Frontend.esproj` と、`tests/dotnet-unit/<製品名>.UnitTests.csproj`、`tests/dotnet-integration/<製品名>.IntegrationTests.csproj` を配置します。生成先ルートと `reference/` にそれぞれ完全な `mise` アプリタスクがあり、`mise run dev` は Vite と .NET を起動し、`mise run build` と `mise run start` は UI を .NET に同梱します。Visual Studio では製品ルートの `<製品名>.slnx` を開き、`backend/<製品名>.csproj` をスタートアッププロジェクトにします。サンプルは `reference/App.slnx` から同様に起動できます。生成は依存取得やコード生成を行わず、既存の出力先は拒否します。
 
 テンプレート開発時は `react-dotnet-template/` で製品文書、`react-dotnet-template/reference/` で参照アプリを検証します。source の文書検査は共通の `template/` と拡張側を一時生成先へ重ねます。製品側の実装・設定と依存ロックは生成後に採用先で管理します。生成・起動・検証の詳細は [参照実装の実行手順](react-dotnet-template/reference/docs/project.md#commands) に従います。
 

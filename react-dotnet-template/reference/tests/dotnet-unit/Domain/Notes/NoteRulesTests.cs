@@ -3,7 +3,7 @@ using NotesSample.Domain.Notes;
 using Shouldly;
 using Xunit;
 
-namespace NotesSample.UnitTests;
+namespace NotesSample.UnitTests.Domain.Notes;
 
 public sealed class NoteRulesTests
 {
