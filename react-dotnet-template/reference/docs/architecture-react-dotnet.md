@@ -34,7 +34,7 @@ C# の API 入出力型を契約の正本とし、OpenAPI から `contracts/api.
 
 公開エラーは HTTP ステータスと標準の Problem Details で表し、独自の FaultCode を応答に含めません。保存・削除の対象なしと版競合はアプリケーションの結果型で表し、プレゼンテーションで 404・409 に変換します。確定後にだけ `ChangeNotifications` が利用者のタブへ変更を通知し、購読側の失敗で確定済みの操作を失敗扱いにはしません。下書きは React が保持し、再取得や保存失敗で上書きしません。
 
-`Program` はエントリポイントに留め、`Hosting/AppHost` が起動モードと各領域の登録順序を組み立てます。サーバー設定と DB 管理コマンドは `Infrastructure/`、HTTP サービス設定・エンドポイント登録・SPA 配信・エラー変換・接続先と Origin の検査は `Presentation/Http/` に置きます。HTTP エラー変換と接続先検査、SPA の 404 応答は共通の `ProblemResponses` を使います。
+`Program` はエントリポイントに留め、`Hosting/AppHost` は起動モードの選択と各領域の組み立てだけを担当します。サーバー設定と DB 管理コマンドは `Infrastructure/`、HTTP サービス設定・エンドポイント登録・SPA 配信・エラー変換・接続先と Origin の検査は `Presentation/Http/` に置きます。OpenAPI 生成も通常起動と同じエンドポイント登録を使いますが、DB 初期化と HTTP 待受は行いません。HTTP エラー変換と接続先検査、SPA の 404 応答は共通の `ProblemResponses` を使います。
 
 <a id="persistence"></a>
 ## 4. 永続化

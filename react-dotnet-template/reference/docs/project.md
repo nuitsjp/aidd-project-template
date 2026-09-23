@@ -24,7 +24,7 @@ SPA、単一 ASP.NET Core サーバー、同一 origin、SQLite を既定とし�
 
 共通資材の配布元と適用版は [ルートの文書方針](../../docs/document-policy.md#adoption) に従います。直接依存は `package.json` と各 `.csproj`、参照アプリの実行ツールとタスクはこのディレクトリの `mise.toml` に記載します。`mise.toml` の `[tools]` は Node.js 24.21.0、.NET SDK 10.0.401、Python 3.13.15 です。
 
-- **ASP.NET Core / .NET SDK**: .NET SDK 10.0.401 と ASP.NET Core .NET 10 を使用します。`backend/App.csproj` が単一サーバーの実行単位で、UI のビルドと静的ファイルの配置も所有します。`App.slnx` は `frontend/Frontend.esproj`、バックエンド、バックエンドテストを束ねます。
+- **ASP.NET Core / .NET SDK**: .NET SDK 10.0.401 と ASP.NET Core .NET 10 を使用します。`backend/App.csproj` が単一サーバーの実行単位で、UI のビルドと静的ファイルの配置も所有します。`App.slnx` は `frontend/Frontend.esproj`、バックエンド、既存のバックエンドテスト、単体テスト、統合テストを束ねます。
 - **HTTP JSON / SSE**: ブラウザとサーバーは HTTP JSON の公開エンドポイントで通信し、`/events/notes` は確定後の変更通知に SSE を使用します。エンドポイント、DTO、エラー形状は [React + .NET アーキテクチャ](architecture-react-dotnet.md) に記録します。
 - **SQLite**: `Microsoft.Data.Sqlite` と Dapper で実 SQLite を操作し、マイグレーションは `backend/Infrastructure/Persistence/Migrations` に配置します。WAL、外部キー制約、有限の busy timeout を設定し、短い書込みトランザクションで確定します（[SQLite WAL](https://sqlite.org/wal.html)）。
 - **公開契約**: C# の API 入出力型を正本とし、OpenAPI と React 用の型を `mise run contracts` で生成します。`contracts/openapi.json` と `contracts/api.gen.ts` はコミットし、`contracts/notes.ts` は生成型の別名だけを定義します。
