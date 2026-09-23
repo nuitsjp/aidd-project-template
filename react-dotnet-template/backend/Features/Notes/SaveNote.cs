@@ -80,7 +80,7 @@ internal sealed class SaveNote
             ReadAsync = PersistenceLayer.ReadAsync;
             InsertAsync = PersistenceLayer.InsertAsync;
             UpdateAsync = PersistenceLayer.UpdateAsync;
-            TranslateError = PersistenceLayer.TranslateError;
+            TranslateError = TranslateDatabaseError;
             PublishChange = notifications.Publish;
         }
 
@@ -88,7 +88,7 @@ internal sealed class SaveNote
         internal Func<SqliteConnection, string, string, string, Task<Note>> InsertAsync { get; set; }
         internal Func<SqliteConnection, string, Note, Task<Note>> UpdateAsync { get; set; }
         internal Func<Exception, Exception> TranslateError { get; set; }
-        internal Func<string, bool> PublishChange { get; set; }
+        internal Action<string> PublishChange { get; set; }
 
         public async Task<SaveResult> ExecuteAsync(Principal principal, SaveNoteRequest input)
         {
@@ -103,13 +103,11 @@ internal sealed class SaveNote
                     var current = await ReadAsync(transaction.Connection, ownerId, input.Id!);
                     if (current is null)
                     {
-                        await transaction.RollbackAsync();
                         return new SaveResult.NotFound();
                     }
 
                     if (current.Version != input.Version)
                     {
-                        await transaction.RollbackAsync();
                         return new SaveResult.Conflict();
                     }
 
@@ -125,7 +123,6 @@ internal sealed class SaveNote
             }
             catch (Exception error)
             {
-                await transaction.RollbackAsync();
                 throw TranslateError(error);
             }
 
@@ -133,6 +130,11 @@ internal sealed class SaveNote
             return new SaveResult.Success(
                 new SaveNoteResponse(saved.Id, saved.Title, saved.Body, saved.Version, saved.UpdatedAt));
         }
+
+        internal static Exception TranslateDatabaseError(Exception error) =>
+            error is SqliteException { SqliteExtendedErrorCode: 2067 }
+                ? new AppFaultException("TITLE_EXISTS", "同じタイトルのメモが既にあります。")
+                : error;
 
     }
 
@@ -202,12 +204,6 @@ internal sealed class SaveNote
                     note.Body,
                 });
 
-        internal static Exception TranslateError(Exception error)
-        {
-            return error is SqliteException { SqliteExtendedErrorCode: 2067 }
-                ? new AppFaultException("TITLE_EXISTS", "同じタイトルのメモが既にあります。")
-                : error;
-        }
     }
 
     internal abstract record SaveResult

@@ -27,7 +27,7 @@ internal sealed class ChangeNotifications
         return new Subscription(this, ownerId, listener);
     }
 
-    internal bool Publish(string ownerId)
+    internal void Publish(string ownerId)
     {
         Action[] snapshot;
         lock (gate)
@@ -46,8 +46,6 @@ internal sealed class ChangeNotifications
                 reportError(error);
             }
         }
-
-        return snapshot.Length > 0;
     }
 
     private void Remove(string ownerId, Action listener)

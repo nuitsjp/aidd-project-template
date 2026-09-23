@@ -135,7 +135,6 @@ public sealed class NotesServiceTests
             Assert.AreEqual("alice", ownerId);
             Assert.IsTrue(persisted);
             notified = true;
-            return true;
         };
 
         var result = Success(await ExecuteAsync(application, Alice, new SaveNoteRequest(null, null, "  正規化  ", "本文")));

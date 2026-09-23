@@ -38,7 +38,7 @@ internal sealed class NotesService
     internal Func<PreparedImport, int> PersistImport { get; init; }
     internal Func<Guid> NewId { get; init; }
     internal Func<DateTimeOffset> UtcNow { get; init; }
-    internal Func<string, bool> PublishChange { get; init; }
+    internal Action<string> PublishChange { get; init; }
 
     internal IReadOnlyList<Note> List(string ownerId) => ReadAll(ownerId);
     internal Note Get(string ownerId, string id) => ReadOne(ownerId, id);
