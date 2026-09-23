@@ -1,33 +1,35 @@
 using NotesSample.Infrastructure.Configuration;
+using NotesSample.Hosting;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi;
+using Shouldly;
+using Xunit;
 
 namespace NotesSample.Tests;
 
-[TestClass]
 public sealed class OpenApiTests
 {
-    [TestMethod]
+    [Fact]
     public async Task ContractGenerationIncludesSaveWithoutCreatingDatabaseOrStartingServerAsync()
     {
         var directory = Path.Combine(Path.GetTempPath(), $"aidd-openapi-{Guid.NewGuid():N}");
         var config = AppConfig.FromValues(key => key == "DB_PATH" ? Path.Combine(directory, "app.sqlite") : null);
-        await using var app = await Program.BuildAppAsync(config, initializeDatabase: false);
+        await using var app = await AppHost.BuildAppAsync(config, initializeDatabase: false);
         var provider = app.Services.GetRequiredKeyedService<IOpenApiDocumentProvider>("v1");
-        var document = await provider.GetOpenApiDocumentAsync();
+        var document = await provider.GetOpenApiDocumentAsync(TestContext.Current.CancellationToken);
 
-        Assert.IsTrue(document.Paths.ContainsKey("/api/notes/save"));
-        Assert.IsTrue(document.Components!.Schemas!.ContainsKey("SaveNoteRequest"));
-        Assert.IsTrue(document.Components.Schemas.ContainsKey("SaveNoteResponse"));
+        document.Paths.ContainsKey("/api/notes/save").ShouldBeTrue();
+        document.Components!.Schemas!.ContainsKey("SaveNoteRequest").ShouldBeTrue();
+        document.Components.Schemas.ContainsKey("SaveNoteResponse").ShouldBeTrue();
         var input = document.Components.Schemas["SaveNoteRequest"];
-        Assert.IsTrue(input.Required!.Contains("title"));
-        Assert.IsTrue(input.Required.Contains("body"));
-        Assert.IsFalse(input.Required.Contains("id"));
-        Assert.IsFalse(input.Required.Contains("version"));
-        Assert.AreEqual(JsonSchemaType.String, input.Properties!["id"].Type);
-        Assert.AreEqual(JsonSchemaType.Integer, input.Properties["version"].Type);
-        Assert.IsFalse(Directory.Exists(directory));
-        Assert.IsFalse(app.Lifetime.ApplicationStarted.IsCancellationRequested);
+        input.Required!.Contains("title").ShouldBeTrue();
+        input.Required.Contains("body").ShouldBeTrue();
+        input.Required.Contains("id").ShouldBeFalse();
+        input.Required.Contains("version").ShouldBeFalse();
+        input.Properties!["id"].Type.ShouldBe(JsonSchemaType.String);
+        input.Properties["version"].Type.ShouldBe(JsonSchemaType.Integer);
+        Directory.Exists(directory).ShouldBeFalse();
+        app.Lifetime.ApplicationStarted.IsCancellationRequested.ShouldBeFalse();
     }
 }

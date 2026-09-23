@@ -71,36 +71,3 @@ internal sealed class TestDatabase : IDisposable
         await command.ExecuteNonQueryAsync();
     }
 }
-
-internal static class TestAssert
-{
-    internal static T Throws<T>(Action action) where T : Exception
-    {
-        try
-        {
-            action();
-        }
-        catch (T error)
-        {
-            return error;
-        }
-
-        Assert.Fail($"{typeof(T).Name} が発生しませんでした。");
-        throw new InvalidOperationException();
-    }
-
-    internal static async Task<T> ThrowsAsync<T>(Func<Task> action) where T : Exception
-    {
-        try
-        {
-            await action();
-        }
-        catch (T error)
-        {
-            return error;
-        }
-
-        Assert.Fail($"{typeof(T).Name} が発生しませんでした。");
-        throw new InvalidOperationException();
-    }
-}

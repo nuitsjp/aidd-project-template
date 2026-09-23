@@ -2,14 +2,14 @@ using NotesSample.Infrastructure.Persistence;
 using NotesSample.Infrastructure.Configuration;
 using Dapper;
 using Microsoft.Data.Sqlite;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Shouldly;
+using Xunit;
 
 namespace NotesSample.Tests;
 
-[TestClass]
 public sealed class DatabaseAndConfigTests
 {
-    [TestMethod]
+    [Fact]
     public async Task DatabaseInstancesKeepPathsIndependentAsync()
     {
         var directory = Path.Combine(Path.GetTempPath(), $"aidd-database-instances-{Guid.NewGuid():N}");
@@ -28,21 +28,21 @@ public sealed class DatabaseAndConfigTests
                     VALUES
                         ('first', 'First');
                     """;
-                await command.ExecuteNonQueryAsync();
+                await command.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
             }
 
             await using var firstConnection = await first.OpenAsync();
             await using var secondConnection = await second.OpenAsync();
-            Assert.AreEqual(1L, await ScalarAsync<long>(firstConnection, """
+            (await ScalarAsync<long>(firstConnection, """
                 SELECT COUNT(*)
                 FROM
                     users
-                """));
-            Assert.AreEqual(0L, await ScalarAsync<long>(secondConnection, """
+                """)).ShouldBe(1L);
+            (await ScalarAsync<long>(secondConnection, """
                 SELECT COUNT(*)
                 FROM
                     users
-                """));
+                """)).ShouldBe(0L);
         }
         finally
         {
@@ -53,24 +53,24 @@ public sealed class DatabaseAndConfigTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task DatabaseEnablesMigrationWalAndForeignKeysAsync()
     {
         using var fixture = await TestDatabase.CreateAsync();
         await using var connection = await fixture.Database.OpenAsync();
-        Assert.AreEqual(1L, await ScalarAsync<long>(connection, "PRAGMA user_version"));
-        Assert.AreEqual("wal", await ScalarAsync<string>(connection, "PRAGMA journal_mode"));
-        Assert.AreEqual(1L, await ScalarAsync<long>(connection, "PRAGMA foreign_keys"));
+        (await ScalarAsync<long>(connection, "PRAGMA user_version")).ShouldBe(1L);
+        (await ScalarAsync<string>(connection, "PRAGMA journal_mode")).ShouldBe("wal");
+        (await ScalarAsync<long>(connection, "PRAGMA foreign_keys")).ShouldBe(1L);
         await using var command = connection.CreateCommand();
         command.CommandText = """
             INSERT INTO notes
             VALUES
                 ('n', 'missing', 'a', '', 1, 'time')
             """;
-        await TestAssert.ThrowsAsync<SqliteException>(async () => await command.ExecuteNonQueryAsync());
+        await Should.ThrowAsync<SqliteException>(async () => await command.ExecuteNonQueryAsync());
     }
 
-    [TestMethod]
+    [Fact]
     public async Task TransactionExposesConnectionAndSupportsCommitRollbackAndModeAsync()
     {
         using var fixture = await TestDatabase.CreateAsync();
@@ -96,23 +96,23 @@ public sealed class DatabaseAndConfigTests
         }
 
         await using var connection = await fixture.Database.OpenAsync();
-        Assert.AreEqual(1L, await ScalarAsync<long>(connection, """
+        (await ScalarAsync<long>(connection, """
             SELECT COUNT(*)
             FROM
                 users
             WHERE
                 id = 'committed'
-            """));
-        Assert.AreEqual(0L, await ScalarAsync<long>(connection, """
+            """)).ShouldBe(1L);
+        (await ScalarAsync<long>(connection, """
             SELECT COUNT(*)
             FROM
                 users
             WHERE
                 id = 'rolled-back'
-            """));
+            """)).ShouldBe(0L);
     }
 
-    [TestMethod]
+    [Fact]
     public async Task ReopenPreservesDataAndUnknownSchemaIsRejectedAsync()
     {
         var directory = Path.Combine(Path.GetTempPath(), $"aidd-version-{Guid.NewGuid():N}");
@@ -130,20 +130,20 @@ public sealed class DatabaseAndConfigTests
                         ('id', 'name');
                     PRAGMA user_version = 99;
                     """;
-                await command.ExecuteNonQueryAsync();
+                await command.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
             }
 
-            await TestAssert.ThrowsAsync<InvalidOperationException>(() => database.InitializeAsync());
+            await Should.ThrowAsync<InvalidOperationException>(() => database.InitializeAsync());
             await using var readonlyConnection = new SqliteConnection($"Data Source={path};Mode=ReadOnly;Pooling=False");
-            await readonlyConnection.OpenAsync();
-            Assert.AreEqual("name", await ScalarAsync<string>(readonlyConnection, """
+            await readonlyConnection.OpenAsync(TestContext.Current.CancellationToken);
+            (await ScalarAsync<string>(readonlyConnection, """
                 SELECT name
                 FROM
                     users
                 WHERE
                     id = 'id'
-                """));
-            Assert.AreEqual(99L, await ScalarAsync<long>(readonlyConnection, "PRAGMA user_version"));
+                """)).ShouldBe("name");
+            (await ScalarAsync<long>(readonlyConnection, "PRAGMA user_version")).ShouldBe(99L);
         }
         finally
         {
@@ -154,7 +154,7 @@ public sealed class DatabaseAndConfigTests
         }
     }
 
-    [TestMethod]
+    [Fact]
     public async Task BackupCopiesCommittedWalStateAndPassesQuickCheckAsync()
     {
         using var fixture = await TestDatabase.CreateAsync();
@@ -164,17 +164,17 @@ public sealed class DatabaseAndConfigTests
         var backup = Path.Combine(Path.GetDirectoryName(fixture.Path)!, "backup.sqlite");
         fixture.Database.Backup(backup);
         var check = await new Database(backup).CheckAsync();
-        Assert.IsTrue(check.IsHealthy);
+        check.IsHealthy.ShouldBeTrue();
         await using var connection = new SqliteConnection($"Data Source={backup};Mode=ReadOnly;Pooling=False");
-        await connection.OpenAsync();
-        Assert.AreEqual("copy", await ScalarAsync<string>(connection, """
+        await connection.OpenAsync(TestContext.Current.CancellationToken);
+        (await ScalarAsync<string>(connection, """
             SELECT body
             FROM
                 notes
-            """));
+            """)).ShouldBe("copy");
     }
 
-    [TestMethod]
+    [Fact]
     public void ConfigAcceptsDynamicPortAndRejectsUnsafeExposure()
     {
         var values = new Dictionary<string, string?>
@@ -185,16 +185,16 @@ public sealed class DatabaseAndConfigTests
             ["PUBLIC_ORIGIN"] = string.Empty,
         };
         var config = AppConfig.FromValues(name => values.GetValueOrDefault(name));
-        Assert.AreEqual(0, config.Port);
-        Assert.IsNull(config.PublicOrigin);
+        config.Port.ShouldBe(0);
+        config.PublicOrigin.ShouldBeNull();
 
         values["HOST"] = "0.0.0.0";
-        TestAssert.Throws<InvalidOperationException>(() => AppConfig.FromValues(name => values.GetValueOrDefault(name)));
+        Should.Throw<InvalidOperationException>(() => AppConfig.FromValues(name => values.GetValueOrDefault(name)));
         values["HOST"] = "127.0.0.1";
         values["AUTH_MODE"] = "proxy";
-        TestAssert.Throws<InvalidOperationException>(() => AppConfig.FromValues(name => values.GetValueOrDefault(name)));
+        Should.Throw<InvalidOperationException>(() => AppConfig.FromValues(name => values.GetValueOrDefault(name)));
         values["PUBLIC_ORIGIN"] = "https://example.com";
-        Assert.AreEqual("proxy", AppConfig.FromValues(name => values.GetValueOrDefault(name)).AuthMode);
+        AppConfig.FromValues(name => values.GetValueOrDefault(name)).AuthMode.ShouldBe("proxy");
     }
 
     private static async Task<T> ScalarAsync<T>(SqliteConnection connection, string sql)
