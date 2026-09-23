@@ -1,130 +1,106 @@
-using NotesSample.Domain;
-using NotesSample.Domain.Notes;
+using NotesSample.Presentation.Http.Validation;
 using Shouldly;
 using Xunit;
 
-namespace NotesSample.UnitTests.Domain.Notes;
+namespace NotesSample.UnitTests.Presentation.Http.Validation;
 
-public sealed class NoteRulesTests
+public sealed class UuidAttributeTests
 {
-    public sealed class ValidateTitle
+    public sealed class IsValid
     {
         [Fact]
-        public void OneHundredUnicodeCharacters_AreAccepted()
+        public void CanonicalUuid_ReturnsTrue()
         {
             // -------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------
-            var hiragana = new string('あ', 100);
-            var emoji = string.Concat(Enumerable.Repeat("😀", 100));
+            var value = "123e4567-e89b-12d3-a456-426614174000";
+            var attribute = new UuidAttribute();
 
             // -------------------------------------------------------------
             // Act
             // -------------------------------------------------------------
-            var hiraganaError = Record.Exception(() => NoteRules.ValidateTitle(hiragana));
-            var emojiError = Record.Exception(() => NoteRules.ValidateTitle(emoji));
+            var result = attribute.IsValid(value);
 
             // -------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------
-            hiraganaError.ShouldBeNull();
-            emojiError.ShouldBeNull();
+            result.ShouldBeTrue();
         }
 
         [Fact]
-        public void OneHundredAndOneUnicodeCharacters_ThrowValidationFault()
+        public void Null_ReturnsTrue()
         {
             // -------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------
-            var title = string.Concat(Enumerable.Repeat("😀", 101));
+            string? value = null;
+            var attribute = new UuidAttribute();
 
             // -------------------------------------------------------------
             // Act
             // -------------------------------------------------------------
-            var error = Record.Exception(() => NoteRules.ValidateTitle(title));
+            var result = attribute.IsValid(value);
 
             // -------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------
-            error.ShouldBeOfType<AppFaultException>().Code.ShouldBe("VALIDATION");
+            result.ShouldBeTrue();
         }
 
         [Fact]
-        public void WhitespaceOnly_ThrowsValidationFault()
+        public void UuidWithoutHyphens_ReturnsFalse()
         {
             // -------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------
-            var title = "  ";
+            var value = "123e4567e89b12d3a456426614174000";
+            var attribute = new UuidAttribute();
 
             // -------------------------------------------------------------
             // Act
             // -------------------------------------------------------------
-            var error = Record.Exception(() => NoteRules.ValidateTitle(title));
+            var result = attribute.IsValid(value);
 
             // -------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------
-            error.ShouldBeOfType<AppFaultException>().Code.ShouldBe("VALIDATION");
+            result.ShouldBeFalse();
         }
-    }
 
-    public sealed class ValidateBody
-    {
         [Fact]
-        public void TenThousandUnicodeCharacters_AreAccepted()
+        public void UuidWithInvalidCharacter_ReturnsFalse()
         {
             // -------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------
-            var body = string.Concat(Enumerable.Repeat("😀", 10_000));
+            var value = "123e4567-e89b-12d3-a456-42661417400z";
+            var attribute = new UuidAttribute();
 
             // -------------------------------------------------------------
             // Act
             // -------------------------------------------------------------
-            var error = Record.Exception(() => NoteRules.ValidateBody(body));
+            var result = attribute.IsValid(value);
 
             // -------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------
-            error.ShouldBeNull();
+            result.ShouldBeFalse();
         }
 
         [Fact]
-        public void TenThousandAndOneUnicodeCharacters_ThrowValidationFault()
+        public void NonStringValue_ReturnsFalse()
         {
             // -------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------
-            var body = string.Concat(Enumerable.Repeat("😀", 10_001));
+            object value = Guid.Empty;
+            var attribute = new UuidAttribute();
 
             // -------------------------------------------------------------
             // Act
             // -------------------------------------------------------------
-            var error = Record.Exception(() => NoteRules.ValidateBody(body));
-
-            // -------------------------------------------------------------
-            // Assert
-            // -------------------------------------------------------------
-            error.ShouldBeOfType<AppFaultException>().Code.ShouldBe("VALIDATION");
-        }
-    }
-
-    public sealed class IsValidBody
-    {
-        [Fact]
-        public void Null_ReturnsFalse()
-        {
-            // -------------------------------------------------------------
-            // Arrange
-            // -------------------------------------------------------------
-            string? body = null;
-
-            // -------------------------------------------------------------
-            // Act
-            // -------------------------------------------------------------
-            var result = NoteRules.IsValidBody(body);
+            var result = attribute.IsValid(value);
 
             // -------------------------------------------------------------
             // Assert

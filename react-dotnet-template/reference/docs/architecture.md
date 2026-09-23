@@ -39,5 +39,5 @@ UI→API のモック差し替え境界は、Vite の `@notes-access` 参照先�
 
 - 保存方式、テーブル、値の制約は [データ設計](design/data.md) に従います。
 - React・ASP.NET Core の責務、状態更新、起動単位は [React + .NET 補足](architecture-react-dotnet.md) に従います。
-- E2E の分離条件と同一 DB の競合境界は [並列 E2E](architecture-react-dotnet.md#test-boundary) に従います。
+- .NET テストと E2E の分担・分離条件は [テストの分担と並列実行](architecture-react-dotnet.md#test-boundary) に従います。
 - 共有環境の認証境界は [配備・認証](architecture-react-dotnet.md#deployment) に従います。

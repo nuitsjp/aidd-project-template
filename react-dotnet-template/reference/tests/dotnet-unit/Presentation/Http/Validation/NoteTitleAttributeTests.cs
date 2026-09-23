@@ -1,130 +1,106 @@
-using NotesSample.Domain;
-using NotesSample.Domain.Notes;
+using NotesSample.Presentation.Http.Validation;
 using Shouldly;
 using Xunit;
 
-namespace NotesSample.UnitTests.Domain.Notes;
+namespace NotesSample.UnitTests.Presentation.Http.Validation;
 
-public sealed class NoteRulesTests
+public sealed class NoteTitleAttributeTests
 {
-    public sealed class ValidateTitle
+    public sealed class IsValid
     {
         [Fact]
-        public void OneHundredUnicodeCharacters_AreAccepted()
+        public void OneHundredEmojiCharacters_ReturnsTrue()
         {
             // -------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------
-            var hiragana = new string('あ', 100);
-            var emoji = string.Concat(Enumerable.Repeat("😀", 100));
+            var value = string.Concat(Enumerable.Repeat("😀", 100));
+            var attribute = new NoteTitleAttribute();
 
             // -------------------------------------------------------------
             // Act
             // -------------------------------------------------------------
-            var hiraganaError = Record.Exception(() => NoteRules.ValidateTitle(hiragana));
-            var emojiError = Record.Exception(() => NoteRules.ValidateTitle(emoji));
+            var result = attribute.IsValid(value);
 
             // -------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------
-            hiraganaError.ShouldBeNull();
-            emojiError.ShouldBeNull();
+            result.ShouldBeTrue();
         }
 
         [Fact]
-        public void OneHundredAndOneUnicodeCharacters_ThrowValidationFault()
+        public void OneHundredAndOneEmojiCharacters_ReturnsFalse()
         {
             // -------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------
-            var title = string.Concat(Enumerable.Repeat("😀", 101));
+            var value = string.Concat(Enumerable.Repeat("😀", 101));
+            var attribute = new NoteTitleAttribute();
 
             // -------------------------------------------------------------
             // Act
             // -------------------------------------------------------------
-            var error = Record.Exception(() => NoteRules.ValidateTitle(title));
+            var result = attribute.IsValid(value);
 
             // -------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------
-            error.ShouldBeOfType<AppFaultException>().Code.ShouldBe("VALIDATION");
+            result.ShouldBeFalse();
         }
 
         [Fact]
-        public void WhitespaceOnly_ThrowsValidationFault()
+        public void WhitespaceOnly_ReturnsFalse()
         {
             // -------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------
-            var title = "  ";
+            var value = "  ";
+            var attribute = new NoteTitleAttribute();
 
             // -------------------------------------------------------------
             // Act
             // -------------------------------------------------------------
-            var error = Record.Exception(() => NoteRules.ValidateTitle(title));
+            var result = attribute.IsValid(value);
 
             // -------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------
-            error.ShouldBeOfType<AppFaultException>().Code.ShouldBe("VALIDATION");
-        }
-    }
-
-    public sealed class ValidateBody
-    {
-        [Fact]
-        public void TenThousandUnicodeCharacters_AreAccepted()
-        {
-            // -------------------------------------------------------------
-            // Arrange
-            // -------------------------------------------------------------
-            var body = string.Concat(Enumerable.Repeat("😀", 10_000));
-
-            // -------------------------------------------------------------
-            // Act
-            // -------------------------------------------------------------
-            var error = Record.Exception(() => NoteRules.ValidateBody(body));
-
-            // -------------------------------------------------------------
-            // Assert
-            // -------------------------------------------------------------
-            error.ShouldBeNull();
+            result.ShouldBeFalse();
         }
 
-        [Fact]
-        public void TenThousandAndOneUnicodeCharacters_ThrowValidationFault()
-        {
-            // -------------------------------------------------------------
-            // Arrange
-            // -------------------------------------------------------------
-            var body = string.Concat(Enumerable.Repeat("😀", 10_001));
-
-            // -------------------------------------------------------------
-            // Act
-            // -------------------------------------------------------------
-            var error = Record.Exception(() => NoteRules.ValidateBody(body));
-
-            // -------------------------------------------------------------
-            // Assert
-            // -------------------------------------------------------------
-            error.ShouldBeOfType<AppFaultException>().Code.ShouldBe("VALIDATION");
-        }
-    }
-
-    public sealed class IsValidBody
-    {
         [Fact]
         public void Null_ReturnsFalse()
         {
             // -------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------
-            string? body = null;
+            string? value = null;
+            var attribute = new NoteTitleAttribute();
 
             // -------------------------------------------------------------
             // Act
             // -------------------------------------------------------------
-            var result = NoteRules.IsValidBody(body);
+            var result = attribute.IsValid(value);
+
+            // -------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------
+            result.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void NonStringValue_ReturnsFalse()
+        {
+            // -------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------
+            object value = 123;
+            var attribute = new NoteTitleAttribute();
+
+            // -------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------
+            var result = attribute.IsValid(value);
 
             // -------------------------------------------------------------
             // Assert

@@ -1,130 +1,101 @@
-using NotesSample.Domain;
-using NotesSample.Domain.Notes;
+using NotesSample.Presentation.Http;
 using Shouldly;
 using Xunit;
 
-namespace NotesSample.UnitTests.Domain.Notes;
+namespace NotesSample.UnitTests.Presentation.Http;
 
-public sealed class NoteRulesTests
+public sealed class JsonRequestTests
 {
-    public sealed class ValidateTitle
+    public sealed class IsUuid
     {
         [Fact]
-        public void OneHundredUnicodeCharacters_AreAccepted()
+        public void CanonicalUuid_ReturnsTrue()
         {
             // -------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------
-            var hiragana = new string('あ', 100);
-            var emoji = string.Concat(Enumerable.Repeat("😀", 100));
+            var value = "123e4567-e89b-12d3-a456-426614174000";
 
             // -------------------------------------------------------------
             // Act
             // -------------------------------------------------------------
-            var hiraganaError = Record.Exception(() => NoteRules.ValidateTitle(hiragana));
-            var emojiError = Record.Exception(() => NoteRules.ValidateTitle(emoji));
+            var result = JsonRequest.IsUuid(value);
 
             // -------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------
-            hiraganaError.ShouldBeNull();
-            emojiError.ShouldBeNull();
+            result.ShouldBeTrue();
         }
 
         [Fact]
-        public void OneHundredAndOneUnicodeCharacters_ThrowValidationFault()
+        public void ThirtyFiveCharacters_ReturnsFalse()
         {
             // -------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------
-            var title = string.Concat(Enumerable.Repeat("😀", 101));
+            var value = "123e4567-e89b-12d3-a456-42661417400";
 
             // -------------------------------------------------------------
             // Act
             // -------------------------------------------------------------
-            var error = Record.Exception(() => NoteRules.ValidateTitle(title));
+            var result = JsonRequest.IsUuid(value);
 
             // -------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------
-            error.ShouldBeOfType<AppFaultException>().Code.ShouldBe("VALIDATION");
+            result.ShouldBeFalse();
         }
 
         [Fact]
-        public void WhitespaceOnly_ThrowsValidationFault()
+        public void UuidWithoutHyphens_ReturnsFalse()
         {
             // -------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------
-            var title = "  ";
+            var value = "123e4567e89b12d3a456426614174000";
 
             // -------------------------------------------------------------
             // Act
             // -------------------------------------------------------------
-            var error = Record.Exception(() => NoteRules.ValidateTitle(title));
+            var result = JsonRequest.IsUuid(value);
 
             // -------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------
-            error.ShouldBeOfType<AppFaultException>().Code.ShouldBe("VALIDATION");
+            result.ShouldBeFalse();
         }
-    }
 
-    public sealed class ValidateBody
-    {
         [Fact]
-        public void TenThousandUnicodeCharacters_AreAccepted()
+        public void WrongHyphenPosition_ReturnsFalse()
         {
             // -------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------
-            var body = string.Concat(Enumerable.Repeat("😀", 10_000));
+            var value = "123e4567-e89b-12d3-a456_426614174000";
 
             // -------------------------------------------------------------
             // Act
             // -------------------------------------------------------------
-            var error = Record.Exception(() => NoteRules.ValidateBody(body));
+            var result = JsonRequest.IsUuid(value);
 
             // -------------------------------------------------------------
             // Assert
             // -------------------------------------------------------------
-            error.ShouldBeNull();
+            result.ShouldBeFalse();
         }
 
         [Fact]
-        public void TenThousandAndOneUnicodeCharacters_ThrowValidationFault()
+        public void InvalidHexCharacter_ReturnsFalse()
         {
             // -------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------
-            var body = string.Concat(Enumerable.Repeat("😀", 10_001));
+            var value = "123e4567-e89b-12d3-a456-42661417400z";
 
             // -------------------------------------------------------------
             // Act
             // -------------------------------------------------------------
-            var error = Record.Exception(() => NoteRules.ValidateBody(body));
-
-            // -------------------------------------------------------------
-            // Assert
-            // -------------------------------------------------------------
-            error.ShouldBeOfType<AppFaultException>().Code.ShouldBe("VALIDATION");
-        }
-    }
-
-    public sealed class IsValidBody
-    {
-        [Fact]
-        public void Null_ReturnsFalse()
-        {
-            // -------------------------------------------------------------
-            // Arrange
-            // -------------------------------------------------------------
-            string? body = null;
-
-            // -------------------------------------------------------------
-            // Act
-            // -------------------------------------------------------------
-            var result = NoteRules.IsValidBody(body);
+            var result = JsonRequest.IsUuid(value);
 
             // -------------------------------------------------------------
             // Assert

@@ -1,7 +1,7 @@
 using Dapper;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Data.Sqlite;
 using NotesSample.Application.Authentication;
+using NotesSample.Domain;
 using NotesSample.Features.Notes;
 using NotesSample.Infrastructure.Notifications;
 using Shouldly;
@@ -9,127 +9,136 @@ using Xunit;
 
 namespace NotesSample.IntegrationTests;
 
-public sealed class RemoveNoteTests
+public sealed class ImportNotesTests
 {
     private static readonly Principal Alice = new("alice", "Alice");
     private static readonly Principal Bob = new("bob", "Bob");
-    private const string NoteId = "00000000-0000-4000-8000-000000000001";
 
     [Fact]
-    public async Task MatchingVersion_DeletesNoteAndPublishesChangeAsync()
+    public async Task ValidInput_InsertsAllNotesAndNotifiesAfterCommitAsync()
     {
         // -------------------------------------------------------------
         // Arrange
         // -------------------------------------------------------------
-        using var fixture = await CreateDatabaseWithNoteAsync();
+        using var fixture = await CreateDatabaseAsync();
         var changes = new ChangeNotifications(_ => { });
-        var removeNote = new RemoveNote(fixture.Database, changes);
+        var import = new ImportNotes(fixture.Database, changes, new PreviewNotes().Application);
         var notifications = 0;
-        var remainingWhenNotified = -1;
+        var countWhenNotified = -1;
         using var subscription = changes.Subscribe("alice", () =>
         {
             notifications++;
             using var connection = new SqliteConnection($"Data Source={fixture.Path};Mode=ReadOnly;Pooling=False");
             connection.Open();
-            remainingWhenNotified = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM notes WHERE id = @Id", new { Id = NoteId });
+            countWhenNotified = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM notes WHERE owner_id = 'alice'");
         });
 
         // -------------------------------------------------------------
         // Act
         // -------------------------------------------------------------
-        var result = await removeNote.Presentation.ExecuteAsync(Alice, new RemoveNoteInput(NoteId, 1));
+        var result = await import.Presentation.ExecuteAsync(Alice, new BulkInput(" first \nsecond", "body"));
 
         // -------------------------------------------------------------
         // Assert
         // -------------------------------------------------------------
-        ((IStatusCodeHttpResult)result).StatusCode.ShouldBe(StatusCodes.Status200OK);
-        (await CountNotesAsync(fixture)).ShouldBe(0);
+        result.Count.ShouldBe(2);
+        (await ReadTitlesAsync(fixture, "alice")).ShouldBe(new[] { "first", "second" });
         notifications.ShouldBe(1);
-        remainingWhenNotified.ShouldBe(0);
+        countWhenNotified.ShouldBe(2);
     }
 
     [Fact]
-    public async Task StaleVersion_ReturnsConflictAndKeepsNoteAsync()
+    public async Task LaterTitleConflict_RollsBackEarlierInsertAsync()
     {
         // -------------------------------------------------------------
         // Arrange
         // -------------------------------------------------------------
-        using var fixture = await CreateDatabaseWithNoteAsync();
+        using var fixture = await CreateDatabaseAsync();
+        await InsertNoteAsync(fixture, "alice", "second");
         var changes = new ChangeNotifications(_ => { });
-        var removeNote = new RemoveNote(fixture.Database, changes);
+        var import = new ImportNotes(fixture.Database, changes, new PreviewNotes().Application);
         var notifications = 0;
         using var subscription = changes.Subscribe("alice", () => notifications++);
 
         // -------------------------------------------------------------
         // Act
         // -------------------------------------------------------------
-        var result = await removeNote.Presentation.ExecuteAsync(Alice, new RemoveNoteInput(NoteId, 2));
+        var error = await Record.ExceptionAsync(() =>
+            import.Presentation.ExecuteAsync(Alice, new BulkInput("first\nsecond", "body")));
 
         // -------------------------------------------------------------
         // Assert
         // -------------------------------------------------------------
-        ((IStatusCodeHttpResult)result).StatusCode.ShouldBe(StatusCodes.Status409Conflict);
-        (await CountNotesAsync(fixture)).ShouldBe(1);
+        error.ShouldBeOfType<AppFaultException>().Code.ShouldBe("TITLE_EXISTS");
+        (await ReadTitlesAsync(fixture, "alice")).ShouldBe(new[] { "second" });
         notifications.ShouldBe(0);
     }
 
     [Fact]
-    public async Task OtherOwner_ReturnsNotFoundAndKeepsNoteAsync()
+    public async Task DuplicateInput_RejectsBeforeInsertingAsync()
     {
         // -------------------------------------------------------------
         // Arrange
         // -------------------------------------------------------------
-        using var fixture = await CreateDatabaseWithNoteAsync();
-        var removeNote = new RemoveNote(fixture.Database, new ChangeNotifications(_ => { }));
+        using var fixture = await CreateDatabaseAsync();
+        var import = new ImportNotes(fixture.Database, new ChangeNotifications(_ => { }), new PreviewNotes().Application);
 
         // -------------------------------------------------------------
         // Act
         // -------------------------------------------------------------
-        var result = await removeNote.Presentation.ExecuteAsync(Bob, new RemoveNoteInput(NoteId, 1));
+        var error = await Record.ExceptionAsync(() =>
+            import.Presentation.ExecuteAsync(Alice, new BulkInput("same\n same ", "body")));
 
         // -------------------------------------------------------------
         // Assert
         // -------------------------------------------------------------
-        ((IStatusCodeHttpResult)result).StatusCode.ShouldBe(StatusCodes.Status404NotFound);
-        (await CountNotesAsync(fixture)).ShouldBe(1);
+        error.ShouldBeOfType<AppFaultException>().Code.ShouldBe("VALIDATION");
+        (await ReadTitlesAsync(fixture, "alice")).ShouldBeEmpty();
     }
 
     [Fact]
-    public async Task MissingNote_ReturnsNotFoundAsync()
+    public async Task SameTitleForDifferentOwners_RemainsIsolatedAsync()
     {
         // -------------------------------------------------------------
         // Arrange
         // -------------------------------------------------------------
-        using var fixture = await TestSqliteDatabase.CreateAsync();
-        var removeNote = new RemoveNote(fixture.Database, new ChangeNotifications(_ => { }));
+        using var fixture = await CreateDatabaseAsync();
+        var import = new ImportNotes(fixture.Database, new ChangeNotifications(_ => { }), new PreviewNotes().Application);
 
         // -------------------------------------------------------------
         // Act
         // -------------------------------------------------------------
-        var result = await removeNote.Presentation.ExecuteAsync(Alice, new RemoveNoteInput(NoteId, 1));
+        await import.Presentation.ExecuteAsync(Alice, new BulkInput("shared", "alice body"));
+        await import.Presentation.ExecuteAsync(Bob, new BulkInput("shared", "bob body"));
 
         // -------------------------------------------------------------
         // Assert
         // -------------------------------------------------------------
-        ((IStatusCodeHttpResult)result).StatusCode.ShouldBe(StatusCodes.Status404NotFound);
-        (await CountNotesAsync(fixture)).ShouldBe(0);
+        (await ReadTitlesAsync(fixture, "alice")).ShouldBe(new[] { "shared" });
+        (await ReadTitlesAsync(fixture, "bob")).ShouldBe(new[] { "shared" });
     }
 
-    private static async Task<TestSqliteDatabase> CreateDatabaseWithNoteAsync()
+    private static async Task<TestSqliteDatabase> CreateDatabaseAsync()
     {
         var fixture = await TestSqliteDatabase.CreateAsync();
         await using var connection = await fixture.Database.OpenAsync();
         await connection.ExecuteAsync("INSERT INTO users (id, name) VALUES ('alice', 'Alice'), ('bob', 'Bob')");
-        await connection.ExecuteAsync("""
-            INSERT INTO notes (id, owner_id, title, body, version, updated_at)
-            VALUES (@Id, 'alice', 'target', 'body', 1, '2026-01-01T00:00:00Z')
-            """, new { Id = NoteId });
         return fixture;
     }
 
-    private static async Task<int> CountNotesAsync(TestSqliteDatabase fixture)
+    private static async Task InsertNoteAsync(TestSqliteDatabase fixture, string ownerId, string title)
     {
         await using var connection = await fixture.Database.OpenAsync();
-        return await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM notes WHERE id = @Id", new { Id = NoteId });
+        await connection.ExecuteAsync("""
+            INSERT INTO notes (id, owner_id, title, body, version, updated_at)
+            VALUES (@id, @ownerId, @title, 'existing', 1, '2026-01-01T00:00:00Z')
+            """, new { id = Guid.NewGuid().ToString("D"), ownerId, title });
+    }
+
+    private static async Task<string[]> ReadTitlesAsync(TestSqliteDatabase fixture, string ownerId)
+    {
+        await using var connection = await fixture.Database.OpenAsync();
+        return (await connection.QueryAsync<string>(
+            "SELECT title FROM notes WHERE owner_id = @ownerId ORDER BY title", new { ownerId })).ToArray();
     }
 }
