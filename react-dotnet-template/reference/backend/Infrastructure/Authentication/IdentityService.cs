@@ -1,6 +1,6 @@
-using Aidd.ReactDotnet.Infrastructure.Persistence;
-using Aidd.ReactDotnet.Application.Authentication;
-using Aidd.ReactDotnet.Domain;
+using NotesSample.Infrastructure.Persistence;
+using NotesSample.Application.Authentication;
+using NotesSample.Domain;
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
 using System.Security.Cryptography;
@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 using Dapper;
 using Microsoft.Data.Sqlite;
 
-namespace Aidd.ReactDotnet.Infrastructure.Authentication;
+namespace NotesSample.Infrastructure.Authentication;
 
 internal sealed partial class IdentityService
 {

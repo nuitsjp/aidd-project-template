@@ -1,3 +1,3 @@
-namespace Aidd.ReactDotnet.Application.Authentication;
+namespace NotesSample.Application.Authentication;
 
 internal sealed record Principal(string Id, string Name);

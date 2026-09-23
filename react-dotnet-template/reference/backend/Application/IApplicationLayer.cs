@@ -1,6 +1,6 @@
-using Aidd.ReactDotnet.Application.Authentication;
+using NotesSample.Application.Authentication;
 
-namespace Aidd.ReactDotnet.Application;
+namespace NotesSample.Application;
 
 internal interface IApplicationLayer<TRequest, TResult>
 {

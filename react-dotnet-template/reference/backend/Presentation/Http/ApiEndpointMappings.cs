@@ -1,9 +1,9 @@
-using Aidd.ReactDotnet.Application.Authentication;
-using Aidd.ReactDotnet.Domain;
-using Aidd.ReactDotnet.Infrastructure.Authentication;
+using NotesSample.Application.Authentication;
+using NotesSample.Domain;
+using NotesSample.Infrastructure.Authentication;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Aidd.ReactDotnet.Presentation.Http;
+namespace NotesSample.Presentation.Http;
 
 internal static class ApiEndpointMappings
 {

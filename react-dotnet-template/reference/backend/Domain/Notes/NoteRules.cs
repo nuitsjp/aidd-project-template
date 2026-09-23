@@ -1,7 +1,7 @@
-using Aidd.ReactDotnet.Domain;
+using NotesSample.Domain;
 using System.Text;
 
-namespace Aidd.ReactDotnet.Domain.Notes;
+namespace NotesSample.Domain.Notes;
 
 internal static class NoteRules
 {

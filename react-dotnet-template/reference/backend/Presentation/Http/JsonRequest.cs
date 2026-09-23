@@ -1,5 +1,5 @@
 
-namespace Aidd.ReactDotnet.Presentation.Http;
+namespace NotesSample.Presentation.Http;
 
 internal static class JsonRequest
 {

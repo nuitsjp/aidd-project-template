@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Aidd.ReactDotnet.Presentation.Http.Validation;
+namespace NotesSample.Presentation.Http.Validation;
 
 internal sealed class UuidAttribute : ValidationAttribute
 {

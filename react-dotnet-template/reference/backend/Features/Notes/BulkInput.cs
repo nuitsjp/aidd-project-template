@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Aidd.ReactDotnet.Features.Notes;
+namespace NotesSample.Features.Notes;
 
 internal sealed record BulkInput(
     [property: JsonRequired] string Titles,

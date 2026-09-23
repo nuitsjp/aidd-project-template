@@ -1,17 +1,17 @@
-using Aidd.ReactDotnet.Application;
-using Aidd.ReactDotnet.Application.Authentication;
-using Aidd.ReactDotnet.Infrastructure.Persistence;
-using Aidd.ReactDotnet.Infrastructure.Notifications;
-using Aidd.ReactDotnet.Domain.Notes;
-using Aidd.ReactDotnet.Domain;
-using Aidd.ReactDotnet.Features.Notes;
+using NotesSample.Application;
+using NotesSample.Application.Authentication;
+using NotesSample.Infrastructure.Persistence;
+using NotesSample.Infrastructure.Notifications;
+using NotesSample.Domain.Notes;
+using NotesSample.Domain;
+using NotesSample.Features.Notes;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Data.Sqlite;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Dapper;
 using System.ComponentModel.DataAnnotations;
 
-namespace Aidd.ReactDotnet.Tests;
+namespace NotesSample.Tests;
 
 [TestClass]
 public sealed class NotesFeatureTests

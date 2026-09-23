@@ -1,10 +1,10 @@
-using Aidd.ReactDotnet.Infrastructure.Persistence;
-using Aidd.ReactDotnet.Infrastructure.Configuration;
+using NotesSample.Infrastructure.Persistence;
+using NotesSample.Infrastructure.Configuration;
 using Dapper;
 using Microsoft.Data.Sqlite;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Aidd.ReactDotnet.Tests;
+namespace NotesSample.Tests;
 
 [TestClass]
 public sealed class DatabaseAndConfigTests
@@ -166,9 +166,9 @@ public sealed class DatabaseAndConfigTests
     public async Task BackupCopiesCommittedWalStateAndPassesQuickCheckAsync()
     {
         using var fixture = new TestDatabase();
-        var request = new Aidd.ReactDotnet.Features.Notes.SaveNoteRequest(null, null, "backup", "copy");
+        var request = new NotesSample.Features.Notes.SaveNoteRequest(null, null, "backup", "copy");
         await fixture.Save.Presentation.ExecuteAsync(
-            new Aidd.ReactDotnet.Application.Authentication.Principal("alice", "Alice"), request);
+            new NotesSample.Application.Authentication.Principal("alice", "Alice"), request);
         var backup = Path.Combine(Path.GetDirectoryName(fixture.Path)!, "backup.sqlite");
         fixture.Database.Backup(backup);
         var check = new Database(backup).Check();

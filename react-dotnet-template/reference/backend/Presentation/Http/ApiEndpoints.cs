@@ -1,11 +1,11 @@
-using Aidd.ReactDotnet.Infrastructure.Notifications;
-using Aidd.ReactDotnet.Infrastructure.Configuration;
-using Aidd.ReactDotnet.Infrastructure.Authentication;
-using Aidd.ReactDotnet.Application.Authentication;
-using Aidd.ReactDotnet.Domain;
+using NotesSample.Infrastructure.Notifications;
+using NotesSample.Infrastructure.Configuration;
+using NotesSample.Infrastructure.Authentication;
+using NotesSample.Application.Authentication;
+using NotesSample.Domain;
 using System.Threading.Channels;
 
-namespace Aidd.ReactDotnet.Presentation.Http;
+namespace NotesSample.Presentation.Http;
 
 internal static class ApiEndpoints
 {

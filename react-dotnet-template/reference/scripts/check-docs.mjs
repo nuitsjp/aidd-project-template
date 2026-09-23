@@ -8,7 +8,7 @@ if (isTemplateSource) {
     const temporary = mkdtempSync(join(tmpdir(), 'aidd-dotnet-docs-'));
     const project = join(temporary, 'app');
     try {
-        await run(process.execPath, [resolve(root, '../../scripts/init-template.mjs'), 'react-dotnet', project]);
+        await run(process.execPath, [resolve(root, '../../scripts/init-template.mjs'), 'react-dotnet', project, '--name', 'Template.Project']);
         await run(process.env.PYTHON ?? 'python', ['scripts/doc_check.py', 'reference'], { cwd: project });
     }
     finally {

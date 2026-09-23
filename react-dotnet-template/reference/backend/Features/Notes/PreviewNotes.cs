@@ -1,11 +1,11 @@
-using Aidd.ReactDotnet.Application;
-using Aidd.ReactDotnet.Application.Authentication;
-using Aidd.ReactDotnet.Domain;
-using Aidd.ReactDotnet.Domain.Notes;
-using Aidd.ReactDotnet.Infrastructure.Authentication;
-using Aidd.ReactDotnet.Presentation.Http;
+using NotesSample.Application;
+using NotesSample.Application.Authentication;
+using NotesSample.Domain;
+using NotesSample.Domain.Notes;
+using NotesSample.Infrastructure.Authentication;
+using NotesSample.Presentation.Http;
 
-namespace Aidd.ReactDotnet.Features.Notes;
+namespace NotesSample.Features.Notes;
 
 internal sealed class PreviewNotes
 {

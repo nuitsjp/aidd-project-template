@@ -17,7 +17,7 @@ function run(command, args, cwd) {
 
 try {
     const project = isSource ? join(temporary, 'app') : root;
-    if (isSource) run(process.execPath, [resolve(root, '../scripts/init-template.mjs'), 'react-dotnet', project], root);
+    if (isSource) run(process.execPath, [resolve(root, '../scripts/init-template.mjs'), 'react-dotnet', project, '--name', 'Template.Project'], root);
     run(process.env.PYTHON ?? 'python', ['scripts/doc_check.py', '.'], project);
 }
 finally {

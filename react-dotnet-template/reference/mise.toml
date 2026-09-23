@@ -89,4 +89,3 @@ run = "node scripts/contracts.mjs"
 [tasks."contracts:check"]
 description = "コミット済みのAPI契約がC#と一致することを検査する"
 run = "node scripts/contracts.mjs --check"
-

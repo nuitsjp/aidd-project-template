@@ -1,8 +1,8 @@
-using Aidd.ReactDotnet.Infrastructure.Persistence;
-using Aidd.ReactDotnet.Infrastructure.Notifications;
-using Aidd.ReactDotnet.Features.Notes;
+using NotesSample.Infrastructure.Persistence;
+using NotesSample.Infrastructure.Notifications;
+using NotesSample.Features.Notes;
 
-namespace Aidd.ReactDotnet.Tests;
+namespace NotesSample.Tests;
 
 internal sealed class TestDatabase : IDisposable
 {

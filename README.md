@@ -82,14 +82,15 @@ cd ../my-react-app
 
 ### React・.NETの初期状態を生成する
 
-React・ASP.NET Core・SQLiteの実行可能なサンプルは [react-dotnet-template/reference/](react-dotnet-template/reference/README.md) にまとめています。生成先でも `reference/` として残り、製品のユースケースや実装を開始した後も参照できます。ルートの `docs/` は製品の現行仕様を記述する場所で、メモのユースケース・シナリオは `reference/docs/` にあります。
+React・ASP.NET Core・SQLiteの実行可能なサンプルは [react-dotnet-template/reference/](react-dotnet-template/reference/README.md) にまとめています。生成時にそのアプリ一式を製品ルートへコピーし、製品側の C# 名前空間、プロジェクト名、アセンブリ名と npm パッケージ名を指定した製品名に合わせます。サンプルは生成先の `reference/` に元の名前と内容で残します。ルートの `docs/` は製品の現行仕様を記述する場所で、メモのユースケース・シナリオは `reference/docs/` にあります。
 
 ```powershell
-mise run init:react-dotnet ../my-react-dotnet-app
+mise run init:react-dotnet ../my-react-dotnet-app --name Company.Product
 cd ../my-react-dotnet-app
 mise trust
 mise run setup
-mise run check:docs
+mise run setup:browser
+mise run verify
 cd reference
 mise trust
 mise run setup
@@ -97,9 +98,9 @@ mise run setup:browser
 mise run verify
 ```
 
-`template/`、`react-dotnet-template/`、ルートの `LICENSE` の順に配置します。共通資材の継承、同名ファイルの全体上書き、新規出力先限定の規則は他の拡張と同じです。生成先ルートの `mise.toml` は実プロジェクト用で、現時点ではツール導入と製品文書の検査を定義します。アプリのタスクは製品実装時に追加します。`reference/mise.toml` はサンプル専用です。`reference/` で実行する `mise run dev` は Vite と .NET を分離し、`mise run build` と `mise run start` は UI を .NET に同梱します。Visual Studio では `reference/App.slnx` を開き、`reference/backend/App.csproj` をスタートアッププロジェクトにします。
+`template/`、`react-dotnet-template/`、ルートの `LICENSE` を配置し、参照アプリから `backend/`、`frontend/`、`contracts/`、`tests/`、アプリの設定とスクリプトを製品ルートへコピーします。`--name` には `Company.Product` のような ASCII の C# 識別子をドットで区切って指定します。C# の予約語は使用できません。製品側には `<製品名>.slnx`、`backend/<製品名>.csproj`、`frontend/<製品名>.Frontend.esproj`、`tests/backend/<製品名>.Tests.csproj` を配置し、.NET アセンブリを `<製品名>.dll` と `<製品名>.Tests.dll` にします。生成先ルートと `reference/` にそれぞれ完全な `mise` アプリタスクがあり、`mise run dev` は Vite と .NET を起動し、`mise run build` と `mise run start` は UI を .NET に同梱します。Visual Studio では製品ルートの `<製品名>.slnx` を開き、`backend/<製品名>.csproj` をスタートアッププロジェクトにします。サンプルは `reference/App.slnx` から同様に起動できます。生成は依存取得やコード生成を行わず、既存の出力先は拒否します。
 
-テンプレート開発時も `react-dotnet-template/` で製品文書、`react-dotnet-template/reference/` で参照アプリを検証できます。source の文書検査は共通の `template/` と拡張側を一時生成先へ重ねます。生成・起動・検証の詳細は [参照実装の実行手順](react-dotnet-template/reference/docs/project.md#commands) に従います。
+テンプレート開発時は `react-dotnet-template/` で製品文書、`react-dotnet-template/reference/` で参照アプリを検証します。source の文書検査は共通の `template/` と拡張側を一時生成先へ重ねます。製品側の実装・設定と依存ロックは生成後に採用先で管理します。生成・起動・検証の詳細は [参照実装の実行手順](react-dotnet-template/reference/docs/project.md#commands) に従います。
 
 ## 3. 初期セットアップと最初のユースケース
 
@@ -167,6 +168,12 @@ node scripts/update-common.mjs ../my-project OLD_COMMIT_SHA NEW_COMMIT_SHA
 ## 7. 変更履歴
 
 配布版は `template/` の内容が変わるたびに上がります。標準の版は、その標準自体に変更があった場合のみ上がります。
+
+### React・.NET拡張の生成手順変更（共通配布版22のまま）
+
+- 変更したファイル: `scripts/init-template.mjs`、React・.NET 参照実装と生成設定・テスト、ルートの `README.md`・`AGENTS.md`。
+- 変更点: `init:react-dotnet` に `--name` を追加し、参照アプリを指定した名前の実行可能な製品アプリとしてルートへ配置します。`reference/` のメモアプリは `NotesSample` のまま残し、製品とサンプルをそれぞれの `mise.toml` で実行・検証します。
+- 標準の版: 設計・文書標準17、モック標準20で変更ありません。採用側への影響: 新規生成時に `--name` が必要です。既存の採用先へ自動同期は行いません。
 
 ### React・.NET拡張 0.1.0（共通配布版22のまま）
 

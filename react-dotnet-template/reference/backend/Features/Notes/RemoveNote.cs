@@ -1,19 +1,19 @@
-using Aidd.ReactDotnet.Application;
-using Aidd.ReactDotnet.Application.Authentication;
-using Aidd.ReactDotnet.Domain;
-using Aidd.ReactDotnet.Domain.Notes;
-using Aidd.ReactDotnet.Infrastructure.Authentication;
-using Aidd.ReactDotnet.Infrastructure.Notifications;
-using Aidd.ReactDotnet.Infrastructure.Persistence;
-using Aidd.ReactDotnet.Presentation.Http;
-using Aidd.ReactDotnet.Presentation.Http.Validation;
+using NotesSample.Application;
+using NotesSample.Application.Authentication;
+using NotesSample.Domain;
+using NotesSample.Domain.Notes;
+using NotesSample.Infrastructure.Authentication;
+using NotesSample.Infrastructure.Notifications;
+using NotesSample.Infrastructure.Persistence;
+using NotesSample.Presentation.Http;
+using NotesSample.Presentation.Http.Validation;
 using Dapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
-namespace Aidd.ReactDotnet.Features.Notes;
+namespace NotesSample.Features.Notes;
 
 internal sealed class RemoveNote
 {

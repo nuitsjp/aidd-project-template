@@ -1,19 +1,19 @@
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 using System.Text.Json.Serialization;
-using Aidd.ReactDotnet.Presentation.Http;
-using Aidd.ReactDotnet.Infrastructure.Persistence;
-using Aidd.ReactDotnet.Infrastructure.Notifications;
-using Aidd.ReactDotnet.Infrastructure.Configuration;
-using Aidd.ReactDotnet.Infrastructure.Authentication;
-using Aidd.ReactDotnet.Domain;
+using NotesSample.Presentation.Http;
+using NotesSample.Infrastructure.Persistence;
+using NotesSample.Infrastructure.Notifications;
+using NotesSample.Infrastructure.Configuration;
+using NotesSample.Infrastructure.Authentication;
+using NotesSample.Domain;
 using System.Net;
 using System.Text.Json;
-using Aidd.ReactDotnet.Features.Notes;
+using NotesSample.Features.Notes;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 
-namespace Aidd.ReactDotnet;
+namespace NotesSample;
 
 public static class Program
 {

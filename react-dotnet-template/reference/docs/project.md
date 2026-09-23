@@ -2,7 +2,7 @@
 
 ## 1. 目的と範囲
 
-React の対話制御から実 ASP.NET Core（.NET 10）・SQLite への更新までを通す参照実装です。メモの編集と一括登録の 2 つのパターン、および個別 DB による並列 E2E を提供します。
+React の対話制御から実 ASP.NET Core（.NET 10）・SQLite への更新までを通す参照実装です。C# 名前空間は `NotesSample` です。メモの編集と一括登録の 2 つのパターン、および個別 DB による並列 E2E を提供します。生成時には製品ルートへアプリ一式をコピーし、製品側だけ指定した名前空間へ置換します。
 
 <a id="constraints"></a>
 ## 2. 制約・受け入れ条件
@@ -42,7 +42,7 @@ mise trust
 mise run setup
 ```
 
-`mise run setup` は `mise install`、npm 依存の `ci`、`.env` の作成、ルートツリーの生成、`dotnet restore App.slnx --locked-mode` を行い、PATH 上の mise の実体パスを絶対パスで `backend/mise.local.props` に記録します。このローカルファイルは Git 管理と配布物から除外されます。`mise run setup` は source と生成先の初回セットアップ時に必要で、mise を移動した後も再実行してください。F5 は npm の依存取得を行いません。依存更新時などに setup を再実行する場合は npm の依存定義とロックを併せて更新し、NuGet は `.csproj` の版を変更してロックを更新します。更新後は `mise run setup` と `mise run verify` で確認します。採用後の依存とロックは採用先で管理します。
+`mise run setup` は `mise install`、npm 依存の `ci`、`.env` の作成、ルートツリーの生成、`dotnet restore App.slnx --locked-mode` を行い、PATH 上の mise の実体パスを絶対パスで `backend/mise.local.props` に記録します。このローカルファイルは Git 管理と配布物から除外されます。`mise run setup` は source と生成先の初回セットアップ時に必要で、mise を移動した後も再実行してください。F5 は npm の依存取得を行いません。依存更新時などに setup を再実行する場合は npm の依存定義とロックを併せて更新し、NuGet は `.csproj` の版を変更してロックを更新します。更新後は `mise run setup` と `mise run verify` で確認します。生成先の製品アプリの依存とロックは採用先で管理します。
 
 Visual Studio で F5 を使う場合はこのディレクトリの `App.slnx` を開き、`backend/App.csproj` の App をスタートアッププロジェクトに設定します。source の場合は `react-dotnet-template/reference/` へ移動して `mise trust` と初回の `mise run setup` を完了してから開いてください。既存の `.suo` に保存された利用者設定がソリューションのプロジェクト順より優先されるため、App の選択を確認してください。frontend（`frontend/Frontend.esproj`）はソリューションの表示用であり、依存取得や UI ビルドを所有しません。`App.csproj` は `backend/mise.local.props` に記録された mise の絶対パスで `mise exec` を実行し、固定版 Node.js を選択します。Visual Studio 起動時の PATH に mise を追加する必要はありません。F5 のたびに npm の依存を再取得する必要はありません。
 

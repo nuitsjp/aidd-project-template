@@ -1,9 +1,9 @@
-using Aidd.ReactDotnet.Infrastructure.Configuration;
+using NotesSample.Infrastructure.Configuration;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi;
 
-namespace Aidd.ReactDotnet.Tests;
+namespace NotesSample.Tests;
 
 [TestClass]
 public sealed class OpenApiTests

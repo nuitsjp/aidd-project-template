@@ -1,7 +1,7 @@
 using Dapper;
 using Microsoft.Data.Sqlite;
 
-namespace Aidd.ReactDotnet.Infrastructure.Persistence;
+namespace NotesSample.Infrastructure.Persistence;
 
 internal sealed class Database
 {
