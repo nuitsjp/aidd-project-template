@@ -2,6 +2,8 @@
 
 [全体構成](architecture.md)の技術固有の判断を記録します。ユースケースの振る舞いは各 UC、実現パターンは `design/UCP-n.md`、テーブルと値の制約は[データ設計](design/data.md)を正本とします。
 
+本書の実装パスは `reference/` を起点とします。製品の現行設計は生成先ルートの `docs/` で管理します。
+
 ## 1. 実行単位と責務
 
 運用時と Visual Studio の F5 では `backend/App.csproj` が React をビルド・配置し、UI と API を単一の .NET プロセスから同じ origin で配信します。コンソール開発では `mise run dev` が Vite と .NET を別々に起動し、Vite が API と SSE をプロキシします。どちらも実 SQLite を使用します。`frontend/Frontend.esproj` は Visual Studio のソリューション表示用で、UI ビルドは所有しません。

@@ -27,7 +27,7 @@ try {
     recursive: true,
     filter: path => basename(path) !== '.vs' && (basename(source) !== 'react-dotnet-template' ||
       (!dotnetGeneratedNames.has(basename(path)) &&
-        relative(source, path).split(sep).join('/') !== 'frontend/src/routeTree.gen.ts')),
+        relative(source, path).split(sep).join('/') !== 'reference/frontend/src/routeTree.gen.ts')),
   });
   copyFileSync(resolve(root, 'LICENSE'), resolve(destination, 'LICENSE'));
   console.log(`${kind}の初期状態を生成しました: ${destination}`);

@@ -4,9 +4,10 @@ import { existsSync } from 'node:fs';
 import { basename, resolve } from 'node:path';
 export const root = fileURLToPath(new URL('../', import.meta.url));
 // 配布元の拡張と、共通資材を配置済みの採用プロジェクトを区別する。
-export const isTemplateSource = basename(root) === 'react-dotnet-template'
-    && existsSync(resolve(root, '../scripts/init-template.mjs'))
-    && existsSync(resolve(root, '../template/scripts/doc_check.py'));
+export const isTemplateSource = basename(root) === 'reference'
+    && basename(resolve(root, '..')) === 'react-dotnet-template'
+    && existsSync(resolve(root, '../../scripts/init-template.mjs'))
+    && existsSync(resolve(root, '../../template/scripts/doc_check.py'));
 export function run(command, args = [], options = {}) {
     return new Promise((resolve, reject) => {
         const child = spawn(command, args, { cwd: root, stdio: 'inherit', ...options });

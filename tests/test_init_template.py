@@ -31,7 +31,7 @@ class InitTemplateTests(unittest.TestCase):
                         name = path.relative_to(source)
                         if source.name == "react-dotnet-template" and (
                             DOTNET_GENERATED_NAMES.intersection(name.parts)
-                            or name.as_posix() == "frontend/src/routeTree.gen.ts"
+                            or name.as_posix() == "reference/frontend/src/routeTree.gen.ts"
                         ):
                             continue
                         if path.is_file() and '.vs' not in path.relative_to(source).parts:
@@ -42,8 +42,12 @@ class InitTemplateTests(unittest.TestCase):
                 self.assertEqual(actual.keys(), expected.keys())
                 self.assertFalse((destination / ".vs").exists())
                 if kind == "react-dotnet":
-                    for name in ("backend/bin", "backend/obj", "backend/data", "backend/mise.local.props", "data", ".env"):
+                    for name in ("reference/backend/bin", "reference/backend/obj", "reference/backend/data", "reference/backend/mise.local.props", "reference/data", "reference/.env"):
                         self.assertFalse((destination / name).exists(), name)
+                    self.assertTrue((destination / "reference/backend/App.csproj").is_file())
+                    self.assertTrue((destination / "reference/App.slnx").is_file())
+                    self.assertEqual(list((destination / "docs/usecases").glob("*/README.md")), [])
+                    self.assertEqual(len(list((destination / "reference/docs/usecases").glob("*/README.md"))), 2)
                 for name, content in expected.items():
                     self.assertEqual(actual[name], content, str(name))
                 for name in ("AGENTS.md", "scripts/doc_check.py",
@@ -60,6 +64,13 @@ class InitTemplateTests(unittest.TestCase):
                     capture_output=True, encoding="utf-8",
                 )
                 self.assertEqual(checked.returncode, 0, checked.stdout + checked.stderr)
+                if kind == "react-dotnet":
+                    reference_checked = subprocess.run(
+                        [sys.executable, "scripts/doc_check.py", "reference"], cwd=destination,
+                        capture_output=True, encoding="utf-8",
+                    )
+                    self.assertEqual(reference_checked.returncode, 0,
+                                     reference_checked.stdout + reference_checked.stderr)
                 rejected = self.generate(kind, destination)
                 self.assertNotEqual(rejected.returncode, 0)
                 self.assertIn("既に存在", rejected.stderr)

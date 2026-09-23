@@ -12,12 +12,12 @@
 | --- | --- |
 | `AGENTS.md`、`docs/standards/`、`scripts/doc_check.py`、`.agents/skills/usecase-docs/` | `template/` だけで管理し、拡張側に上書き用ファイルを置かない。採用先では同じ固定コミットから一組で更新する。技術固有の注意は既存の固有文書に記載する。 |
 | `LICENSE` | ルートだけで管理し、生成時に配置する。 |
-| `README.md`、`docs/project.md`、`docs/document-policy.md`、`docs/architecture.md`、`docs/design/`、`docs/usecases/` | 各拡張側で個別管理する。共通版の記入欄で固有の現在の仕様・制約・検証手順を置き換えない。 |
-| 技術固有のコード・設定・`docs/architecture-wails.md`・`docs/architecture-react.md`・`docs/architecture-react-dotnet.md` | 対応する拡張ディレクトリで管理し、生成先に配置する。 |
+| `README.md`、`docs/project.md`、`docs/document-policy.md`、`docs/architecture.md`、`docs/design/`、`docs/usecases/` | Wails・React の固有文書は各拡張側で個別管理する。React・.NET の製品用ルート文書は共通版を使い、メモの仕様・設計は `react-dotnet-template/reference/docs/` に置く。 |
+| 技術固有のコード・設定・`docs/architecture-wails.md`・`docs/architecture-react.md` | 対応する拡張ディレクトリで管理し、生成先に配置する。React・.NET の参照アプリは `react-dotnet-template/reference/` に一式を置く。 |
 
 共通側を変更した際は、同一変更内で各拡張側への影響を確認します。`project.md` は必須項目・文書構造の変更を必要最小限で反映し、固有内容は維持します。`document-policy.md` は生成物に入る配布版・標準版と適用版を一致させ、適用範囲・固有差分・正本配置・仕様変更の扱いが新しい共通規則と整合するか確認します（記載する版は実際に生成へ使用する版とし、過去のコミットを現在の適用版の代用にしません）。
 
-`wails-template/` と `react-template/` は拡張ディレクトリ単体では実行・配布・文書検査を行わず、生成先で開発・検証して保守変更を正本へ反映します。`react-dotnet-template/` はテンプレート開発時に限り、source checkout として拡張ディレクトリ単独で実行できます。source では `mise trust`、`mise run setup`、`mise run setup:browser`、`mise run dev`、`mise run verify`、Visual Studio の F5 を使えます。source の `check:docs` と `verify` は共通の `template/` と拡張側を一時生成先へ配置して文書だけを検査し、アプリの build・test は source で実行します。source の package はルートの `LICENSE` を使います。共通の文書・検査資材を拡張側へ複製せず、採用先では従来どおり生成先の `scripts/doc_check.py` と `LICENSE` を使います。生成物や依存取得物はコミットしません。生成によってサンプルの仕様合意や未実施の検証が完了したとは扱いません。
+`wails-template/` と `react-template/` は拡張ディレクトリ単体では実行・配布・文書検査を行わず、生成先で開発・検証して保守変更を正本へ反映します。`react-dotnet-template/` は source checkout でもルートの mise タスクで `reference/` の参照アプリを実行・検証できます。Visual Studio の F5 は `reference/App.slnx` の App を使用します。source の `check:docs` と `verify` は共通の `template/` と拡張側を一時生成先へ配置して文書を検査し、アプリの build・test は `reference/` で実行します。source の package はルートの `LICENSE` を使います。共通の文書・検査資材を拡張側へ複製せず、採用先では生成先の `scripts/doc_check.py` と `LICENSE` を使います。生成物や依存取得物はコミットしません。生成によって参照実装の仕様合意や未実施の検証が完了したとは扱いません。
 
 生成後のプロジェクト文書・実装・設定・DB移行履歴は採用先が管理し、初期雛形との全文同期は行いません。継続更新する規則は既存標準に集約し、必要な書式移行は変更履歴に記載します。依存ロックは再現に必要な配布資材として、生成先で検証したものを正本に保存します。
 

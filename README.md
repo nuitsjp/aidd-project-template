@@ -80,30 +80,22 @@ cd ../my-react-app
 
 配置・上書きの規則はWailsと同様です。共通ファイルの継承、固有文書の全体上書き、新規出力先限定で行われ、生成タスクは依存取得やビルドを行いません。`react-template/` 単体をコピー・実行せず、生成先で開発してください。必要な環境と生成後のセットアップ・起動は [Reactの実行手順](react-template/docs/project.md#commands) に従います。
 
-### React・.NETアプリの初期状態を生成する
+### React・.NETの初期状態を生成する
 
-React・ASP.NET Core・SQLiteの参照実装は [react-dotnet-template/](react-dotnet-template/README.md) に差分として管理しています。React版の画面と参照仕様を基に、単一の.NETサーバーがビルド済みUIとHTTP APIを同じoriginで配信します。Wailsと同じ生成環境で、本リポジトリのルートから実行します。
+React・ASP.NET Core・SQLiteの実行可能なサンプルは [react-dotnet-template/reference/](react-dotnet-template/reference/README.md) にまとめています。生成先でも `reference/` として残り、製品のユースケースや実装を開始した後も参照できます。ルートの `docs/` は製品の現行仕様を記述する場所で、メモのユースケース・シナリオは `reference/docs/` にあります。
 
 ```powershell
 mise run init:react-dotnet ../my-react-dotnet-app
 cd ../my-react-dotnet-app
-```
-
-`template/` → `react-dotnet-template/` → ルートの `LICENSE` の順に配置します。共通資材の継承、同名ファイルの全体上書き、新規出力先限定の規則は他の拡張と同じです。採用プロジェクトは生成先で開発します。テンプレート開発時は `react-dotnet-template/` を source checkout として単独で開発・検証できます。生成先と source の `mise.toml` は Node.js 24.21.0、.NET SDK 10.0.401、Python 3.13.15 を固定します。全用途の入口は `mise run` です。
-
-source を使う場合は、リポジトリのルートから拡張ディレクトリへ移動して初回だけセットアップします。
-
-```powershell
-Set-Location ./react-dotnet-template
 mise trust
 mise run setup
 mise run setup:browser
-mise run dev
 mise run verify
 ```
 
-`mise run check:docs` と `mise run verify` の文書検査は source の `template/` 不在を補うため、共通の `template/` と拡張側を一時生成先へ配置して実行します。アプリの build・test は source で実行します。Visual Studio で source の `App.slnx` を開く場合もこのディレクトリを起点にし、`backend/App.csproj` の App をスタートアッププロジェクトに設定して F5 を押します。セットアップ完了後は F5 のたびに npm の依存を再取得する必要はありません。source で `mise run package` を実行する場合はリポジトリルートの `LICENSE` を使い、生成先では生成先に配置された `LICENSE` を使います。F5 と `mise run start` は単一の .NET プロセスが UI と API を配信し、コンソールの `mise run dev` は Vite（127.0.0.1:5173）の HMR と ASP.NET Core（127.0.0.1:3000）を使います。セットアップ・起動・検証・配備の手順は [React・.NETの実行手順](react-dotnet-template/docs/project.md#commands) に従います。本番の配布物は .NET で起動し、Node.js はビルドとテストに使用します。 API の入出力型は C# を正本とし、`mise run contracts` で OpenAPI と React 用の型を生成します。`mise run verify` は生成漏れを検出します。
-`mise run setup` は PATH 上の mise の実体パスを絶対パスで `backend/mise.local.props` に記録します。このローカルファイルは Git と配布物に含めません。初回セットアップ時と mise を移動した後に `mise run setup` を再実行してください。`App.csproj` は記録した mise の絶対パスで UI をビルドするため、Visual Studio 起動時の PATH に依存しません。
+`template/`、`react-dotnet-template/`、ルートの `LICENSE` の順に配置します。共通資材の継承、同名ファイルの全体上書き、新規出力先限定の規則は他の拡張と同じです。生成後のルートの mise タスクは `reference/` のサンプルを実行・検証します。`mise run dev` は Vite と .NET を分離し、`mise run build` と `mise run start` は UI を .NET に同梱します。Visual Studio では `reference/App.slnx` を開き、`reference/backend/App.csproj` をスタートアッププロジェクトにします。
+
+テンプレート開発時も `react-dotnet-template/` を作業ディレクトリにして同じタスクを実行できます。source の文書検査は共通の `template/` と拡張側を一時生成先へ重ね、アプリの build・test は `reference/` で行います。生成・起動・検証の詳細は [参照実装の実行手順](react-dotnet-template/reference/docs/project.md#commands) に従います。
 
 ## 3. 初期セットアップと最初のユースケース
 

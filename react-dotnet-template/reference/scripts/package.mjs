@@ -6,5 +6,5 @@ if (existsSync(target))
     throw new Error('release/app が既にあります。内容を確認し別名へ移動してから実行してください。');
 mkdirSync(target, { recursive: true });
 cpSync(join(root, 'dist/server'), target, { recursive: true });
-cpSync(isTemplateSource ? resolve(root, '../LICENSE') : join(root, 'LICENSE'), join(target, 'LICENSE'));
+cpSync(isTemplateSource ? resolve(root, '../../LICENSE') : resolve(root, '../LICENSE'), join(target, 'LICENSE'));
 console.log('release/app を配備しました。環境変数を設定し、dotnet App.dll を実行してください。dataは配備領域の外へ置いてください。');

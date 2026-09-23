@@ -36,7 +36,7 @@ jobs:
         with:
           name: react-dotnet-e2e-${{ matrix.os }}
           path: |
-            dist/playwright-report-*/
-            dist/e2e-results-*/
+            reference/dist/playwright-report-*/
+            reference/dist/e2e-results-*/
           if-no-files-found: ignore
           retention-days: 7
