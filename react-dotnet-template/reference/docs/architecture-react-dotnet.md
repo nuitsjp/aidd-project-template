@@ -12,7 +12,7 @@
 
 ## 2. API 単位の実装
 
-各 API ファイルにはルート登録の `Map` と、責務を明示する内部 `PresentationLayer`、`ApplicationLayer` を置きます。DB を使う API には、1関数が1つの SQL を実行する static `PersistenceLayer` も置きます。`ApplicationLayer` は共通の `IApplicationLayer<TRequest, TResult>` を実装し、トランザクションと業務判断を担当します。`PresentationLayer` は公開応答への変換を担当します。DB を使わない `PreviewNotes` に永続化レイヤーは置きません。
+各 API ファイルにはルート登録の `Map` と、責務を明示する内部 `PresentationLayer`、`ApplicationLayer` を置きます。API 専用の SQL は、1関数が1つの SQL を実行する static `PersistenceLayer` に置きます。保存と一括登録が共有する INSERT と DB エラー変換は同じ機能の `Features/Notes/NotePersistence.cs` に置き、各 `ApplicationLayer` の差し替え可能な関数メンバーから使います。`ApplicationLayer` は共通の `IApplicationLayer<TRequest, TResult>` を実装し、トランザクションと業務判断を担当します。`PresentationLayer` は公開応答への変換を担当します。DB を使わない `PreviewNotes` に永続化レイヤーは置きません。
 
 テストで差し替える関数は、それを呼ぶレイヤーの `Func` または `Action` メンバーに既定実装を保持します。`Database` は起動時に生成して必要な `ApplicationLayer` に渡し、static `PersistenceLayer` には状態を持たせません。API 専用の入出力型は担当ファイルに置き、プレビューと一括登録が共有する `BulkInput` だけを独立させます。一括登録はプレビューのアプリケーション処理を再利用し、確認時と確定時に同じ内容を検証します。
 
@@ -34,10 +34,18 @@ C# の API 入出力型を契約の正本とし、OpenAPI から `contracts/api.
 
 公開エラーは HTTP ステータスと標準の Problem Details で表し、独自の FaultCode を応答に含めません。保存・削除の対象なしと版競合はアプリケーションの結果型で表し、プレゼンテーションで 404・409 に変換します。確定後にだけ `ChangeNotifications` が利用者のタブへ変更を通知し、購読側の失敗で確定済みの操作を失敗扱いにはしません。下書きは React が保持し、再取得や保存失敗で上書きしません。
 
+HTTP エラー変換と接続先・Origin の検査は `Presentation/Http/` の専用ファイルに置き、`Program` は登録順序だけを管理します。両処理と SPA の 404 応答は共通の `ProblemResponses` を使います。
+
 <a id="persistence"></a>
 ## 4. 永続化
 
-`Database` が DB パスと接続の生成を管理し、`ApplicationLayer` が `BeginTransactionAsync` で `ITransaction` を取得して確定します。開始モードは既定の `IMMEDIATE` を必要に応じて指定変更できます。SQL は API ファイル内の `PersistenceLayer` に置き、Dapper で実行します。
+`Database` が DB パスと接続の生成を管理し、`ApplicationLayer` が `BeginTransactionAsync` で `ITransaction` を取得して確定します。開始モードは既定の `IMMEDIATE` を必要に応じて指定変更できます。SQL は API 専用ならそのファイルの `PersistenceLayer`、同じ機能の API 間で共有するならその機能のディレクトリに置き、Dapper で実行します。
+
+永続化基盤の `Database`、`ITransaction`、`DatabaseTransaction`、`TransactionMode`、`DatabaseCheck` はそれぞれ独立したファイルに置きます。
+
+接続だけが必要な処理は `Database.OpenAsync()` の戻り値を呼び出し側で `await using` し、トランザクションは `BeginTransactionAsync()` の戻り値を `await using` します。DB初期化・利用者更新・整合性検査も非同期メソッドを使います。接続やトランザクションの操作を `Func` に渡すラッパーは置きません。SQLiteバックアップは提供される `BackupDatabase` が同期操作のため、管理コマンドで同期実行します。
+
+C# 内の SQL が1行なら `"BEGIN IMMEDIATE;"` のような通常の文字列、2行以上なら改行した raw string (`"""` ... `"""`) で記述します。
 
 新規メモの ID と更新日時は永続化レイヤーが発行し、日時には SQLite の UTC 時刻を使います。INSERT・UPDATE は `RETURNING` で保存後の `Note` を返し、保存後の読み直しを行いません。書込みは利用者の確認待ちを含まない短いトランザクションで確定します。
 

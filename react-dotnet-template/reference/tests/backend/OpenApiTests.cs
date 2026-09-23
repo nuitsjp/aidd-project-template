@@ -13,7 +13,7 @@ public sealed class OpenApiTests
     {
         var directory = Path.Combine(Path.GetTempPath(), $"aidd-openapi-{Guid.NewGuid():N}");
         var config = AppConfig.FromValues(key => key == "DB_PATH" ? Path.Combine(directory, "app.sqlite") : null);
-        await using var app = Program.BuildApp(config, initializeDatabase: false);
+        await using var app = await Program.BuildAppAsync(config, initializeDatabase: false);
         var provider = app.Services.GetRequiredKeyedService<IOpenApiDocumentProvider>("v1");
         var document = await provider.GetOpenApiDocumentAsync();
 

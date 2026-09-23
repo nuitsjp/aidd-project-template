@@ -17,7 +17,7 @@ internal static class ApiEndpointMappings
     {
         var builder = app.MapPost(pattern, async (HttpContext context, TRequest request) =>
         {
-            var principal = identity.Resolve(context.Request)
+            var principal = await identity.ResolveAsync(context.Request)
                 ?? throw new AppFaultException("UNAUTHENTICATED", "利用者を確認できません。");
             return TypedResults.Ok(await execute(principal, request));
         })
@@ -38,7 +38,7 @@ internal static class ApiEndpointMappings
     {
         var builder = app.MapPost(pattern, async (HttpContext context, TRequest request) =>
         {
-            var principal = identity.Resolve(context.Request)
+            var principal = await identity.ResolveAsync(context.Request)
                 ?? throw new AppFaultException("UNAUTHENTICATED", "利用者を確認できません。");
             return await execute(principal, request);
         })

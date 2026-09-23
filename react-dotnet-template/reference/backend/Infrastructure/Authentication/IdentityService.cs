@@ -26,12 +26,12 @@ internal sealed partial class IdentityService
         this.authMode = authMode;
     }
 
-    internal Principal? Resolve(HttpRequest request)
+    internal async Task<Principal?> ResolveAsync(HttpRequest request)
     {
         if (authMode == "proxy")
         {
             var id = request.Headers["X-Authenticated-User"].ToString();
-            return AuthenticatedUserPattern().IsMatch(id) ? EnsureUser(new Principal(id, id)) : null;
+            return AuthenticatedUserPattern().IsMatch(id) ? await EnsureUserAsync(new Principal(id, id)) : null;
         }
 
         if (!request.Cookies.TryGetValue(CookieName, out var key) || !sessions.TryGetValue(key, out var session))
@@ -48,7 +48,7 @@ internal sealed partial class IdentityService
         return session.User;
     }
 
-    internal Principal SignIn(HttpRequest request, HttpResponse response, string id)
+    internal async Task<Principal> SignInAsync(HttpRequest request, HttpResponse response, string id)
     {
         if (authMode != "demo" || !DemoUsers.TryGetValue(id, out var name))
         {
@@ -74,7 +74,7 @@ internal sealed partial class IdentityService
             throw new AppFaultException("VALIDATION", "参照用セッションの上限です。");
         }
 
-        var user = EnsureUser(new Principal(id, name));
+        var user = await EnsureUserAsync(new Principal(id, name));
         var token = Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(32));
         sessions[token] = new Session(user, now.AddHours(8));
         response.Cookies.Append(CookieName, token, new CookieOptions
@@ -98,18 +98,19 @@ internal sealed partial class IdentityService
         response.Cookies.Delete(CookieName, new CookieOptions { Path = "/" });
     }
 
-    internal Principal EnsureUser(Principal user)
+    internal async Task<Principal> EnsureUserAsync(Principal user)
     {
-        database.WithConnection(connection => connection.Execute("""
-                INSERT INTO users (id, name)
-                VALUES
-                    (@id, @name)
-                ON CONFLICT (id) DO UPDATE
-                SET
-                    name = excluded.name
-                WHERE
-                    users.name <> excluded.name
-                """, new { id = user.Id, name = user.Name }));
+        await using var connection = await database.OpenAsync();
+        await connection.ExecuteAsync("""
+            INSERT INTO users (id, name)
+            VALUES
+                (@id, @name)
+            ON CONFLICT (id) DO UPDATE
+            SET
+                name = excluded.name
+            WHERE
+                users.name <> excluded.name
+            """, new { id = user.Id, name = user.Name });
         return user;
     }
 

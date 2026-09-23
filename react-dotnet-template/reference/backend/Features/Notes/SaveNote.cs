@@ -30,7 +30,7 @@ internal sealed class SaveNote
     {
         app.MapPost("/api/notes/save", async (HttpContext context, SaveNoteRequest request) =>
         {
-            var principal = identity.Resolve(context.Request)
+            var principal = await identity.ResolveAsync(context.Request)
                 ?? throw new AppFaultException("UNAUTHENTICATED", "利用者を確認できません。");
             return await Presentation.HandleAsync(principal, request);
         })
@@ -79,9 +79,9 @@ internal sealed class SaveNote
         {
             this.database = database;
             ReadAsync = PersistenceLayer.ReadAsync;
-            InsertAsync = PersistenceLayer.InsertAsync;
+            InsertAsync = NotePersistence.InsertAsync;
             UpdateAsync = PersistenceLayer.UpdateAsync;
-            TranslateError = TranslateDatabaseError;
+            TranslateError = NotePersistence.TranslateError;
             PublishChange = notifications.Publish;
         }
 
@@ -131,12 +131,6 @@ internal sealed class SaveNote
             return new SaveResult.Success(
                 new SaveNoteResponse(saved.Id, saved.Title, saved.Body, saved.Version, saved.UpdatedAt));
         }
-
-        internal static Exception TranslateDatabaseError(Exception error) =>
-            error is SqliteException { SqliteExtendedErrorCode: 2067 }
-                ? new AppFaultException("TITLE_EXISTS", "同じタイトルのメモが既にあります。")
-                : error;
-
     }
 
     internal static class PersistenceLayer
@@ -156,28 +150,6 @@ internal sealed class SaveNote
                     owner_id = @ownerId AND id = @id
                 """,
                 new { ownerId, id });
-
-        internal static Task<Note> InsertAsync(SqliteConnection connection, string ownerId, string title,
-            string body) =>
-            connection.QuerySingleAsync<Note>(
-                """
-                INSERT INTO notes (id, owner_id, title, body, version, updated_at)
-                VALUES
-                    (@Id, @OwnerId, @Title, @Body, 1, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-                RETURNING
-                    id AS Id,
-                    title AS Title,
-                    body AS Body,
-                    version AS Version,
-                    updated_at AS UpdatedAt
-                """,
-                new
-                {
-                    OwnerId = ownerId,
-                    Id = Guid.NewGuid().ToString("D"),
-                    Title = title,
-                    Body = body,
-                });
 
         internal static Task<Note> UpdateAsync(SqliteConnection connection, string ownerId, Note note) =>
             connection.QuerySingleAsync<Note>(
@@ -204,7 +176,6 @@ internal sealed class SaveNote
                     note.Title,
                     note.Body,
                 });
-
     }
 
     internal abstract record SaveResult

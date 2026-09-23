@@ -11,16 +11,16 @@ internal static class ApiEndpoints
 {
     internal static void MapApplicationEndpoints(WebApplication app, AppConfig config, IdentityService identity)
     {
-        app.MapGet("/api/session", (HttpRequest request) =>
-            TypedResults.Ok(new SessionOutput(identity.Resolve(request), config.AuthMode)));
+        app.MapGet("/api/session", async (HttpRequest request) =>
+            TypedResults.Ok(new SessionOutput(await identity.ResolveAsync(request), config.AuthMode)));
 
         if (config.AuthMode == "demo")
         {
             app.MapAnonymousPost<DemoSignInInput, SignInOutput>(
                 "/api/demo/sign-in",
                 "DemoSignIn",
-                (context, input) => Task.FromResult(
-                    new SignInOutput(identity.SignIn(context.Request, context.Response, input.User))));
+                async (context, input) =>
+                    new SignInOutput(await identity.SignInAsync(context.Request, context.Response, input.User)));
             app.MapPost("/api/demo/sign-out", (HttpContext context) =>
             {
                 identity.SignOut(context.Request, context.Response);
@@ -37,7 +37,7 @@ internal static class ApiEndpoints
     {
         app.MapGet("/events/notes", async (HttpContext context) =>
         {
-            var user = RequireUser(identity, context.Request);
+            var user = await RequireUserAsync(identity, context.Request);
             using var stopping = CancellationTokenSource.CreateLinkedTokenSource(
                 context.RequestAborted,
                 applicationStopping);
@@ -84,8 +84,8 @@ internal static class ApiEndpoints
         app.MapGet("/health", () => TypedResults.Ok(new HealthOutput("ok")));
     }
 
-    private static Principal RequireUser(IdentityService identity, HttpRequest request) =>
-        identity.Resolve(request) ?? throw new AppFaultException("UNAUTHENTICATED", "利用者を確認できません。");
+    private static async Task<Principal> RequireUserAsync(IdentityService identity, HttpRequest request) =>
+        await identity.ResolveAsync(request) ?? throw new AppFaultException("UNAUTHENTICATED", "利用者を確認できません。");
 
     private static async Task WriteEventAsync(HttpResponse response, string eventName, CancellationToken cancellationToken)
     {

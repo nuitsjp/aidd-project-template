@@ -23,7 +23,7 @@ internal sealed class ListNotes
     {
         app.MapGet("/api/notes", async (HttpRequest request) =>
         {
-            var principal = identity.Resolve(request)
+            var principal = await identity.ResolveAsync(request)
                 ?? throw new AppFaultException("UNAUTHENTICATED", "利用者を確認できません。");
             return TypedResults.Ok(await Presentation.ExecuteAsync(principal));
         });

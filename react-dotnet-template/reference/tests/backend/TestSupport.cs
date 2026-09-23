@@ -10,13 +10,10 @@ internal sealed class TestDatabase : IDisposable
         System.IO.Path.GetTempPath(),
         $"aidd-dotnet-{Guid.NewGuid():N}");
 
-    internal TestDatabase()
+    private TestDatabase()
     {
         Path = System.IO.Path.Combine(directory, "app.sqlite");
         Database = new Database(Path);
-        Database.Initialize();
-        EnsureUser("alice", "Alice");
-        EnsureUser("bob", "Bob");
         Notifications = new ChangeNotifications(NotificationErrors.Add);
         ListNotes = new ListNotes(Database);
         GetNote = new GetNote(Database);
@@ -24,6 +21,15 @@ internal sealed class TestDatabase : IDisposable
         PreviewNotes = new PreviewNotes();
         ImportNotes = new ImportNotes(Database, Notifications, PreviewNotes.Application);
         Save = new SaveNote(Database, Notifications);
+    }
+
+    internal static async Task<TestDatabase> CreateAsync()
+    {
+        var fixture = new TestDatabase();
+        await fixture.Database.InitializeAsync();
+        await fixture.EnsureUserAsync("alice", "Alice");
+        await fixture.EnsureUserAsync("bob", "Bob");
+        return fixture;
     }
 
     internal string Path { get; }
@@ -51,10 +57,10 @@ internal sealed class TestDatabase : IDisposable
         Directory.Delete(directory, true);
     }
 
-    private void EnsureUser(string id, string name)
+    private async Task EnsureUserAsync(string id, string name)
     {
-        using var connection = Database.Open();
-        using var command = connection.CreateCommand();
+        await using var connection = await Database.OpenAsync();
+        await using var command = connection.CreateCommand();
         command.CommandText = """
             INSERT INTO users (id, name)
             VALUES
@@ -62,7 +68,7 @@ internal sealed class TestDatabase : IDisposable
             """;
         command.Parameters.AddWithValue("$id", id);
         command.Parameters.AddWithValue("$name", name);
-        command.ExecuteNonQuery();
+        await command.ExecuteNonQueryAsync();
     }
 }
 

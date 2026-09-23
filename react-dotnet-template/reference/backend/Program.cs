@@ -6,8 +6,6 @@ using NotesSample.Infrastructure.Persistence;
 using NotesSample.Infrastructure.Notifications;
 using NotesSample.Infrastructure.Configuration;
 using NotesSample.Infrastructure.Authentication;
-using NotesSample.Domain;
-using System.Net;
 using System.Text.Json;
 using NotesSample.Features.Notes;
 using Microsoft.AspNetCore.Hosting.Server;
@@ -21,9 +19,10 @@ public static class Program
     {
         try
         {
+            // API契約の生成ではDBに触れず、実際のエンドポイント定義からスキーマを作る。
             if (args is ["openapi", var output])
             {
-                await using var schemaApp = BuildApp(AppConfig.FromValues(_ => null), initializeDatabase: false);
+                await using var schemaApp = await BuildAppAsync(AppConfig.FromValues(_ => null), initializeDatabase: false);
                 var provider = schemaApp.Services.GetRequiredKeyedService<IOpenApiDocumentProvider>("v1");
                 var document = await provider.GetOpenApiDocumentAsync();
                 await using var stream = File.Create(output);
@@ -33,12 +32,13 @@ public static class Program
 
             if (args.Length > 0)
             {
-                return RunCommand(args);
+                return await RunCommandAsync(args);
             }
 
             var config = AppConfig.FromEnvironment();
-            await using var app = BuildApp(config);
+            await using var app = await BuildAppAsync(config);
             await app.StartAsync();
+            // 開発・E2Eツールが動的に割り当てられた待受URLを取得できるよう通知する。
             var addresses = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>();
             var url = addresses?.Addresses.SingleOrDefault()
                 ?? throw new InvalidOperationException("起動URLを取得できませんでした。");
@@ -47,6 +47,7 @@ public static class Program
 
             if (Environment.GetEnvironmentVariable("AIDD_CONTROL_STDIN") == "1")
             {
+                // テスト用プロセスを標準入力から正常終了できるようにする。
                 _ = ReadControlInputAsync(app.Lifetime);
             }
 
@@ -60,10 +61,12 @@ public static class Program
         }
     }
 
-    internal static WebApplication BuildApp(AppConfig config, bool initializeDatabase = true)
+    internal static async Task<WebApplication> BuildAppAsync(AppConfig config, bool initializeDatabase = true)
     {
         var database = new Database(config.DatabasePath);
-        if (initializeDatabase) database.Initialize();
+        // 通常起動だけDBを初期化し、契約生成ではファイルを作らない。
+        if (initializeDatabase) await database.InitializeAsync();
+        // 配布先でも静的ファイルを実行ファイルの配置場所から解決する。
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
         {
             ContentRootPath = AppContext.BaseDirectory,
@@ -71,6 +74,7 @@ public static class Program
         });
         builder.WebHost.ConfigureKestrel(options =>
         {
+            // APIの入力上限をサーバー入口で制限する。
             options.Limits.MaxRequestBodySize = 1024 * 1024;
             options.Listen(config.BindAddress, config.Port);
         });
@@ -79,6 +83,7 @@ public static class Program
         builder.Services.AddValidation();
         builder.Services.AddOpenApi(options =>
         {
+            // 入れ子の契約型を区別し、null不可の指定を生成契約にも反映する。
             options.CreateSchemaReferenceId = type => type.Type.IsNested
                 ? type.Type.DeclaringType!.Name + type.Type.Name
                 : OpenApiOptions.CreateDefaultSchemaReferenceId(type);
@@ -96,6 +101,7 @@ public static class Program
             });
         });
         builder.Services.Configure<RouteHandlerOptions>(options => options.ThrowOnBadRequest = true);
+        // 未知の項目や曖昧なJSONを受け入れず、公開契約どおりにバインドする。
         builder.Services.ConfigureHttpJsonOptions(options =>
         {
             options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
@@ -107,136 +113,32 @@ public static class Program
         });
 
         var contractSources = new List<EndpointDataSource>();
+        // DB未初期化の契約生成時にも、ビルド後に登録するエンドポイントを列挙できるようにする。
         if (!initializeDatabase)
             builder.Services.AddSingleton<EndpointDataSource>(_ => new CompositeEndpointDataSource(contractSources));
         var app = builder.Build();
         var notifications = new ChangeNotifications(error => app.Logger.LogWarning(error, "変更通知に失敗しました"));
         var identity = new IdentityService(database, config.AuthMode);
 
-        app.Use(async (context, next) =>
-        {
-            context.Response.Headers["X-Content-Type-Options"] = "nosniff";
-            context.Response.Headers["Referrer-Policy"] = "same-origin";
-            context.Response.Headers["Content-Security-Policy"] =
-                "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'";
-            try
-            {
-                await next(context);
-                // 型付きバインディングが例外を投げずに返すサイズ超過等も公開エラー形式に統一する。
-                if (context.Request.Path.StartsWithSegments("/api") && !context.Response.HasStarted
-                    && context.Response.ContentType is null
-                    && context.Response.StatusCode is 400 or 413 or 415)
-                {
-                    if (context.Response.StatusCode == StatusCodes.Status400BadRequest)
-                        await WriteValidationProblemAsync(context, "入力の形式を確認してください。");
-                    else
-                        await WriteProblemAsync(context, context.Response.StatusCode,
-                            context.Response.StatusCode == 413 ? "リクエストが大きすぎます。" : "入力の形式を確認してください。");
-                }
-            }
-            catch (AppFaultException fault)
-            {
-                if (context.Response.HasStarted)
-                {
-                    throw;
-                }
-
-                var status = fault.Code switch
-                {
-                    "UNAUTHENTICATED" => StatusCodes.Status401Unauthorized,
-                    "NOT_FOUND" => StatusCodes.Status404NotFound,
-                    "EDIT_CONFLICT" or "TITLE_EXISTS" => StatusCodes.Status409Conflict,
-                    "VALIDATION" => StatusCodes.Status400BadRequest,
-                    _ => StatusCodes.Status500InternalServerError,
-                };
-                if (status == StatusCodes.Status400BadRequest)
-                    await WriteValidationProblemAsync(context, fault.Message);
-                else
-                    await WriteProblemAsync(context, status, fault.Message);
-            }
-            catch (BadHttpRequestException error) when (error.StatusCode is StatusCodes.Status400BadRequest or StatusCodes.Status413PayloadTooLarge or StatusCodes.Status415UnsupportedMediaType)
-            {
-                if (context.Response.HasStarted)
-                {
-                    throw;
-                }
-
-                if (error.StatusCode == StatusCodes.Status400BadRequest)
-                    await WriteValidationProblemAsync(context, "入力の形式を確認してください。");
-                else
-                    await WriteProblemAsync(
-                        context,
-                        error.StatusCode,
-                        error.StatusCode == 413 ? "リクエストが大きすぎます。" : "入力の形式を確認してください。");
-            }
-            catch (Exception error)
-            {
-                if (context.Response.HasStarted)
-                {
-                    throw;
-                }
-
-                app.Logger.LogError(error, "機能操作に失敗しました");
-                await WriteProblemAsync(
-                    context,
-                    StatusCodes.Status500InternalServerError,
-                    "処理を完了できませんでした。");
-            }
-        });
-
-        app.Use(async (context, next) =>
-        {
-            if (!context.Request.Path.StartsWithSegments("/api") && context.Request.Path != "/events/notes")
-            {
-                await next(context);
-                return;
-            }
-
-            context.Response.Headers.CacheControl = "no-store";
-            var port = context.Connection.LocalPort;
-            var localHost = config.Host == "::1" ? $"[::1]:{port}" : $"{config.Host}:{port}";
-            var publicHost = config.PublicOrigin?.Authority;
-            var requestHost = context.Request.Host.Value ?? string.Empty;
-            if (!requestHost.Equals(localHost, StringComparison.OrdinalIgnoreCase) &&
-                !requestHost.Equals($"localhost:{port}", StringComparison.OrdinalIgnoreCase) &&
-                (publicHost is null || !requestHost.Equals(publicHost, StringComparison.OrdinalIgnoreCase)))
-            {
-                await WriteProblemAsync(
-                    context,
-                    StatusCodes.Status403Forbidden,
-                    "接続先が不正です。");
-                return;
-            }
-
-            var localOrigin = $"http://{localHost}";
-            var expectedOrigin = config.PublicOrigin?.GetLeftPart(UriPartial.Authority) ?? localOrigin;
-            var origin = context.Request.Headers.Origin.ToString();
-            if ((!string.IsNullOrEmpty(origin) && origin != expectedOrigin && !config.AllowedOrigins.Contains(origin)) ||
-                (HttpMethods.IsPost(context.Request.Method) && string.IsNullOrEmpty(origin)))
-            {
-                await WriteProblemAsync(
-                    context,
-                    StatusCodes.Status403Forbidden,
-                    "同一サイトから操作してください。");
-                return;
-            }
-
-            await next(context);
-        });
+        app.UseHttpErrorHandling();
+        app.UseApiRequestGuard(config);
 
         new SaveNote(database, notifications).Map(app, identity);
         ApiEndpoints.MapApplicationEndpoints(app, config, identity);
         new ListNotes(database).Map(app, identity);
         new GetNote(database).Map(app, identity);
         new RemoveNote(database, notifications).Map(app, identity);
+        // 一括登録はプレビューと同じ入力準備処理を使う。
         var previewNotes = new PreviewNotes();
         previewNotes.Map(app, identity);
         new ImportNotes(database, notifications, previewNotes.Application).Map(app, identity);
         ApiEndpoints.MapEventEndpoints(app, identity, notifications, app.Lifetime.ApplicationStopping);
+        // 配置済みReactを同じサーバーから配信し、画面遷移だけをindex.htmlへ戻す。
         app.UseDefaultFiles();
         app.UseStaticFiles();
         app.MapFallback(async context =>
         {
+            // HTMLを要求する画面URLだけSPAに渡し、未知のAPIやイベントは404にする。
             if (HttpMethods.IsGet(context.Request.Method) &&
                 !context.Request.Path.StartsWithSegments("/api") &&
                 !context.Request.Path.StartsWithSegments("/events") &&
@@ -252,17 +154,18 @@ public static class Program
                 }
             }
 
-            await WriteProblemAsync(
+            await ProblemResponses.WriteAsync(
                 context,
                 StatusCodes.Status404NotFound,
                 "見つかりません。");
         });
+        // 契約生成用プロバイダーに、Build後に登録したルートを渡す。
         if (!initializeDatabase)
             contractSources.AddRange(((IEndpointRouteBuilder)app).DataSources);
         return app;
     }
 
-    private static int RunCommand(string[] args)
+    private static async Task<int> RunCommandAsync(string[] args)
     {
         if (args is ["db:backup", var destination])
         {
@@ -273,7 +176,7 @@ public static class Program
 
         if (args is ["db:check", var path])
         {
-            var result = new Database(path).Check();
+            var result = await new Database(path).CheckAsync();
             Console.WriteLine(JsonSerializer.Serialize(new { version = result.Version, result = result.Result }));
             return result.IsHealthy ? 0 : 1;
         }
@@ -293,25 +196,4 @@ public static class Program
         }
     });
 
-    private static Task WriteProblemAsync(HttpContext context, int status, string detail) =>
-        Results.Problem(
-            statusCode: status,
-            title: status switch
-            {
-                StatusCodes.Status401Unauthorized => "認証が必要です。",
-                StatusCodes.Status403Forbidden => "操作できません。",
-                StatusCodes.Status404NotFound => "見つかりません。",
-                StatusCodes.Status409Conflict => "競合が発生しました。",
-                StatusCodes.Status413PayloadTooLarge => "リクエストが大きすぎます。",
-                StatusCodes.Status415UnsupportedMediaType => "対応していない形式です。",
-                _ => "処理を完了できませんでした。",
-            },
-            detail: detail)
-        .ExecuteAsync(context);
-
-    private static Task WriteValidationProblemAsync(HttpContext context, string message) =>
-        Results.ValidationProblem(
-            new Dictionary<string, string[]> { ["request"] = [message] },
-            title: "入力内容を確認してください。")
-        .ExecuteAsync(context);
 }

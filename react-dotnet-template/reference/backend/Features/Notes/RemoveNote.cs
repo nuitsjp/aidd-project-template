@@ -28,7 +28,7 @@ internal sealed class RemoveNote
     {
         app.MapPost("/api/notes/remove", async (HttpContext context, RemoveNoteInput input) =>
         {
-            var principal = identity.Resolve(context.Request)
+            var principal = await identity.ResolveAsync(context.Request)
                 ?? throw new AppFaultException("UNAUTHENTICATED", "利用者を確認できません。");
             return await Presentation.ExecuteAsync(principal, input);
         })

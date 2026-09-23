@@ -28,7 +28,7 @@ internal sealed class GetNote
                 throw AppFaultException.Validation();
             }
 
-            var principal = identity.Resolve(request)
+            var principal = await identity.ResolveAsync(request)
                 ?? throw new AppFaultException("UNAUTHENTICATED", "利用者を確認できません。");
             return TypedResults.Ok(await Presentation.ExecuteAsync(principal, id));
         });

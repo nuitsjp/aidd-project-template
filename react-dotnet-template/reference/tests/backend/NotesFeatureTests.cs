@@ -45,7 +45,7 @@ public sealed class NotesFeatureTests
     [TestMethod]
     public async Task CreateEditRemovePersistsAndDetectsStaleVersionAsync()
     {
-        using var fixture = new TestDatabase();
+        using var fixture = await TestDatabase.CreateAsync();
         var created = Success(await ExecuteAsync(fixture.Save.Presentation, Alice, new SaveNoteRequest(null, null, "対象", "initial")));
         Assert.AreEqual(1L, created.Version);
         var updated = Success(await ExecuteAsync(fixture.Save.Presentation, Alice, new SaveNoteRequest(created.Id, created.Version, created.Title, "updated")));
@@ -62,7 +62,7 @@ public sealed class NotesFeatureTests
     [TestMethod]
     public async Task ConcurrentEditsSerializeAndOnlyOneVersionWinsAsync()
     {
-        using var fixture = new TestDatabase();
+        using var fixture = await TestDatabase.CreateAsync();
         var original = Success(await ExecuteAsync(fixture.Save.Presentation, Alice, new SaveNoteRequest(null, null, "parallel", "v1")));
         using var start = new ManualResetEventSlim(false);
         var attempts = new[] { "first", "second" }.Select(body => Task.Run(async () =>
@@ -87,7 +87,7 @@ public sealed class NotesFeatureTests
     [TestMethod]
     public async Task OwnerBoundaryAppliesToReadWriteAndDeleteAsync()
     {
-        using var fixture = new TestDatabase();
+        using var fixture = await TestDatabase.CreateAsync();
         var alice = Success(await ExecuteAsync(fixture.Save.Presentation, Alice, new SaveNoteRequest(null, null, "同じタイトル", "private")));
         Success(await ExecuteAsync(fixture.Save.Presentation, Bob, new SaveNoteRequest(null, null, "同じタイトル", "other")));
         Assert.AreEqual("NOT_FOUND", (await TestAssert.ThrowsAsync<AppFaultException>(
@@ -101,7 +101,7 @@ public sealed class NotesFeatureTests
     [TestMethod]
     public async Task ImportRollsBackEveryRowWhenLaterInsertFailsAsync()
     {
-        using var fixture = new TestDatabase();
+        using var fixture = await TestDatabase.CreateAsync();
         await fixture.ImportNotes.Presentation.ExecuteAsync(Alice, new BulkInput("二件目", "既存"));
         var error = await TestAssert.ThrowsAsync<AppFaultException>(() =>
             fixture.ImportNotes.Presentation.ExecuteAsync(Alice, new BulkInput("一件目\n二件目", "本文")));
@@ -119,7 +119,7 @@ public sealed class NotesFeatureTests
         var notified = false;
         var expectedId = Guid.Parse("30000000-0000-0000-0000-000000000001");
         var expectedTime = DateTimeOffset.Parse("2026-03-01T00:00:00Z");
-        using var fixture = new TestDatabase();
+        using var fixture = await TestDatabase.CreateAsync();
         var application = new SaveNote.ApplicationLayer(
             fixture.Database, notifications);
         application.InsertAsync = (_, ownerId, title, body) =>
@@ -182,15 +182,18 @@ public sealed class NotesFeatureTests
     [TestMethod]
     public async Task NotificationRunsAfterCommitAndFailureDoesNotUndoSaveAsync()
     {
-        using var fixture = new TestDatabase();
+        using var fixture = await TestDatabase.CreateAsync();
         var observedCount = -1;
         using var successful = fixture.Notifications.Subscribe("alice", () =>
-            observedCount = fixture.Database.WithConnection(connection =>
-                connection.ExecuteScalar<int>("""
-                    SELECT COUNT(*)
-                    FROM notes
-                    WHERE owner_id = @ownerId
-                    """, new { ownerId = "alice" })));
+        {
+            using var connection = new SqliteConnection($"Data Source={fixture.Path};Mode=ReadOnly;Pooling=False");
+            connection.Open();
+            observedCount = connection.ExecuteScalar<int>("""
+                SELECT COUNT(*)
+                FROM notes
+                WHERE owner_id = @ownerId
+                """, new { ownerId = "alice" });
+        });
         using var failing = fixture.Notifications.Subscribe("alice", () => throw new InvalidOperationException("notification failed"));
         var note = Success(await ExecuteAsync(fixture.Save.Presentation, Alice, new SaveNoteRequest(null, null, "committed", string.Empty)));
         Assert.AreEqual(1, observedCount);
