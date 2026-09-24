@@ -92,6 +92,26 @@ public sealed class PreviewNotesTests
     }
 
     [Fact]
+    public async Task OverOneHundredTitles_ThrowsValidationAsync()
+    {
+        // -------------------------------------------------------------
+        // Arrange
+        // -------------------------------------------------------------
+        var previewNotes = new PreviewNotes();
+        var input = new BulkInput(string.Join('\n', Enumerable.Range(1, 101).Select(index => $"title-{index}")), "body");
+
+        // -------------------------------------------------------------
+        // Act
+        // -------------------------------------------------------------
+        var error = await Record.ExceptionAsync(() => previewNotes.Presentation.ExecuteAsync(Alice, input));
+
+        // -------------------------------------------------------------
+        // Assert
+        // -------------------------------------------------------------
+        error.ShouldBeOfType<AppFaultException>().Message.ShouldBe("タイトルは1〜100件で入力してください。");
+    }
+
+    [Fact]
     public async Task OverlongTitle_ThrowsValidationAsync()
     {
         // -------------------------------------------------------------

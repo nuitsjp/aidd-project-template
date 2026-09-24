@@ -49,6 +49,26 @@ public sealed class NoteTitleAttributeTests
         }
 
         [Fact]
+        public void OneHundredCharactersWithSurroundingWhitespace_ReturnsTrue()
+        {
+            // -------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------
+            var value = $" {new string('あ', 100)} ";
+            var attribute = new NoteTitleAttribute();
+
+            // -------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------
+            var result = attribute.IsValid(value);
+
+            // -------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------
+            result.ShouldBeTrue();
+        }
+
+        [Fact]
         public void WhitespaceOnly_ReturnsFalse()
         {
             // -------------------------------------------------------------

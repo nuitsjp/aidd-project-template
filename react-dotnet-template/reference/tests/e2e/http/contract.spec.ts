@@ -4,40 +4,75 @@ import { test, expect } from '../fixtures.ts';
 test.use({ serveFrontend: false });
 
 test('HTTP契約はcamelCaseで保存結果を返し、他者の取得を拒否する', async ({ request, app }) => {
+  // Arrange
   const headers = { Origin: app.url };
   expect((await request.post('/api/demo/sign-in', { headers, data: { user: 'alice' } })).ok()).toBe(
     true,
   );
+
+  // Act
   const response = await request.post('/api/notes/save', {
     headers,
     data: { title: ' 契約の確認 ', body: '本文' },
   });
-  expect(response.status()).toBe(200);
   const note = await response.json();
-  expect(Object.keys(note).sort()).toEqual(['body', 'id', 'title', 'updatedAt', 'version']);
-  expect(note).toMatchObject({ title: '契約の確認', body: '本文', version: 1 });
-  expect(note.id).toMatch(/^[0-9a-f-]{36}$/i);
-  expect(Number.isNaN(Date.parse(note.updatedAt))).toBe(false);
-  expect(await (await request.get('/api/notes')).json()).toEqual([note]);
-  expect(app.rows()).toEqual([
-    { owner_id: 'alice', title: '契約の確認', body: '本文', version: 1 },
-  ]);
-
+  const aliceNotes = await (await request.get('/api/notes')).json();
   expect((await request.post('/api/demo/sign-in', { headers, data: { user: 'bob' } })).ok()).toBe(
     true,
   );
   const other = await request.get(`/api/notes/${note.id}`);
+  const bobNotes = await (await request.get('/api/notes')).json();
+
+  // Assert
+  expect(response.status()).toBe(200);
+  expect(Object.keys(note).sort()).toEqual(['body', 'id', 'title', 'updatedAt', 'version']);
+  expect(note).toMatchObject({ title: '契約の確認', body: '本文', version: 1 });
+  expect(note.id).toMatch(/^[0-9a-f-]{36}$/i);
+  expect(Number.isNaN(Date.parse(note.updatedAt))).toBe(false);
+  expect(aliceNotes).toEqual([note]);
+  expect(app.rows()).toEqual([
+    { owner_id: 'alice', title: '契約の確認', body: '本文', version: 1 },
+  ]);
   expect(other.status()).toBe(404);
   expect(await other.json()).toMatchObject({ status: 404, detail: '対象のメモが見つかりません。' });
-  expect(await (await request.get('/api/notes')).json()).toEqual([]);
+  expect(bobNotes).toEqual([]);
 });
 
-test('HTTP境界は不正なJSONと入力形状を拒否しDBを変更しない', async ({ request, app }) => {
+test('タイトルは前後の空白を除いた文字数で検証する', async ({ request, app }) => {
+  // Arrange
   const headers = { Origin: app.url };
   expect((await request.post('/api/demo/sign-in', { headers, data: { user: 'alice' } })).ok()).toBe(
     true,
   );
-  for (const input of [
+  const longest = 'あ'.repeat(100);
+
+  // Act
+  const accepted = await request.post('/api/notes/save', {
+    headers,
+    data: { title: `\u3000${longest} `, body: '' },
+  });
+  const rejected = await request.post('/api/notes/save', {
+    headers,
+    data: { title: ` ${longest}い `, body: '' },
+  });
+
+  // Assert
+  expect(accepted.status()).toBe(200);
+  expect(rejected.status()).toBe(400);
+  expect(await rejected.json()).toMatchObject({
+    errors: { Title: ['タイトルは1〜100文字で入力してください。'] },
+  });
+  expect(app.rows()).toEqual([{ owner_id: 'alice', title: longest, body: '', version: 1 }]);
+});
+
+test('HTTP境界は不正なJSONと入力形状を拒否しDBを変更しない', async ({ request, app }) => {
+  // Arrange
+  const headers = { Origin: app.url };
+  const jsonHeaders = { ...headers, 'Content-Type': 'application/json' };
+  expect((await request.post('/api/demo/sign-in', { headers, data: { user: 'alice' } })).ok()).toBe(
+    true,
+  );
+  const invalidShapes = [
     null,
     {},
     { title: '本文欠落' },
@@ -54,24 +89,35 @@ test('HTTP境界は不正なJSONと入力形状を拒否しDBを変更しない'
     { title: '不正版', body: '', id: '00000000-0000-4000-8000-000000000001', version: 0 },
     { title: '版欠落', body: '', id: '00000000-0000-4000-8000-000000000001' },
     { title: 'ID欠落', body: '', version: 1 },
-  ]) {
-    const response = await request.post('/api/notes/save', {
-      headers: { ...headers, 'Content-Type': 'application/json' },
-      data: JSON.stringify(input),
-    });
-    expect(response.status(), JSON.stringify(input)).toBe(400);
-    expect(await response.json()).toMatchObject({ status: 400, errors: expect.any(Object) });
-  }
+  ];
+
+  // Act
+  const shapeResponses = [];
+  for (const input of invalidShapes)
+    shapeResponses.push(
+      await request.post('/api/notes/save', { headers: jsonHeaders, data: JSON.stringify(input) }),
+    );
   const duplicate = await request.post('/api/notes/save', {
-    headers: { ...headers, 'Content-Type': 'application/json' },
+    headers: jsonHeaders,
     data: '{"title":"重複キー","body":"","title":"重複キー"}',
   });
-  expect(duplicate.status()).toBe(400);
-  expect(await duplicate.json()).toMatchObject({ status: 400, errors: expect.any(Object) });
   const multiple = await request.post('/api/notes/save', {
     headers,
     data: { title: '   ', body: 'x'.repeat(10_001) },
   });
+  const broken = await request.post('/api/notes/save', { headers: jsonHeaders, data: '{' });
+  const oversized = await request.post('/api/notes/save', {
+    headers,
+    data: { title: '上限超過', body: 'x'.repeat(1024 * 1024) },
+  });
+
+  // Assert
+  for (const [index, response] of shapeResponses.entries()) {
+    expect(response.status(), JSON.stringify(invalidShapes[index])).toBe(400);
+    expect(await response.json()).toMatchObject({ status: 400, errors: expect.any(Object) });
+  }
+  expect(duplicate.status()).toBe(400);
+  expect(await duplicate.json()).toMatchObject({ status: 400, errors: expect.any(Object) });
   expect(multiple.status()).toBe(400);
   expect(multiple.headers()['content-type']).toContain('application/problem+json');
   expect(await multiple.json()).toMatchObject({
@@ -81,16 +127,8 @@ test('HTTP境界は不正なJSONと入力形状を拒否しDBを変更しない'
       Body: ['本文は10,000文字以内で入力してください。'],
     },
   });
-  const broken = await request.post('/api/notes/save', {
-    headers: { ...headers, 'Content-Type': 'application/json' },
-    data: '{',
-  });
   expect(broken.status()).toBe(400);
   expect(await broken.json()).toMatchObject({ status: 400, errors: expect.any(Object) });
-  const oversized = await request.post('/api/notes/save', {
-    headers,
-    data: { title: '上限超過', body: 'x'.repeat(1024 * 1024) },
-  });
   expect(oversized.status()).toBe(413);
   expect(await oversized.json()).toMatchObject({
     status: 413,
@@ -100,6 +138,7 @@ test('HTTP境界は不正なJSONと入力形状を拒否しDBを変更しない'
 });
 
 test('削除入力のUUIDと版を検証し、不正入力ではDBを変更しない', async ({ request, app }) => {
+  // Arrange
   const headers = { Origin: app.url };
   expect((await request.post('/api/demo/sign-in', { headers, data: { user: 'alice' } })).ok()).toBe(
     true,
@@ -110,16 +149,22 @@ test('削除入力のUUIDと版を検証し、不正入力ではDBを変更し�
   });
   expect(saved.status()).toBe(200);
   const note = await saved.json();
-
-  for (const { input, field } of [
+  const cases = [
     { input: { id: 'not-a-uuid', version: note.version }, field: 'Id' },
     { input: { id: note.id, version: 0 }, field: 'Version' },
-  ]) {
-    const response = await request.post('/api/notes/remove', { headers, data: input });
-    expect(response.status(), JSON.stringify(input)).toBe(400);
+  ];
+
+  // Act
+  const responses = [];
+  for (const { input } of cases)
+    responses.push(await request.post('/api/notes/remove', { headers, data: input }));
+
+  // Assert
+  for (const [index, response] of responses.entries()) {
+    expect(response.status(), JSON.stringify(cases[index].input)).toBe(400);
     expect(await response.json()).toMatchObject({
       status: 400,
-      errors: { [field]: expect.any(Array) },
+      errors: { [cases[index].field]: expect.any(Array) },
     });
   }
   expect(app.rows()).toEqual([
@@ -133,11 +178,12 @@ test('削除入力のUUIDと版を検証し、不正入力ではDBを変更し�
 });
 
 test('HTTP境界は未認証操作と異なるoriginからの更新を拒否する', async ({ request, app }) => {
-  expect(await (await request.get('/api/session')).json()).toEqual({ user: null, mode: 'demo' });
-  const anonymous = await request.get('/api/notes');
-  expect(anonymous.status()).toBe(401);
-  expect(await anonymous.json()).toMatchObject({ status: 401, detail: '利用者を確認できません。' });
+  // Arrange
   const headers = { Origin: app.url };
+
+  // Act
+  const session = await (await request.get('/api/session')).json();
+  const anonymous = await request.get('/api/notes');
   expect((await request.post('/api/demo/sign-in', { headers, data: { user: 'alice' } })).ok()).toBe(
     true,
   );
@@ -145,22 +191,52 @@ test('HTTP境界は未認証操作と異なるoriginからの更新を拒否す�
     headers: { Origin: 'https://other.example' },
     data: { title: '保存しない', body: '' },
   });
-  expect(foreign.status()).toBe(403);
   const missingOrigin = await request.post('/api/notes/save', {
     data: { title: '保存しない', body: '' },
   });
+
+  // Assert
+  expect(session).toEqual({ user: null, mode: 'demo' });
+  expect(anonymous.status()).toBe(401);
+  expect(await anonymous.json()).toMatchObject({ status: 401, detail: '利用者を確認できません。' });
+  expect(foreign.status()).toBe(403);
   expect(missingOrigin.status()).toBe(403);
   expect(app.rows()).toEqual([]);
 });
 
+test('HTTP境界は許可していない接続先名でのAPI呼び出しを拒否する', async ({ request, app }) => {
+  // Arrange
+  const port = new URL(app.url).port;
+
+  // Act
+  const foreignHost = await request.get('/api/session', {
+    headers: { Host: `other.example:${port}` },
+  });
+  const localhost = await request.get('/api/session', { headers: { Host: `localhost:${port}` } });
+
+  // Assert
+  expect(foreignHost.status()).toBe(403);
+  expect(await foreignHost.json()).toMatchObject({ status: 403, detail: '接続先が不正です。' });
+  expect(localhost.status()).toBe(200);
+});
+
 test('同一.NETサーバーがSPAを配信し、未知APIにはHTMLを返さない', async ({ request, app }) => {
   test.skip(app.mode !== 'hosted', 'SPAの一体配信はhostedモードだけで検証します。');
+
+  // Arrange
+  const unknownPaths = ['/api/not-found', '/events/not-found'];
+
+  // Act
   const page = await request.get('/import/confirm', { headers: { Accept: 'text/html' } });
+  const unknown = [];
+  for (const path of unknownPaths)
+    unknown.push(await request.get(path, { headers: { Accept: 'text/html' } }));
+
+  // Assert
   expect(page.status()).toBe(200);
   expect(page.headers()['content-type']).toContain('text/html');
   expect(await page.text()).toContain('<div id="root">');
-  for (const path of ['/api/not-found', '/events/not-found']) {
-    const response = await request.get(path, { headers: { Accept: 'text/html' } });
+  for (const response of unknown) {
     expect(response.status()).toBe(404);
     expect(response.headers()['content-type'] ?? '').not.toContain('text/html');
   }

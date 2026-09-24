@@ -4,18 +4,18 @@ using Xunit;
 
 namespace NotesSample.UnitTests.Presentation.Http.Validation;
 
-public sealed class RuneMaxLengthAttributeTests
+public sealed class NoteBodyAttributeTests
 {
     public sealed class IsValid
     {
         [Fact]
-        public void MaximumEmojiCharacters_ReturnsTrue()
+        public void TenThousandEmojiCharacters_ReturnsTrue()
         {
             // -------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------
-            var value = string.Concat(Enumerable.Repeat("😀", 3));
-            var attribute = new RuneMaxLengthAttribute(3);
+            var value = string.Concat(Enumerable.Repeat("😀", 10_000));
+            var attribute = new NoteBodyAttribute();
 
             // -------------------------------------------------------------
             // Act
@@ -29,13 +29,13 @@ public sealed class RuneMaxLengthAttributeTests
         }
 
         [Fact]
-        public void MoreThanMaximumEmojiCharacters_ReturnsFalse()
+        public void TenThousandAndOneEmojiCharacters_ReturnsFalse()
         {
             // -------------------------------------------------------------
             // Arrange
             // -------------------------------------------------------------
-            var value = string.Concat(Enumerable.Repeat("😀", 4));
-            var attribute = new RuneMaxLengthAttribute(3);
+            var value = string.Concat(Enumerable.Repeat("😀", 10_001));
+            var attribute = new NoteBodyAttribute();
 
             // -------------------------------------------------------------
             // Act
@@ -55,7 +55,7 @@ public sealed class RuneMaxLengthAttributeTests
             // Arrange
             // -------------------------------------------------------------
             var value = string.Empty;
-            var attribute = new RuneMaxLengthAttribute(3);
+            var attribute = new NoteBodyAttribute();
 
             // -------------------------------------------------------------
             // Act
@@ -75,7 +75,7 @@ public sealed class RuneMaxLengthAttributeTests
             // Arrange
             // -------------------------------------------------------------
             string? value = null;
-            var attribute = new RuneMaxLengthAttribute(3);
+            var attribute = new NoteBodyAttribute();
 
             // -------------------------------------------------------------
             // Act
@@ -95,7 +95,7 @@ public sealed class RuneMaxLengthAttributeTests
             // Arrange
             // -------------------------------------------------------------
             object value = 123;
-            var attribute = new RuneMaxLengthAttribute(3);
+            var attribute = new NoteBodyAttribute();
 
             // -------------------------------------------------------------
             // Act

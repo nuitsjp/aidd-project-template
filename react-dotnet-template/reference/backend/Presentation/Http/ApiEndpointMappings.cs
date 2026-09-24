@@ -1,5 +1,4 @@
 using NotesSample.Application.Authentication;
-using NotesSample.Domain;
 using NotesSample.Infrastructure.Authentication;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,32 +16,11 @@ internal static class ApiEndpointMappings
     {
         var builder = app.MapPost(pattern, async (HttpContext context, TRequest request) =>
         {
-            var principal = await identity.ResolveAsync(context.Request)
-                ?? throw new AppFaultException("UNAUTHENTICATED", "利用者を確認できません。");
+            var principal = await identity.RequireAsync(context.Request);
             return TypedResults.Ok(await execute(principal, request));
         })
         .WithName(operationName)
         .Produces<TResponse>(StatusCodes.Status200OK)
-        .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json");
-
-        return ProducesCommonPostErrors(builder);
-    }
-
-    internal static RouteHandlerBuilder MapAuthenticatedPost<TRequest>(
-        this WebApplication app,
-        string pattern,
-        string operationName,
-        IdentityService identity,
-        Func<Principal, TRequest, Task<IResult>> execute)
-        where TRequest : class
-    {
-        var builder = app.MapPost(pattern, async (HttpContext context, TRequest request) =>
-        {
-            var principal = await identity.ResolveAsync(context.Request)
-                ?? throw new AppFaultException("UNAUTHENTICATED", "利用者を確認できません。");
-            return await execute(principal, request);
-        })
-        .WithName(operationName)
         .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json");
 
         return ProducesCommonPostErrors(builder);

@@ -19,6 +19,7 @@ internal sealed partial class IdentityService
     private readonly Database database;
     private readonly string authMode;
     private readonly ConcurrentDictionary<string, Session> sessions = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, Principal> proxyUsers = new(StringComparer.Ordinal);
 
     internal IdentityService(Database database, string authMode)
     {
@@ -31,7 +32,19 @@ internal sealed partial class IdentityService
         if (authMode == "proxy")
         {
             var id = request.Headers["X-Authenticated-User"].ToString();
-            return AuthenticatedUserPattern().IsMatch(id) ? await EnsureUserAsync(new Principal(id, id)) : null;
+            if (!AuthenticatedUserPattern().IsMatch(id))
+            {
+                return null;
+            }
+
+            // 利用者の登録は初回だけ行い、読み取りの要求ごとにDBへ書き込まない。
+            if (!proxyUsers.TryGetValue(id, out var user))
+            {
+                user = await EnsureUserAsync(new Principal(id, id));
+                proxyUsers[id] = user;
+            }
+
+            return user;
         }
 
         if (!request.Cookies.TryGetValue(CookieName, out var key) || !sessions.TryGetValue(key, out var session))
@@ -47,6 +60,9 @@ internal sealed partial class IdentityService
 
         return session.User;
     }
+
+    internal async Task<Principal> RequireAsync(HttpRequest request) =>
+        await ResolveAsync(request) ?? throw new AppFaultException("UNAUTHENTICATED", "利用者を確認できません。");
 
     internal async Task<Principal> SignInAsync(HttpRequest request, HttpResponse response, string id)
     {

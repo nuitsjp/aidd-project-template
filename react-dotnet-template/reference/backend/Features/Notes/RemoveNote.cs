@@ -1,7 +1,5 @@
 using NotesSample.Application;
 using NotesSample.Application.Authentication;
-using NotesSample.Domain;
-using NotesSample.Domain.Notes;
 using NotesSample.Infrastructure.Authentication;
 using NotesSample.Infrastructure.Notifications;
 using NotesSample.Infrastructure.Persistence;
@@ -26,12 +24,9 @@ internal sealed class RemoveNote
 
     internal void Map(WebApplication app, IdentityService identity)
     {
+        // 属性検証を適用するため、入力型を明示したハンドラーで登録する。
         app.MapPost("/api/notes/remove", async (HttpContext context, RemoveNoteInput input) =>
-        {
-            var principal = await identity.ResolveAsync(context.Request)
-                ?? throw new AppFaultException("UNAUTHENTICATED", "利用者を確認できません。");
-            return await Presentation.ExecuteAsync(principal, input);
-        })
+            await Presentation.ExecuteAsync(await identity.RequireAsync(context.Request), input))
             .WithName(nameof(RemoveNote))
             .Produces<SuccessOutput>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")
@@ -42,11 +37,8 @@ internal sealed class RemoveNote
 
     internal sealed class PresentationLayer(IApplicationLayer<RemoveNoteInput, RemoveResult> application)
     {
-        internal Func<Principal, RemoveNoteInput, Task<RemoveResult>> ExecuteApplicationAsync { get; set; } =
-            application.ExecuteAsync;
-
         internal async Task<IResult> ExecuteAsync(Principal principal, RemoveNoteInput input) =>
-            await ExecuteApplicationAsync(principal, input) switch
+            await application.ExecuteAsync(principal, input) switch
             {
                 RemoveResult.Success => TypedResults.Ok(new SuccessOutput(true)),
                 RemoveResult.NotFound => TypedResults.Problem(
@@ -61,26 +53,13 @@ internal sealed class RemoveNote
             };
     }
 
-    internal sealed class ApplicationLayer : IApplicationLayer<RemoveNoteInput, RemoveResult>
+    internal sealed class ApplicationLayer(Database database, ChangeNotifications notifications)
+        : IApplicationLayer<RemoveNoteInput, RemoveResult>
     {
-        private readonly Database database;
-
-        internal ApplicationLayer(Database database, ChangeNotifications notifications)
-        {
-            this.database = database;
-            ReadAsync = PersistenceLayer.ReadAsync;
-            DeleteAsync = PersistenceLayer.DeleteAsync;
-            PublishChange = notifications.Publish;
-        }
-
-        internal Func<SqliteConnection, string, string, Task<Note?>> ReadAsync { get; set; }
-        internal Func<SqliteConnection, string, string, Task<int>> DeleteAsync { get; set; }
-        internal Action<string> PublishChange { get; set; }
-
         public async Task<RemoveResult> ExecuteAsync(Principal principal, RemoveNoteInput input)
         {
             await using var transaction = await database.BeginTransactionAsync();
-            var current = await ReadAsync(transaction.Connection, principal.Id, input.Id);
+            var current = await NotePersistence.ReadAsync(transaction.Connection, principal.Id, input.Id);
             if (current is null)
             {
                 return new RemoveResult.NotFound();
@@ -91,31 +70,15 @@ internal sealed class RemoveNote
                 return new RemoveResult.Conflict();
             }
 
-            await DeleteAsync(transaction.Connection, principal.Id, input.Id);
+            await PersistenceLayer.DeleteAsync(transaction.Connection, principal.Id, input.Id);
             await transaction.CommitAsync();
-            PublishChange(principal.Id);
+            notifications.Publish(principal.Id);
             return new RemoveResult.Success();
         }
     }
 
     internal static class PersistenceLayer
     {
-        internal static Task<Note?> ReadAsync(SqliteConnection connection, string ownerId, string id) =>
-            connection.QuerySingleOrDefaultAsync<Note>(
-                """
-                SELECT
-                    id AS Id,
-                    title AS Title,
-                    body AS Body,
-                    version AS Version,
-                    updated_at AS UpdatedAt
-                FROM
-                    notes
-                WHERE
-                    owner_id = @ownerId AND id = @id
-                """,
-                new { ownerId, id });
-
         internal static Task<int> DeleteAsync(SqliteConnection connection, string ownerId, string id) =>
             connection.ExecuteAsync(
                 """

@@ -7,6 +7,22 @@ namespace NotesSample.Features.Notes;
 
 internal static class NotePersistence
 {
+    internal static Task<Note?> ReadAsync(SqliteConnection connection, string ownerId, string id) =>
+        connection.QuerySingleOrDefaultAsync<Note>(
+            """
+            SELECT
+                id AS Id,
+                title AS Title,
+                body AS Body,
+                version AS Version,
+                updated_at AS UpdatedAt
+            FROM
+                notes
+            WHERE
+                owner_id = @ownerId AND id = @id
+            """,
+            new { ownerId, id });
+
     internal static Task<Note> InsertAsync(SqliteConnection connection, string ownerId, string title, string body) =>
         connection.QuerySingleAsync<Note>(
             """

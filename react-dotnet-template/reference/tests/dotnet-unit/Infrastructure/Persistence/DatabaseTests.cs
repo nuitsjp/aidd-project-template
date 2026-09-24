@@ -51,7 +51,7 @@ public sealed class DatabaseTests
             await transaction.Connection.ExecuteAsync("INSERT INTO users (id, name) VALUES ('committed', 'Committed')");
             await transaction.CommitAsync();
         }
-        await using (var transaction = await fixture.Database.BeginTransactionAsync(TransactionMode.Deferred))
+        await using (var transaction = await fixture.Database.BeginTransactionAsync())
         {
             await transaction.Connection.ExecuteAsync("INSERT INTO users (id, name) VALUES ('rolled-back', 'Rolled back')");
             await transaction.RollbackAsync();
