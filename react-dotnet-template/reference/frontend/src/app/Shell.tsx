@@ -17,7 +17,7 @@ function Application() {
   const signIn = useSignIn();
   const signOut = useSignOut();
   const busy = useIsMutating() > 0;
-  const { dirty } = useDraft();
+  const draft = useDraft();
   const ready = useNotesSubscription(session.data?.user?.id);
   if (session.isPending)
     return (
@@ -116,7 +116,7 @@ function Application() {
                 variant="subtle"
                 disabled={busy}
                 onClick={() => {
-                  if (!dirty || window.confirm('未保存の入力を破棄して終了しますか？'))
+                  if (!draft.current || window.confirm('未保存の入力を破棄して終了しますか？'))
                     signOut.mutate();
                 }}
               >

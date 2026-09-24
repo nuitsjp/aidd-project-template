@@ -5,7 +5,7 @@ import type { BulkInput, BulkPreview } from '@contracts/notes.ts';
 import { useDraftDirty } from '../../shared/DraftContext.tsx';
 interface Value {
   input: BulkInput;
-  setInput: (value: BulkInput) => void;
+  setInput: (update: (current: BulkInput) => BulkInput) => void;
   preview: BulkPreview | null;
   setPreview: (value: BulkPreview | null) => void;
   clear: () => void;
@@ -18,8 +18,8 @@ export function ImportDialogue() {
   useDraftDirty(input.titles !== '' || input.body !== '', (pathname) =>
     pathname.startsWith('/import'),
   );
-  function updateInput(value: BulkInput) {
-    setInput(value);
+  function updateInput(update: (current: BulkInput) => BulkInput) {
+    setInput(update);
     setPreview(null);
   }
   return (

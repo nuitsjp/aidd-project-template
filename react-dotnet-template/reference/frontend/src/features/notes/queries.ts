@@ -40,11 +40,14 @@ export function useNotesSubscription(ownerId: string | undefined): boolean {
   const [ready, setReady] = useState(false);
   const queryClient = useQueryClient();
   useEffect(() => {
-    setReady(false);
     if (!ownerId) return;
-    return watchNotes(() => {
+    const unwatch = watchNotes(() => {
       void queryClient.invalidateQueries({ queryKey: notesOptions().queryKey }).catch(() => {});
     }, setReady);
+    return () => {
+      unwatch();
+      setReady(false);
+    };
   }, [ownerId, queryClient]);
   return ready;
 }

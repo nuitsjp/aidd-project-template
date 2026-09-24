@@ -34,14 +34,20 @@ export function ImportInput() {
             minRows={6}
             autosize
             value={state.input.titles}
-            onChange={(e) => state.setInput({ ...state.input, titles: e.currentTarget.value })}
+            onChange={(e) => {
+              const titles = e.currentTarget.value;
+              state.setInput((current) => ({ ...current, titles }));
+            }}
             disabled={preview.isPending}
           />
           <Textarea
             label="共通の本文"
             minRows={3}
             value={state.input.body}
-            onChange={(e) => state.setInput({ ...state.input, body: e.currentTarget.value })}
+            onChange={(e) => {
+              const body = e.currentTarget.value;
+              state.setInput((current) => ({ ...current, body }));
+            }}
             disabled={preview.isPending}
           />
           <ErrorNotice error={preview.error} />
