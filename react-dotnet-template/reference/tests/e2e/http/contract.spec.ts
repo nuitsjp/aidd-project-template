@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.ts';
+import { test, expect } from '../fixtures.ts';
 
 // HTTP契約はAPIへ直接接続して検証し、ブラウザのシナリオではdev時にViteを経由する。
 test.use({ serveFrontend: false });
