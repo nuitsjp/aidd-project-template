@@ -1,8 +1,7 @@
 using NotesSample.Infrastructure.Notifications;
 using NotesSample.Infrastructure.Configuration;
 using NotesSample.Infrastructure.Authentication;
-using NotesSample.Application.Authentication;
-using NotesSample.Domain;
+using Microsoft.AspNetCore.Mvc;
 using System.Threading.Channels;
 
 namespace NotesSample.Presentation.Http;
@@ -12,7 +11,9 @@ internal static class ApiEndpoints
     internal static void MapApplicationEndpoints(WebApplication app, AppConfig config, IdentityService identity)
     {
         app.MapGet("/api/session", async (HttpRequest request) =>
-            TypedResults.Ok(new SessionOutput(await identity.ResolveAsync(request), config.AuthMode)));
+            TypedResults.Ok(new SessionOutput(await identity.ResolveAsync(request), config.AuthMode)))
+            .WithName("GetSession")
+            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden, "application/problem+json");
 
         if (config.AuthMode == "demo")
         {
@@ -25,7 +26,9 @@ internal static class ApiEndpoints
             {
                 identity.SignOut(context.Request, context.Response);
                 return TypedResults.Ok(new SuccessOutput(true));
-            });
+            })
+            .WithName("DemoSignOut")
+            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden, "application/problem+json");
         }
     }
 
@@ -37,7 +40,7 @@ internal static class ApiEndpoints
     {
         app.MapGet("/events/notes", async (HttpContext context) =>
         {
-            var user = await RequireUserAsync(identity, context.Request);
+            var user = await identity.RequireAsync(context.Request);
             using var stopping = CancellationTokenSource.CreateLinkedTokenSource(
                 context.RequestAborted,
                 applicationStopping);
@@ -83,9 +86,6 @@ internal static class ApiEndpoints
 
         app.MapGet("/health", () => TypedResults.Ok(new HealthOutput("ok")));
     }
-
-    private static async Task<Principal> RequireUserAsync(IdentityService identity, HttpRequest request) =>
-        await identity.ResolveAsync(request) ?? throw new AppFaultException("UNAUTHENTICATED", "利用者を確認できません。");
 
     private static async Task WriteEventAsync(HttpResponse response, string eventName, CancellationToken cancellationToken)
     {

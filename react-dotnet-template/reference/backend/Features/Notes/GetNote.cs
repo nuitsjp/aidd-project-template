@@ -5,8 +5,7 @@ using NotesSample.Domain.Notes;
 using NotesSample.Infrastructure.Authentication;
 using NotesSample.Infrastructure.Persistence;
 using NotesSample.Presentation.Http;
-using Dapper;
-using Microsoft.Data.Sqlite;
+using Microsoft.AspNetCore.Mvc;
 
 namespace NotesSample.Features.Notes;
 
@@ -28,45 +27,30 @@ internal sealed class GetNote
                 throw AppFaultException.Validation();
             }
 
-            var principal = await identity.ResolveAsync(request)
-                ?? throw new AppFaultException("UNAUTHENTICATED", "利用者を確認できません。");
+            var principal = await identity.RequireAsync(request);
             return TypedResults.Ok(await Presentation.ExecuteAsync(principal, id));
-        });
+        })
+        .WithName(nameof(GetNote))
+        .Produces<Note>(StatusCodes.Status200OK)
+        .Produces<HttpValidationProblemDetails>(StatusCodes.Status400BadRequest, "application/problem+json")
+        .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")
+        .Produces<ProblemDetails>(StatusCodes.Status403Forbidden, "application/problem+json")
+        .Produces<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")
+        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError, "application/problem+json");
     }
 
     internal sealed class PresentationLayer(IApplicationLayer<string, Note> application)
     {
-        internal Func<Principal, string, Task<Note>> ExecuteAsync { get; set; } = application.ExecuteAsync;
+        internal Task<Note> ExecuteAsync(Principal principal, string id) => application.ExecuteAsync(principal, id);
     }
 
     internal sealed class ApplicationLayer(Database database) : IApplicationLayer<string, Note>
     {
-        internal Func<SqliteConnection, string, string, Task<Note?>> ReadAsync { get; set; } = PersistenceLayer.ReadAsync;
-
         public async Task<Note> ExecuteAsync(Principal principal, string id)
         {
             await using var connection = await database.OpenAsync();
-            return await ReadAsync(connection, principal.Id, id)
+            return await NotePersistence.ReadAsync(connection, principal.Id, id)
                 ?? throw new AppFaultException("NOT_FOUND", "対象のメモが見つかりません。");
         }
-    }
-
-    internal static class PersistenceLayer
-    {
-        internal static Task<Note?> ReadAsync(SqliteConnection connection, string ownerId, string id) =>
-            connection.QuerySingleOrDefaultAsync<Note>(
-                """
-                SELECT
-                    id AS Id,
-                    title AS Title,
-                    body AS Body,
-                    version AS Version,
-                    updated_at AS UpdatedAt
-                FROM
-                    notes
-                WHERE
-                    owner_id = @ownerId AND id = @id
-                """,
-                new { ownerId, id });
     }
 }

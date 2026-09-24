@@ -28,17 +28,16 @@ internal sealed class PreviewNotes
 
     internal sealed class PresentationLayer(IApplicationLayer<BulkInput, BulkPreview> application)
     {
-        internal Func<Principal, BulkInput, Task<BulkPreview>> ExecuteAsync { get; set; } = application.ExecuteAsync;
+        internal Task<BulkPreview> ExecuteAsync(Principal principal, BulkInput input) =>
+            application.ExecuteAsync(principal, input);
     }
 
     internal sealed class ApplicationLayer : IApplicationLayer<BulkInput, BulkPreview>
     {
-        internal Func<BulkInput, BulkPreview> Prepare { get; set; } = PrepareCore;
-
         public Task<BulkPreview> ExecuteAsync(Principal principal, BulkInput input) =>
             Task.FromResult(Prepare(input));
 
-        internal static BulkPreview PrepareCore(BulkInput input)
+        private static BulkPreview Prepare(BulkInput input)
         {
             NoteRules.ValidateBody(input.Body);
             var rawTitles = input.Titles.Split('\n')

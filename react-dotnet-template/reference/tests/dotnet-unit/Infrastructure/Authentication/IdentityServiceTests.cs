@@ -40,6 +40,34 @@ public sealed class IdentityServiceTests
         }
 
         [Fact]
+        public async Task ProxyWithKnownIdentity_DoesNotWriteUserAgainAsync()
+        {
+            // -------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------
+            using var fixture = await CreateDatabaseAsync();
+            var identity = new IdentityService(fixture.Database, "proxy");
+            var context = new DefaultHttpContext();
+            context.Request.Headers["X-Authenticated-User"] = "alice@example.com";
+            await identity.ResolveAsync(context.Request);
+            await using var connection = await fixture.Database.OpenAsync();
+            await connection.ExecuteAsync("DELETE FROM users WHERE id = @Id", new { Id = "alice@example.com" });
+
+            // -------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------
+            var result = await identity.ResolveAsync(context.Request);
+
+            // -------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------
+            result.ShouldBe(new Principal("alice@example.com", "alice@example.com"));
+            (await connection.ExecuteScalarAsync<int>(
+                "SELECT COUNT(*) FROM users WHERE id = @Id", new { Id = "alice@example.com" }))
+                .ShouldBe(0);
+        }
+
+        [Fact]
         public async Task ProxyWithInvalidIdentity_ReturnsNullAsync()
         {
             // -------------------------------------------------------------
@@ -59,6 +87,30 @@ public sealed class IdentityServiceTests
             // Assert
             // -------------------------------------------------------------
             result.ShouldBeNull();
+        }
+    }
+
+    public sealed class RequireAsync
+    {
+        [Fact]
+        public async Task UnknownSession_ThrowsUnauthenticatedFaultAsync()
+        {
+            // -------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------
+            using var fixture = await CreateDatabaseAsync();
+            var identity = new IdentityService(fixture.Database, "demo");
+            var context = new DefaultHttpContext();
+
+            // -------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------
+            var error = await Record.ExceptionAsync(() => identity.RequireAsync(context.Request));
+
+            // -------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------
+            error.ShouldBeOfType<AppFaultException>().Code.ShouldBe("UNAUTHENTICATED");
         }
     }
 

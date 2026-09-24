@@ -10,6 +10,34 @@ namespace NotesSample.UnitTests.Features.Notes;
 
 public sealed class NotePersistenceTests
 {
+    public sealed class ReadAsync
+    {
+        [Fact]
+        public async Task OtherOwnersNote_ReturnsNullAsync()
+        {
+            // -------------------------------------------------------------
+            // Arrange
+            // -------------------------------------------------------------
+            using var fixture = TemporaryDatabase.Create();
+            await fixture.Database.InitializeAsync();
+            await using var connection = await fixture.Database.OpenAsync();
+            await connection.ExecuteAsync("INSERT INTO users (id, name) VALUES ('alice', 'Alice'), ('bob', 'Bob')");
+            var saved = await NotePersistence.InsertAsync(connection, "alice", "title", "body");
+
+            // -------------------------------------------------------------
+            // Act
+            // -------------------------------------------------------------
+            var own = await NotePersistence.ReadAsync(connection, "alice", saved.Id);
+            var other = await NotePersistence.ReadAsync(connection, "bob", saved.Id);
+
+            // -------------------------------------------------------------
+            // Assert
+            // -------------------------------------------------------------
+            own.ShouldBe(saved);
+            other.ShouldBeNull();
+        }
+    }
+
     public sealed class InsertAsync
     {
         [Fact]

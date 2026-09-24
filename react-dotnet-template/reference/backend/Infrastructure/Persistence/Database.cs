@@ -52,19 +52,12 @@ internal sealed class Database
         }
     }
 
-    internal async Task<ITransaction> BeginTransactionAsync(TransactionMode mode = TransactionMode.Immediate)
+    internal async Task<ITransaction> BeginTransactionAsync()
     {
         var connection = await OpenAsync();
         try
         {
-            var begin = mode switch
-            {
-                TransactionMode.Deferred => "BEGIN DEFERRED;",
-                TransactionMode.Immediate => "BEGIN IMMEDIATE;",
-                TransactionMode.Exclusive => "BEGIN EXCLUSIVE;",
-                _ => throw new ArgumentOutOfRangeException(nameof(mode)),
-            };
-            await connection.ExecuteAsync(begin);
+            await connection.ExecuteAsync("BEGIN IMMEDIATE;");
             return new DatabaseTransaction(connection);
         }
         catch

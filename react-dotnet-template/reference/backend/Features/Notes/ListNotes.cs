@@ -1,11 +1,10 @@
 using NotesSample.Application;
 using NotesSample.Application.Authentication;
-using NotesSample.Domain;
 using NotesSample.Domain.Notes;
 using NotesSample.Infrastructure.Authentication;
 using NotesSample.Infrastructure.Persistence;
-using NotesSample.Presentation.Http;
 using Dapper;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
 
 namespace NotesSample.Features.Notes;
@@ -23,28 +22,29 @@ internal sealed class ListNotes
     {
         app.MapGet("/api/notes", async (HttpRequest request) =>
         {
-            var principal = await identity.ResolveAsync(request)
-                ?? throw new AppFaultException("UNAUTHENTICATED", "利用者を確認できません。");
+            var principal = await identity.RequireAsync(request);
             return TypedResults.Ok(await Presentation.ExecuteAsync(principal));
-        });
+        })
+        .WithName(nameof(ListNotes))
+        .Produces<IReadOnlyList<Note>>(StatusCodes.Status200OK)
+        .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")
+        .Produces<ProblemDetails>(StatusCodes.Status403Forbidden, "application/problem+json")
+        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError, "application/problem+json");
     }
 
     internal sealed class PresentationLayer(IApplicationLayer<ListNotesRequest, IReadOnlyList<Note>> application)
     {
-        internal Func<Principal, Task<IReadOnlyList<Note>>> ExecuteAsync { get; set; } =
-            principal => application.ExecuteAsync(principal, new ListNotesRequest());
+        internal Task<IReadOnlyList<Note>> ExecuteAsync(Principal principal) =>
+            application.ExecuteAsync(principal, new ListNotesRequest());
     }
 
     internal sealed class ApplicationLayer(Database database)
         : IApplicationLayer<ListNotesRequest, IReadOnlyList<Note>>
     {
-        internal Func<SqliteConnection, string, Task<IReadOnlyList<Note>>> ReadAllAsync { get; set; } =
-            PersistenceLayer.ReadAllAsync;
-
         public async Task<IReadOnlyList<Note>> ExecuteAsync(Principal principal, ListNotesRequest input)
         {
             await using var connection = await database.OpenAsync();
-            return await ReadAllAsync(connection, principal.Id);
+            return await PersistenceLayer.ReadAllAsync(connection, principal.Id);
         }
     }
 

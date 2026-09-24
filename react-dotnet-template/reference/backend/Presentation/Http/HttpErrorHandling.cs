@@ -42,7 +42,7 @@ internal static class HttpErrorHandling
                 {
                     "UNAUTHENTICATED" => StatusCodes.Status401Unauthorized,
                     "NOT_FOUND" => StatusCodes.Status404NotFound,
-                    "EDIT_CONFLICT" or "TITLE_EXISTS" => StatusCodes.Status409Conflict,
+                    "TITLE_EXISTS" => StatusCodes.Status409Conflict,
                     "VALIDATION" => StatusCodes.Status400BadRequest,
                     _ => StatusCodes.Status500InternalServerError,
                 };

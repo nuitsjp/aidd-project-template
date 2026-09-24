@@ -6,7 +6,6 @@ using NotesSample.Infrastructure.Persistence;
 using NotesSample.Infrastructure.Notifications;
 using NotesSample.Infrastructure.Authentication;
 using NotesSample.Domain.Notes;
-using NotesSample.Domain;
 using Dapper;
 using Microsoft.Data.Sqlite;
 using Microsoft.AspNetCore.Mvc;
@@ -28,32 +27,21 @@ internal sealed class SaveNote
 
     internal void Map(WebApplication app, IdentityService identity)
     {
+        // 属性検証を適用するため、入力型を明示したハンドラーで登録する。
         app.MapPost("/api/notes/save", async (HttpContext context, SaveNoteRequest request) =>
-        {
-            var principal = await identity.ResolveAsync(context.Request)
-                ?? throw new AppFaultException("UNAUTHENTICATED", "利用者を確認できません。");
-            return await Presentation.HandleAsync(principal, request);
-        })
-        .WithName(nameof(SaveNote))
-        .Produces<SaveNoteResponse>(StatusCodes.Status200OK)
-        .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")
-        .Produces<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")
-        .Produces<ProblemDetails>(StatusCodes.Status409Conflict, "application/problem+json")
-        .ProducesCommonPostErrors();
+            await Presentation.HandleAsync(await identity.RequireAsync(context.Request), request))
+            .WithName(nameof(SaveNote))
+            .Produces<SaveNoteResponse>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict, "application/problem+json")
+            .ProducesCommonPostErrors();
     }
 
-    internal sealed class PresentationLayer
+    internal sealed class PresentationLayer(IApplicationLayer<SaveNoteRequest, SaveResult> application)
     {
-        internal PresentationLayer(IApplicationLayer<SaveNoteRequest, SaveResult> application)
-        {
-            ExecuteAsync = application.ExecuteAsync;
-        }
-
-        internal Func<Principal, SaveNoteRequest, Task<SaveResult>> ExecuteAsync { get; set; }
-
-        internal async Task<IResult> HandleAsync(Principal principal, SaveNoteRequest request)
-        {
-            return await ExecuteAsync(principal, request) switch
+        internal async Task<IResult> HandleAsync(Principal principal, SaveNoteRequest request) =>
+            await application.ExecuteAsync(principal, request) switch
             {
                 SaveResult.Success success => TypedResults.Ok(success.Response),
                 SaveResult.NotFound => TypedResults.Problem(
@@ -66,31 +54,11 @@ internal sealed class SaveNote
                     detail: "別の操作で更新されています。下書きを保持したまま、最新版を確認してください。"),
                 _ => throw new InvalidOperationException("未対応の保存結果です。"),
             };
-        }
     }
 
-    internal sealed class ApplicationLayer : IApplicationLayer<SaveNoteRequest, SaveResult>
+    internal sealed class ApplicationLayer(Database database, ChangeNotifications notifications)
+        : IApplicationLayer<SaveNoteRequest, SaveResult>
     {
-        private readonly Database database;
-
-        internal ApplicationLayer(
-            Database database,
-            ChangeNotifications notifications)
-        {
-            this.database = database;
-            ReadAsync = PersistenceLayer.ReadAsync;
-            InsertAsync = NotePersistence.InsertAsync;
-            UpdateAsync = PersistenceLayer.UpdateAsync;
-            TranslateError = NotePersistence.TranslateError;
-            PublishChange = notifications.Publish;
-        }
-
-        internal Func<SqliteConnection, string, string, Task<Note?>> ReadAsync { get; set; }
-        internal Func<SqliteConnection, string, string, string, Task<Note>> InsertAsync { get; set; }
-        internal Func<SqliteConnection, string, Note, Task<Note>> UpdateAsync { get; set; }
-        internal Func<Exception, Exception> TranslateError { get; set; }
-        internal Action<string> PublishChange { get; set; }
-
         public async Task<SaveResult> ExecuteAsync(Principal principal, SaveNoteRequest input)
         {
             var ownerId = principal.Id;
@@ -101,7 +69,7 @@ internal sealed class SaveNote
             {
                 if (input.Version is not null)
                 {
-                    var current = await ReadAsync(transaction.Connection, ownerId, input.Id!);
+                    var current = await NotePersistence.ReadAsync(transaction.Connection, ownerId, input.Id!);
                     if (current is null)
                     {
                         return new SaveResult.NotFound();
@@ -112,22 +80,22 @@ internal sealed class SaveNote
                         return new SaveResult.Conflict();
                     }
 
-                    saved = await UpdateAsync(transaction.Connection, ownerId,
+                    saved = await PersistenceLayer.UpdateAsync(transaction.Connection, ownerId,
                         current with { Title = title, Body = input.Body });
                 }
                 else
                 {
-                    saved = await InsertAsync(transaction.Connection, ownerId, title, input.Body);
+                    saved = await NotePersistence.InsertAsync(transaction.Connection, ownerId, title, input.Body);
                 }
 
                 await transaction.CommitAsync();
             }
             catch (Exception error)
             {
-                throw TranslateError(error);
+                throw NotePersistence.TranslateError(error);
             }
 
-            PublishChange(principal.Id);
+            notifications.Publish(principal.Id);
             return new SaveResult.Success(
                 new SaveNoteResponse(saved.Id, saved.Title, saved.Body, saved.Version, saved.UpdatedAt));
         }
@@ -135,22 +103,6 @@ internal sealed class SaveNote
 
     internal static class PersistenceLayer
     {
-        internal static Task<Note?> ReadAsync(SqliteConnection connection, string ownerId, string id) =>
-            connection.QuerySingleOrDefaultAsync<Note>(
-                """
-                SELECT
-                    id AS Id,
-                    title AS Title,
-                    body AS Body,
-                    version AS Version,
-                    updated_at AS UpdatedAt
-                FROM
-                    notes
-                WHERE
-                    owner_id = @ownerId AND id = @id
-                """,
-                new { ownerId, id });
-
         internal static Task<Note> UpdateAsync(SqliteConnection connection, string ownerId, Note note) =>
             connection.QuerySingleAsync<Note>(
                 """
@@ -213,7 +165,7 @@ public sealed record SaveNoteRequest : IValidatableObject
     [NoteTitle]
     public string Title { get; init; } = null!;
     [JsonRequired]
-    [RuneMaxLength(10_000, ErrorMessage = "本文は10,000文字以内で入力してください。")]
+    [NoteBody]
     public string Body { get; init; } = null!;
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
