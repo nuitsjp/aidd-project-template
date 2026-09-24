@@ -58,25 +58,25 @@ AIエージェントを利用する場合は、プロジェクト側の `AGENTS.
 
 ### Wailsアプリの初期状態を生成する
 
-Windows向けのGo・React参照実装は [wails-template/](wails-template/README.md) に差分として管理しています。miseとNode.js 22.16以上を用意し、本リポジトリのルートで実行します。設定の信頼確認を求められた場合は、`mise.toml` の内容を確認して `mise trust` を実行してください。
+Windows向けのGo・React参照実装は [wails-template/reference/](wails-template/reference/README.md) にまとめています。miseとNode.js 22.16以上を用意し、本リポジトリのルートで実行します。設定の信頼確認を求められた場合は、`mise.toml` の内容を確認して `mise trust` を実行してください。
 
 ```powershell
 mise run init:wails ../my-wails-app
 cd ../my-wails-app
 ```
 
-生成は `template/` → `wails-template/` の順にコピーして同名ファイルを上書きし、ルートの `LICENSE` を配置します。出力先の親ディレクトリは事前に用意し、既存の出力先は指定しないでください。生成タスクは依存取得やビルドを行いません。共通の行動指針・標準・文書検査は `template/` から取得し、`project.md` 等の固有文書はWails側の内容で全体を上書きします。`wails-template/` 単体をコピー・実行せず、生成先で開発してください。共通側の変更を取り込んだ初期状態は新しい出力先へ再生成して確認し、既存プロジェクトへの反映は第5節に従って差分を確認します。必要な環境と生成後のセットアップ・起動は [Wailsの実行手順](wails-template/docs/project.md#commands) に従います。
+生成は `template/` → `wails-template/` の順にコピーし、ルートの `LICENSE` を配置したうえで、参照アプリの `docs/` と `README.md` を除く一式を製品ルートへコピーします。サンプルは生成先の `reference/` に元の内容で残します。ルートの `docs/` は製品の現行仕様を記述する場所で、`template/` の共通版から始まります。参照実装のユースケース・シナリオは `reference/docs/` にあります。出力先の親ディレクトリは事前に用意し、既存の出力先は指定しないでください。生成タスクは依存取得やビルドを行いません。`wails-template/` 単体をコピー・実行せず、生成先で開発してください。共通側の変更を取り込んだ初期状態は新しい出力先へ再生成して確認し、既存プロジェクトへの反映は第5節に従って差分を確認します。必要な環境と生成後のセットアップ・起動は [Wailsの実行手順](wails-template/reference/docs/project.md#commands) に従い、製品ルートと `reference/` のそれぞれで実行します。
 
 ### Reactアプリの初期状態を生成する
 
-React・Node.js・SQLiteの参照実装は [react-template/](react-template/README.md) に差分として管理しています。Wailsと同じ前提で、本リポジトリのルートから実行します。
+React・Node.js・SQLiteの参照実装は [react-template/reference/](react-template/reference/README.md) にまとめています。Wailsと同じ前提で、本リポジトリのルートから実行します。
 
 ```powershell
 mise run init:react ../my-react-app
 cd ../my-react-app
 ```
 
-配置・上書きの規則はWailsと同様です。共通ファイルの継承、固有文書の全体上書き、新規出力先限定で行われ、生成タスクは依存取得やビルドを行いません。`react-template/` 単体をコピー・実行せず、生成先で開発してください。必要な環境と生成後のセットアップ・起動は [Reactの実行手順](react-template/docs/project.md#commands) に従います。
+配置の規則はWailsと同様です。参照アプリを製品ルートへコピーし、サンプルを `reference/` に残します。生成タスクは依存取得やビルドを行わず、既存の出力先は拒否します。`react-template/` 単体をコピー・実行せず、生成先で開発してください。必要な環境と生成後のセットアップ・起動は [Reactの実行手順](react-template/reference/docs/project.md#commands) に従い、製品ルートと `reference/` のそれぞれで実行します。
 
 ### React・.NETの初期状態を生成する
 

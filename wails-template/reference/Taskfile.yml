@@ -1,5 +1,9 @@
 version: '3'
 
+vars:
+  # 生成先の reference/ は親ディレクトリの共通検査器を使う。
+  DOC_CHECK: '{{if eq (osBase .ROOT_DIR) "reference"}}../{{end}}scripts/doc_check.py'
+
 tasks:
   generate:
     cmds:
@@ -44,6 +48,6 @@ tasks:
       - go test ./internal/... ./cmd/release/...
       - go vet ./...
       - go vet -tags server ./...
-      - python scripts/doc_check.py .
+      - python {{.DOC_CHECK}} .
       - task: build:server
       - npm --prefix frontend run test:e2e
