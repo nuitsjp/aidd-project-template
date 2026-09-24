@@ -21,7 +21,7 @@
     "frontend",
     "contracts",
     "tests/e2e",
-    "tests/unit",
+    "tests/frontend-unit",
     "playwright.config.ts",
     "vitest.config.ts"
   ]
