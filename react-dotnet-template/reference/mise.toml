@@ -78,6 +78,10 @@ run = "npm run lint"
 description = "フロントエンドと開発スクリプトを整形する"
 run = "npm run format"
 
+[tasks."format:check"]
+description = "整形済みであることを検査する"
+run = "npm run format:check"
+
 [tasks."check:docs"]
 description = "文書の整合性を検査する"
 run = "node scripts/check-docs.mjs"
