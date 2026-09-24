@@ -5,15 +5,15 @@
 <a id="adoption"></a>
 ## 1. 適用する標準
 
-導入状態: **未適用**。採用先で以下の版と固有差分を確定した後に「適用済み」へ更新してください。
+導入状態: **未適用**。採用先で以下の採用元固定コミットと固有差分を確定した後に「適用済み」へ更新してください。
 
 | 項目 | 内容 |
 | --- | --- |
-| 配布元・版 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版22 |
+| 配布元 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) |
 | 採用元固定コミット | `{{SOURCE_COMMIT}}`（生成に使用した40桁SHAを記載） |
-| 設計・文書標準 | [版17](standards/design-and-documentation.md) |
-| モック標準 | [版20](standards/mock-driven-development.md) |
-| React拡張 | 0.2.6 / React・Node.js・SQLite・並列 E2E の参照実装 |
+| 設計・文書標準 | [design-and-documentation.md](standards/design-and-documentation.md) |
+| モック標準 | [mock-driven-development.md](standards/mock-driven-development.md) |
+| React拡張 | React・Node.js・SQLite・並列 E2E の参照実装 |
 | 固有差分 | React と Node.js の責務分担、SQLite の保存、実処理までの並列 E2E を提供します。具体設計は `design/`、共通構造は `architecture-react.md` に置きます |
 
 生成時は `template/` を先にコピーし、`react-template/` の内容で上書きします。共通資材（`AGENTS.md`、`docs/standards/`、検査スクリプト、`.agents/skills/usecase-docs/`、`LICENSE`）は共通側から取得し、`docs/project.md` と本書を含む React 固有文書は React 差分側で個別管理します（共通版との部分マージは行いません）。
@@ -38,7 +38,7 @@
 | [architecture-react.md](architecture-react.md) | React・Node.js の責務と依存方向、起動単位、並列 E2E の分離原則 |
 | `usecases/<ユースケース名>/README.md` | 主アクター、目的、共通条件、シナリオ一覧、実現パターン |
 | `usecases/<ユースケース名>/scenarios/<シナリオ名>.md` | シナリオの条件、手順、受け入れ条件 |
-| `../.agents/skills/usecase-docs/` | 文書標準に従う作成手順と雛形 |
+| `../.agents/skills/usecase-docs/` | ユースケース・シナリオの文書構造、作成手順と雛形 |
 | standards/ | 適用する標準の原文 |
 | [README.md](../README.md) | プロジェクト概要と参照案内 |
 | [AGENTS.md](../AGENTS.md) | 作業時の参照先と注意点 |

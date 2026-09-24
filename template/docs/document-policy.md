@@ -9,13 +9,13 @@
 
 | 項目 | 内容 |
 | --- | --- |
-| 配布元・版 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) / 版22 |
-| 設計・文書標準 | [project-template-design-and-documentation / 版17](standards/design-and-documentation.md) |
-| モック標準 | [project-template-mock-driven-development / 版20](standards/mock-driven-development.md) |
+| 配布元 | [aidd-project-template](https://github.com/nuitsjp/aidd-project-template) |
+| 設計・文書標準 | [project-template-design-and-documentation](standards/design-and-documentation.md) |
+| モック標準 | [project-template-mock-driven-development](standards/mock-driven-development.md) |
 | 採用元固定コミット | {{SOURCE_COMMIT}} |
 | プロジェクト固有の適用範囲と差分 | {{LOCAL_RULE_DIFFERENCES}} |
 
-採用後、設計・文書標準はすべての変更に適用し、モック標準の適用範囲は第2節で定めます。配布元管理の AGENTS・標準2件・`scripts/doc_check.py`・`.agents/skills/usecase-docs/` のスキルと雛形2件は同じ固定コミットから7ファイル一組で更新し、採用元固定コミット欄には実際に採用した40桁SHAを記載します。作成済みのプロジェクト文書は採用先で管理し、雛形全文は同期しません。現在有効な固有差分のみを上表に記載します（例: `scripts/doc_check.py` を実行できない環境、Playwright CLI が使えない対象の代替確認手段と適用範囲。差分がなければ「なし」）。確認手段を替えても利用者の承認は省略しません。新版のテンプレートは自動適用しません。
+採用後、設計・文書標準はすべての変更に適用し、モック標準の適用範囲は第2節で定めます。配布元管理の AGENTS・標準2件・`scripts/doc_check.py`・`.agents/skills/usecase-docs/` のスキルと雛形2件は同じ固定コミットから7ファイル一組で更新し、採用元固定コミット欄には実際に採用した40桁SHAを記載します。作成済みのプロジェクト文書は採用先で管理し、雛形全文は同期しません。現在有効な固有差分のみを上表に記載します（例: `scripts/doc_check.py` を実行できない環境、Playwright CLI が使えない対象の代替確認手段と適用範囲。差分がなければ「なし」）。確認手段を替えても利用者の承認は省略しません。配布元の更新は自動適用しません。
 
 <a id="mock-scope"></a>
 ## 2. モック駆動開発の適用範囲
@@ -34,7 +34,7 @@
 | [project.md](project.md) | プロジェクトの目的・制約、ユースケース一覧、確認した事実、実行・検証手順 |
 | `usecases/<名称>/README.md` | 主アクター・目的・共通条件、シナリオ一覧、実現パターンへの参照 |
 | `usecases/<名称>/scenarios/<名称>.md` | シナリオ固有の条件・手順・受け入れ条件、種別、UI確認の要否 |
-| [.agents/skills/usecase-docs/](../.agents/skills/usecase-docs/SKILL.md) | 標準に従う文書作成手順と新規作成用雛形（実仕様ではない） |
+| [.agents/skills/usecase-docs/](../.agents/skills/usecase-docs/SKILL.md) | ユースケース・シナリオの文書構造、作成手順と新規作成用雛形（雛形は実仕様ではない） |
 | [architecture.md](architecture.md) | システム構成、共通方針、実現パターン一覧、設計上の制約 |
 | `design/UCP-n.md` | 実現パターンごとの処理・役割・境界と UC 固有の差分 |
 | [design/data.md](design/data.md) | DB・ファイル等の保存形式と現在のテーブル設計 |

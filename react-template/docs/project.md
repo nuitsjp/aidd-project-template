@@ -22,7 +22,7 @@ SPA、単一 Node.js、同一 origin、SQLite を既定とします。各利用�
 <a id="design"></a>
 ## 4. 確認した事実
 
-共通資材の配布元と適用版は [文書方針](document-policy.md#adoption) に従います。直接依存は `package.json`、Node.js の指定版は `.nvmrc` に記載しています。
+共通資材の配布元と採用元固定コミットは [文書方針](document-policy.md#adoption) に従います。直接依存は `package.json`、Node.js の指定版は `.nvmrc` に記載しています。
 
 - **Node.js / SQLite**: Node.js 24.21.0 と同版の標準 `node:sqlite` を使用します。実 SQLite を用いる処理、マイグレーション、バックアップを同一ドライバーで実行します（[Node API](https://nodejs.org/docs/latest-v24.x/api/sqlite.html)）。並列 E2E は DB ファイルを分離します（[SQLite WAL](https://sqlite.org/wal.html)）。
 - **Playwright fixtures**: 環境生成と破棄を一体化し、fullyParallel と複数 worker を利用します（[fixtures](https://playwright.dev/docs/test-fixtures)）。
