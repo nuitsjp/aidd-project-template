@@ -1,5 +1,5 @@
-import { test, expect } from './fixtures.ts';
-import { signIn, saveFromUI } from './helpers.ts';
+import { test, expect } from '../fixtures.ts';
+import { signIn, saveFromUI } from '../helpers.ts';
 // 意図的に同じユーザー・一意キーを使う。suffixで衝突を隠さず、DB単位の分離を確認する。
 for (let i = 1; i <= 4; i++)
   test(`ISO-${i} 並列でも同一キーを独立して保存できる`, async ({ page, app }) => {
