@@ -1,7 +1,7 @@
 import { createContext, useContext, useState } from 'react';
 import { Outlet } from '@tanstack/react-router';
 import { Text, Title } from '@mantine/core';
-import type { BulkInput, BulkPreview } from '../../../../contracts/notes.ts';
+import type { BulkInput, BulkPreview } from '@contracts/notes.ts';
 import { useDraftDirty } from '../../shared/DraftContext.tsx';
 interface Value {
   input: BulkInput;
@@ -14,7 +14,10 @@ const Context = createContext<Value | null>(null);
 export function ImportDialogue() {
   const [input, setInput] = useState<BulkInput>({ titles: '', body: '' });
   const [preview, setPreview] = useState<BulkPreview | null>(null);
-  useDraftDirty(input.titles !== '' || input.body !== '');
+  // 入力と確認の間は同じ下書きを引き継ぐため、/import配下への遷移は止めない。
+  useDraftDirty(input.titles !== '' || input.body !== '', (pathname) =>
+    pathname.startsWith('/import'),
+  );
   function updateInput(value: BulkInput) {
     setInput(value);
     setPreview(null);

@@ -21,14 +21,14 @@ export function ImportConfirm() {
       </section>
     );
   if (!state.preview) return <Navigate to="/import" />;
-  async function submit() {
-    try {
-      const result = await commit.mutateAsync(state.input);
-      setCount(result.count);
-      state.clear();
-    } catch {
-      /* 確認内容と下書きは失敗時に残す。 */
-    }
+  // 失敗時は確認内容と下書きを残し、表示はErrorNoticeが担う。
+  function submit() {
+    commit.mutate(state.input, {
+      onSuccess: (result) => {
+        setCount(result.count);
+        state.clear();
+      },
+    });
   }
   return (
     <section className="panel">
@@ -42,10 +42,10 @@ export function ImportConfirm() {
             <List.Item key={index}>{title}</List.Item>
           ))}
         </List>
-        <Text style={{ whiteSpace: 'pre-wrap' }}>{state.preview.body || '（本文なし）'}</Text>
+        <Text className="pre-wrap">{state.preview.body || '（本文なし）'}</Text>
         <ErrorNotice error={commit.error} />
         <Group>
-          <Button loading={commit.isPending} onClick={() => void submit()}>
+          <Button loading={commit.isPending} onClick={submit}>
             一括登録する
           </Button>
           <Button

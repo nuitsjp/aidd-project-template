@@ -12,6 +12,9 @@
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
+    "paths": {
+      "@contracts/*": ["./contracts/*"]
+    },
     "types": ["vite/client", "node", "@testing-library/jest-dom"]
   },
   "include": [

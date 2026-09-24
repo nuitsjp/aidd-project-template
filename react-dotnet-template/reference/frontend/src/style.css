@@ -68,3 +68,7 @@ button:focus-visible {
     grid-template-columns: 1fr;
   }
 }
+
+.pre-wrap {
+  white-space: pre-wrap;
+}

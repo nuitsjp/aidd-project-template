@@ -1,4 +1,4 @@
-import type { ApiProblem, ValidationProblem } from '../../../contracts/notes.ts';
+import type { ApiProblem, ValidationProblem } from '@contracts/notes.ts';
 
 const fallbackMessage = '処理を完了できませんでした。接続とサーバーの状態を確認してください。';
 
@@ -20,8 +20,15 @@ export function readErrorMessage(error: unknown): string {
   return error instanceof HttpError ? error.message : fallbackMessage;
 }
 
-export function readErrorMessages(error: unknown): string[] {
-  return error instanceof HttpError ? readProblemMessages(error.problem) : [fallbackMessage];
+// fieldsに指定した項目のエラーは入力欄で表示するため除く。
+export function readErrorMessages(error: unknown, fields: readonly string[] = []): string[] {
+  return error instanceof HttpError
+    ? readProblemMessages(error.problem, fields)
+    : [fallbackMessage];
+}
+
+export function readFieldError(error: unknown, field: string): string | undefined {
+  return error instanceof HttpError ? error.problem.errors?.[field]?.join(' ') : undefined;
 }
 
 export function parseProblemDetails(value: unknown, status: number): ProblemDetails {
@@ -44,11 +51,12 @@ export function parseProblemDetails(value: unknown, status: number): ProblemDeta
   };
 }
 
-function readProblemMessages(problem: ProblemDetails): string[] {
-  if (problem.errors) {
-    const messages = Object.values(problem.errors).flat();
-    if (messages.length > 0) return messages;
-  }
+function readProblemMessages(problem: ProblemDetails, fields: readonly string[] = []): string[] {
+  const entries = Object.entries(problem.errors ?? {}).filter(
+    ([, messages]) => messages.length > 0,
+  );
+  if (entries.length > 0)
+    return entries.filter(([field]) => !fields.includes(field)).flatMap(([, messages]) => messages);
   if (problem.detail) return [problem.detail];
   if (problem.title) return [problem.title];
   return [fallbackMessage];

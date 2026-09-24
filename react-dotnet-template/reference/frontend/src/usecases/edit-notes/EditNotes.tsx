@@ -10,10 +10,13 @@ import {
   TextInput,
   Title,
 } from '@mantine/core';
-import type { Note } from '../../../../contracts/notes.ts';
+import type { Note } from '@contracts/notes.ts';
 import { useNotes, useSaveNote, useRemoveNote } from '../../features/notes/queries.ts';
 import { ErrorNotice } from '../../shared/ErrorNotice.tsx';
 import { useDraftDirty } from '../../shared/DraftContext.tsx';
+import { readFieldError } from '../../shared/errors.ts';
+// 入力欄の下に表示する検証エラーの項目名（C#の入力型のプロパティ名）。
+const noteFields = ['Title', 'Body'] as const;
 export function EditNotes() {
   const notes = useNotes();
   const save = useSaveNote();
@@ -34,36 +37,36 @@ export function EditNotes() {
     save.reset();
     remove.reset();
   }
-  async function submit() {
+  // 失敗時はエラーと下書きを画面に残す。
+  function submit() {
     setMessage('');
-    try {
-      const note = await save.mutateAsync({
-        id: selected?.id,
-        version: selected?.version,
-        title,
-        body,
-      });
-      setSelected(note);
-      setTitle(note.title);
-      setBody(note.body);
-      setMessage('保存しました');
-      remove.reset();
-    } catch {
-      /* エラーと下書きを画面に残す。 */
-    }
+    save.mutate(
+      { id: selected?.id, version: selected?.version, title, body },
+      {
+        onSuccess: (note) => {
+          setSelected(note);
+          setTitle(note.title);
+          setBody(note.body);
+          setMessage('保存しました');
+          remove.reset();
+        },
+      },
+    );
   }
-  async function deleteSelected() {
+  function deleteSelected() {
     if (!selected || !window.confirm('このメモを削除しますか？')) return;
-    try {
-      await remove.mutateAsync({ id: selected.id, version: selected.version });
-      setSelected(null);
-      setTitle('');
-      setBody('');
-      setMessage('削除しました');
-      save.reset();
-    } catch {
-      /* 表示はErrorNoticeが担う。 */
-    }
+    remove.mutate(
+      { id: selected.id, version: selected.version },
+      {
+        onSuccess: () => {
+          setSelected(null);
+          setTitle('');
+          setBody('');
+          setMessage('削除しました');
+          save.reset();
+        },
+      },
+    );
   }
   return (
     <>
@@ -124,7 +127,7 @@ export function EditNotes() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              void submit();
+              submit();
             }}
           >
             <Stack>
@@ -132,6 +135,7 @@ export function EditNotes() {
                 label="タイトル"
                 value={title}
                 onChange={(e) => setTitle(e.currentTarget.value)}
+                error={readFieldError(save.error, 'Title')}
                 disabled={busy}
                 autoComplete="off"
               />
@@ -141,9 +145,11 @@ export function EditNotes() {
                 autosize
                 value={body}
                 onChange={(e) => setBody(e.currentTarget.value)}
+                error={readFieldError(save.error, 'Body')}
                 disabled={busy}
               />
-              <ErrorNotice error={save.error || remove.error} />
+              <ErrorNotice error={save.error} fields={noteFields} />
+              <ErrorNotice error={remove.error} />
               {message && (
                 <Notification color="teal" role="status" withCloseButton={false} withBorder>
                   {message}
@@ -159,7 +165,7 @@ export function EditNotes() {
                     variant="subtle"
                     loading={remove.isPending}
                     disabled={save.isPending}
-                    onClick={() => void deleteSelected()}
+                    onClick={deleteSelected}
                   >
                     削除する
                   </Button>

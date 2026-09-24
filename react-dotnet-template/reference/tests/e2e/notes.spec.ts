@@ -24,7 +24,9 @@ test('メモを作成・編集して保存する / 不正な入力の保存を�
   await page.getByLabel('タイトル', { exact: true }).fill('   ');
   await page.getByLabel('本文', { exact: true }).fill('残す下書き');
   await page.getByRole('button', { name: '保存する', exact: true }).click();
-  await expect(page.getByRole('alert')).toContainText('タイトルは1〜100文字で入力してください。');
+  await expect(page.getByLabel('タイトル', { exact: true })).toHaveAccessibleDescription(
+    'タイトルは1〜100文字で入力してください。',
+  );
   expect(app.rows()).toHaveLength(0);
   await expect(page.getByLabel('本文', { exact: true })).toHaveValue('残す下書き');
 });
@@ -46,13 +48,16 @@ test('保存エラーの後に削除できたら古いエラーを消す', async
   await saveFromUI(page, '削除対象');
   await page.getByLabel('タイトル', { exact: true }).fill('   ');
   await page.getByRole('button', { name: '保存する', exact: true }).click();
-  await expect(page.getByRole('alert')).toContainText('タイトルは1〜100文字で入力してください。');
+  await expect(page.getByLabel('タイトル', { exact: true })).toHaveAccessibleDescription(
+    'タイトルは1〜100文字で入力してください。',
+  );
 
   page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: '削除する', exact: true }).click();
 
   await expect(page.getByRole('status').filter({ hasText: '削除しました' })).toBeVisible();
   await expect(page.getByRole('alert')).toHaveCount(0);
+  await expect(page.getByLabel('タイトル', { exact: true })).toHaveAccessibleDescription('');
   expect(app.rows()).toEqual([]);
 });
 test('メモを作成・編集して保存する / メモを作成・編集して保存する サーバー再起動後も保存結果を読み取れる', async ({

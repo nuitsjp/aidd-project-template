@@ -8,7 +8,17 @@
 
 運用時と Visual Studio の F5 では `backend/App.csproj` が React をビルド・配置し、UI と API を単一の .NET プロセスから同じ origin で配信します。コンソール開発では `mise run dev` が Vite と .NET を別々に起動し、Vite が API と SSE をプロキシします。どちらも実 SQLite を使用します。`frontend/Frontend.esproj` は Visual Studio のソリューション表示用で、UI ビルドは所有しません。
 
-フロントエンドの `usecases/` は対話と下書き、`features/` は API 呼び出しとイベント購読を担当します。バックエンドは画面単位ではなく API エンドポイント単位で `backend/Features/Notes/` にファイルを分けます。画面やユースケースと API は 1:1 に対応させません。
+フロントエンドの `frontend/src/` は次の責務に分け、依存方向を `eslint.config.mjs` の `no-restricted-imports` で検査します。
+
+| ディレクトリ | 責務 | 参照しないもの |
+| --- | --- | --- |
+| `app/` | 起動、ルーター生成、共通レイアウト（Shell） | — |
+| `routes/` | TanStack Router のファイルルート。画面の割当てと Query の先読み（`loader`） | — |
+| `usecases/` | ユースケースの対話、下書き、確認・失敗時の表示 | `features/client`、バックエンド |
+| `features/` | API 呼び出し、Query・mutation、変更通知の購読 | `usecases/`、`routes/` |
+| `shared/` | 機能に依存しない共用 UI と下書き管理 | `features/`、`usecases/` |
+
+バックエンドは画面単位ではなく API エンドポイント単位で `backend/Features/Notes/` にファイルを分けます。画面やユースケースと API は 1:1 に対応させません。
 
 ## 2. API 単位の実装
 
@@ -20,7 +30,7 @@ API 間で共有する DataAnnotations 属性は `backend/Presentation/Http/Vali
 
 ## 3. HTTP 契約と状態
 
-C# の API 入出力型を契約の正本とし、OpenAPI から `contracts/api.gen.ts` を生成します。React は `contracts/notes.ts` の別名を通じて生成型を使います。保存と削除の入力は DataAnnotations で自動検証し、フィールド別のエラーを標準の Validation Problem Details で返します。保存入力の項目間条件は `IValidatableObject` で定義し、タイトルのトリムは検証後の保存処理で行います。
+C# の API 入出力型を契約の正本とし、OpenAPI から `contracts/api.gen.ts` を生成します。React は `contracts/notes.ts` の別名を `@contracts/notes.ts` として import し、生成型を使います。保存と削除の入力は DataAnnotations で自動検証し、フィールド別のエラーを標準の Validation Problem Details で返します。保存入力の項目間条件は `IValidatableObject` で定義し、タイトルのトリムは検証後の保存処理で行います。
 
 | HTTP | パス | このアプリでの役割 |
 | --- | --- | --- |
@@ -33,6 +43,8 @@ C# の API 入出力型を契約の正本とし、OpenAPI から `contracts/api.
 属性検証が必要な保存・削除 POST は、入力型を明示した `MapPost` ハンドラーで登録します。このテンプレートでは汎用 `MapAuthenticatedPost<TRequest>` 経由の削除入力に属性検証が適用されず、不正な UUID が 404 になったためです。認証結果は文字列 ID ではなく `Principal` としてアプリケーションレイヤーへ渡します。
 
 公開エラーは HTTP ステータスと標準の Problem Details で表し、独自の FaultCode を応答に含めません。保存・削除の対象なしと版競合はアプリケーションの結果型で表し、プレゼンテーションで 404・409 に変換します。確定後にだけ `ChangeNotifications` が利用者のタブへ変更を通知し、購読側の失敗で確定済みの操作を失敗扱いにはしません。下書きは React が保持し、再取得や保存失敗で上書きしません。
+
+サーバー状態は TanStack Query が保持し、鮮度は確定後の再取得と SSE 通知で保ちます。このため時間経過・フォーカス復帰・再接続による自動再取得と自動リトライは行いません。Query のキーと取得関数は `features/` の `queryOptions` に定義し、フックは `useQueryClient` でクライアントを取得します。ルートの `loader` は同じ `queryOptions` で先読みし、失敗の表示は画面側の Query に任せます。mutation は `mutate` の `onSuccess` で画面の状態を進め、失敗は mutation の `error` として表示します。入力検証のエラーは `errors` の項目名に対応する入力欄の下に、それ以外は操作単位の通知に表示します。
 
 `Program` はエントリポイントに留め、`Hosting/AppHost` は起動モードの選択と各領域の組み立てだけを担当します。サーバー設定と DB 管理コマンドは `Infrastructure/`、HTTP サービス設定・エンドポイント登録・SPA 配信・エラー変換・接続先と Origin の検査は `Presentation/Http/` に置きます。OpenAPI 生成も通常起動と同じエンドポイント登録を使いますが、DB 初期化と HTTP 待受は行いません。HTTP エラー変換と接続先検査、SPA の 404 応答は共通の `ProblemResponses` を使います。
 

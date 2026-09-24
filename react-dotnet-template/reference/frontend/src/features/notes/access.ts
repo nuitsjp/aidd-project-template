@@ -8,7 +8,7 @@ import type {
   SaveNoteResponse,
   RemoveNote,
   SuccessOutput,
-} from '../../../../contracts/notes.ts';
+} from '@contracts/notes.ts';
 export const listNotes = (signal?: AbortSignal) => requestJson<Note[]>('/api/notes', { signal });
 export const saveNote = (input: SaveNoteRequest) =>
   postJson<SaveNoteResponse>('/api/notes/save', input);
