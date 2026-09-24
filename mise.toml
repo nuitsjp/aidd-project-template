@@ -1,3 +1,7 @@
+[tasks.setup]
+description = "開発環境を初期化する（現時点では処理なし）"
+run = "echo 初期化する処理はありません"
+
 [tasks."init:wails"]
 description = "共通テンプレートとWails差分を新しいディレクトリへ配置する"
 run = "node scripts/init-template.mjs wails"
