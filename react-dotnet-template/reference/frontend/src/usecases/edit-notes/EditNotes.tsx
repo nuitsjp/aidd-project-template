@@ -33,6 +33,7 @@ export function EditNotes() {
             setTitle(note.title);
             setBody(note.body);
             setMessage('保存しました');
+            remove.reset();
         }
         catch { /* エラーと下書きを画面に残す。 */ }
     }
@@ -45,6 +46,7 @@ export function EditNotes() {
             setTitle('');
             setBody('');
             setMessage('削除しました');
+            save.reset();
         }
         catch { /* 表示はErrorNoticeが担う。 */ }
     }

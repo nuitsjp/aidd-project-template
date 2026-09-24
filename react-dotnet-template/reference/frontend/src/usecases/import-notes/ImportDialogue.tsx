@@ -15,7 +15,11 @@ export function ImportDialogue() {
     const [input, setInput] = useState<BulkInput>({ titles: '', body: '' });
     const [preview, setPreview] = useState<BulkPreview | null>(null);
     useDraftDirty(input.titles !== '' || input.body !== '');
-    return <Context.Provider value={{ input, setInput, preview, setPreview, clear: () => { setInput({ titles: '', body: '' }); setPreview(null); } }}>
+    function updateInput(value: BulkInput) {
+        setInput(value);
+        setPreview(null);
+    }
+    return <Context.Provider value={{ input, setInput: updateInput, preview, setPreview, clear: () => { setInput({ titles: '', body: '' }); setPreview(null); } }}>
     <div className="wizard">
     <div className="section-label">USE CASE 02</div>
     <Title order={1} className="page-heading">メモを一括登録する</Title>

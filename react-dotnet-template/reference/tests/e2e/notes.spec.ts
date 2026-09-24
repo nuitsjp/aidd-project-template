@@ -29,6 +29,21 @@ test('メモを作成・編集して保存する / メモを削除する 削除�
     await page.reload();
     await expect(page.getByRole('button', { name: '削除対象を編集' })).toHaveCount(0);
 });
+
+test('保存エラーの後に削除できたら古いエラーを消す', async ({ page, app }) => {
+    await signIn(page);
+    await saveFromUI(page, '削除対象');
+    await page.getByLabel('タイトル', { exact: true }).fill('   ');
+    await page.getByRole('button', { name: '保存する', exact: true }).click();
+    await expect(page.getByRole('alert')).toContainText('タイトルは1〜100文字で入力してください。');
+
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: '削除する', exact: true }).click();
+
+    await expect(page.getByRole('status').filter({ hasText: '削除しました' })).toBeVisible();
+    await expect(page.getByRole('alert')).toHaveCount(0);
+    expect(app.rows()).toEqual([]);
+});
 test('メモを作成・編集して保存する / メモを作成・編集して保存する サーバー再起動後も保存結果を読み取れる', async ({ page, app }) => {
     await signIn(page);
     await saveFromUI(page, '再起動しても保持', '永続化');
