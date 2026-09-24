@@ -2,7 +2,7 @@
 
 ## 1. 目的と範囲
 
-React の対話制御から実 Node.js・SQLite への更新までを通す参照実装です。メモの編集と一括登録の2つのパターン、および個別 DB による並列 E2E を提供します。
+React の対話制御から実 Node.js・SQLite への更新までを通す参照実装です。メモの編集と一括登録の2つのパターン、および個別 DB による並列 E2E を提供します。生成時には製品ルートへアプリ一式をコピーし、このディレクトリは参照用として残します。
 
 <a id="constraints"></a>
 ## 2. 制約・受け入れ条件
@@ -22,7 +22,7 @@ SPA、単一 Node.js、同一 origin、SQLite を既定とします。各利用�
 <a id="design"></a>
 ## 4. 確認した事実
 
-共通資材の配布元と採用元固定コミットは [文書方針](document-policy.md#adoption) に従います。直接依存は `package.json`、Node.js の指定版は `.nvmrc` に記載しています。
+共通資材の配布元と採用元固定コミットは [ルートの文書方針](../../docs/document-policy.md#adoption) に従います。直接依存は `package.json`、Node.js の指定版は `.nvmrc` に記載しています。
 
 - **Node.js / SQLite**: Node.js 24.21.0 と同版の標準 `node:sqlite` を使用します。実 SQLite を用いる処理、マイグレーション、バックアップを同一ドライバーで実行します（[Node API](https://nodejs.org/docs/latest-v24.x/api/sqlite.html)）。並列 E2E は DB ファイルを分離します（[SQLite WAL](https://sqlite.org/wal.html)）。
 - **Playwright fixtures**: 環境生成と破棄を一体化し、fullyParallel と複数 worker を利用します（[fixtures](https://playwright.dev/docs/test-fixtures)）。
@@ -31,7 +31,7 @@ SPA、単一 Node.js、同一 origin、SQLite を既定とします。各利用�
 <a id="commands"></a>
 ## 5. 実行・切り替え・検証手順
 
-生成したプロジェクトのルートを作業ディレクトリとします。Node.js は `.nvmrc` と `package.json` に固定した24.21.0を使用し、文書検査に Python 3 を使用します。Docker や外部 DB は不要です。nvm を使う場合は指定版を導入して選択します。nvm-windows では版番号を明示してください。
+生成したプロジェクトの `reference/` を作業ディレクトリとします。製品ルートのアプリも同じ手順で実行します。Node.js は `.nvmrc` と `package.json` に固定した24.21.0を使用し、文書検査に Python 3 を使用します。Docker や外部 DB は不要です。nvm を使う場合は指定版を導入して選択します。nvm-windows では版番号を明示してください。
 
 ```powershell
 $nodeVersion = (Get-Content .nvmrc -Raw).Trim()

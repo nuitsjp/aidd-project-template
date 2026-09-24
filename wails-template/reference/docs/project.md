@@ -2,7 +2,7 @@
 
 ## 1. 目的と範囲
 
-Wails の共通構造を動作可能な実装として示す参照アプリです。メモの編集、CSV 一括取り込み、起動・終了、およびアプリ内更新機能を含みます。業務プロダクトや汎用 CRUD 基盤を作るものではありません。
+Wails の共通構造を動作可能な実装として示す参照アプリです。メモの編集、CSV 一括取り込み、起動・終了、およびアプリ内更新機能を含みます。業務プロダクトや汎用 CRUD 基盤を作るものではありません。生成時には製品ルートへアプリ一式をコピーし、このディレクトリは参照用として残します。
 
 ## 2. 制約・受け入れ条件
 
@@ -22,7 +22,7 @@ Windows デスクトップを主対象とします（ブラウザ server build �
 <a id="design"></a>
 ## 4. 確認した事実
 
-共通資材の配布元と採用元固定コミットは [文書方針](document-policy.md#adoption) に従います。生成時は同一チェックアウトの `template/` を先に配置し、Wails 差分を重ねます。
+共通資材の配布元と採用元固定コミットは [ルートの文書方針](../../docs/document-policy.md#adoption) に従います。
 
 Wails 本体・CLI・npm ランタイムは `v3.0.0-beta.23` / `3.0.0-beta.23`、Go 1.25以上を前提とします。Node.js は `.nvmrc` と `mise.toml` で固定し、生成 API・Service 登録・ライフサイクル・runtime Vite plugin は [固定版ソース](https://github.com/wailsapp/wails/tree/v3.0.0-beta.23/v3) および [CLI資料](https://v3.wails.io/guides/cli/) に従います。
 
@@ -31,7 +31,7 @@ Wails 本体・CLI・npm ランタイムは `v3.0.0-beta.23` / `3.0.0-beta.23`�
 <a id="commands"></a>
 ## 5. 実行・切り替え・検証手順
 
-生成したプロジェクトのルートを作業ディレクトリとします。Go 1.25以上、`.nvmrc` と完全一致する Node.js 24.21.0、Python 3.9以上（mise の指定は3.14系）、WebView2 Evergreen Runtime を導入し、`go`・`node`・`npm`・`python` を PATH 上で使用できるようにします。NSIS 3.11以上はインストーラー作成時のみ必要です。Go の自動ツールチェーン取得を禁止する環境では、依存モジュールが要求する Go 版も事前に導入します。
+生成したプロジェクトの `reference/` を作業ディレクトリとします。製品ルートのアプリも同じ手順で実行します。Go 1.25以上、`.nvmrc` と完全一致する Node.js 24.21.0、Python 3.9以上（mise の指定は3.14系）、WebView2 Evergreen Runtime を導入し、`go`・`node`・`npm`・`python` を PATH 上で使用できるようにします。NSIS 3.11以上はインストーラー作成時のみ必要です。Go の自動ツールチェーン取得を禁止する環境では、依存モジュールが要求する Go 版も事前に導入します。
 
 nvm-windows を使う場合は次の手順で指定版を選択します。mise を使う場合は `mise install` で指定ツールを導入し、`mise exec -- node scripts/run.mjs setup` と `mise exec -- node scripts/run.mjs dev` を実行します（nvm の操作は不要）。
 
@@ -69,7 +69,7 @@ $env:PLAYWRIGHT_IGNORE_DISABLE_EXTENSIONS = '1'
 node scripts/run.mjs verify
 ```
 
-E2E は実 Go サービスと専用の一時データ領域を使用します。生成先で `python scripts/doc_check.py .` を実行すると文書リンク・UC 対応・標準ハッシュ等を確認できます。Windows 実機確認では、保存後の再起動、未保存状態からの終了、多重起動、CSV 処理中の終了、インストール・更新・アンインストール後のデータ保持を確認します。変更後は `node scripts/run.mjs verify` を実行し、生成・型検査・Lint・テスト・文書・server E2E が合格した状態を維持します。
+E2E は実 Go サービスと専用の一時データ領域を使用します。このディレクトリで `python ../scripts/doc_check.py .` を実行すると文書リンク・UC 対応・標準ハッシュ等を確認できます。Windows 実機確認では、保存後の再起動、未保存状態からの終了、多重起動、CSV 処理中の終了、インストール・更新・アンインストール後のデータ保持を確認します。変更後は `node scripts/run.mjs verify` を実行し、生成・型検査・Lint・テスト・文書・server E2E が合格した状態を維持します。
 
 <a id="release"></a>
 ### 更新元と署名

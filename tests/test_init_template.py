@@ -90,6 +90,12 @@ class InitTemplateTests(unittest.TestCase):
                             if source_name.as_posix() in ("package.json", "package-lock.json"):
                                 content = content.replace(b"aidd-react-dotnet-template", b"acme-notes")
                             expected[Path(PRODUCT_PATHS.get(source_name.as_posix(), source_name.as_posix()))] = content
+                else:
+                    reference = SOURCE / f"{kind}-template/reference"
+                    for path in reference.rglob("*"):
+                        source_name = path.relative_to(reference)
+                        if path.is_file() and source_name.parts[0] not in ("README.md", "docs"):
+                            expected[source_name] = path.read_bytes()
                 actual = {p.relative_to(destination): p.read_bytes()
                           for p in destination.rglob("*") if p.is_file()}
                 self.assertEqual(actual.keys(), expected.keys())
@@ -109,14 +115,15 @@ class InitTemplateTests(unittest.TestCase):
                     self.assertIn(b"NotesSample", (destination / "reference/backend/App.csproj").read_bytes())
                     self.assertIn(b"Acme.Notes", (destination / "backend/Acme.Notes.csproj").read_bytes())
                     self.assertNotIn(b"NotesSample", (destination / "backend/Acme.Notes.csproj").read_bytes())
-                    self.assertEqual(list((destination / "docs/usecases").glob("*/README.md")), [])
-                    self.assertEqual(len(list((destination / "reference/docs/usecases").glob("*/README.md"))), 2)
                     root_tasks = (destination / "mise.toml").read_text(encoding="utf-8")
                     reference_tasks = (destination / "reference/mise.toml").read_text(encoding="utf-8")
                     self.assertIn('[tasks."check:docs"]', root_tasks)
                     self.assertIn("[tasks.verify]", root_tasks)
                     self.assertIn("[tasks.verify]", reference_tasks)
                     self.assertFalse((destination / "scripts/reference-task.mjs").exists())
+                self.assertEqual(list((destination / "docs/usecases").glob("*/README.md")), [])
+                self.assertEqual(len(list((destination / "reference/docs/usecases").glob("*/README.md"))),
+                                 3 if kind == "wails" else 2)
                 for name, content in expected.items():
                     self.assertEqual(actual[name], content, str(name))
                 if kind == "react-dotnet":
@@ -139,13 +146,12 @@ class InitTemplateTests(unittest.TestCase):
                     capture_output=True, encoding="utf-8",
                 )
                 self.assertEqual(checked.returncode, 0, checked.stdout + checked.stderr)
-                if kind == "react-dotnet":
-                    reference_checked = subprocess.run(
-                        [sys.executable, "scripts/doc_check.py", "reference"], cwd=destination,
-                        capture_output=True, encoding="utf-8",
-                    )
-                    self.assertEqual(reference_checked.returncode, 0,
-                                     reference_checked.stdout + reference_checked.stderr)
+                reference_checked = subprocess.run(
+                    [sys.executable, "scripts/doc_check.py", "reference"], cwd=destination,
+                    capture_output=True, encoding="utf-8",
+                )
+                self.assertEqual(reference_checked.returncode, 0,
+                                 reference_checked.stdout + reference_checked.stderr)
                 rejected = self.generate(kind, destination)
                 self.assertNotEqual(rejected.returncode, 0)
                 self.assertIn("既に存在", rejected.stderr)

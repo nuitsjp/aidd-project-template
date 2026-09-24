@@ -25,6 +25,14 @@ const csharpKeywords = new Set([
   'unchecked', 'unsafe', 'ushort', 'using', 'virtual', 'void', 'volatile', 'while',
 ]);
 
+// 参照実装の仕様・案内文書は reference/ だけに残し、製品ルートは共通版の文書で始める。
+function copyApp(reference, destination) {
+  for (const name of readdirSync(reference)) {
+    if (name !== 'README.md' && name !== 'docs')
+      cpSync(resolve(reference, name), resolve(destination, name), { recursive: true });
+  }
+}
+
 function copyProduct(reference, destination, namespace) {
   for (const name of productFiles) {
     cpSync(resolve(reference, name), resolve(destination, name), {
@@ -129,6 +137,7 @@ try {
   copyFileSync(resolve(root, 'LICENSE'), resolve(destination, 'LICENSE'));
   if (kind === 'react-dotnet')
     copyProduct(resolve(root, 'react-dotnet-template/reference'), destination, namespace);
+  else copyApp(resolve(root, `${kind}-template/reference`), destination);
   console.log(`${kind}の初期状態を生成しました: ${destination}`);
 } catch (error) {
   console.error(error.code === 'EEXIST' ? '出力先が既に存在します。新しい名前を指定してください。' : error.message);
