@@ -68,6 +68,8 @@ C# 内の SQL が1行なら `"BEGIN IMMEDIATE;"` のような通常の文字列�
 
 .NET の統合テストは `tests/dotnet-integration/` に API 担当クラスごとに置き、必要なレイヤーを横断する振る舞いを確認します。DB を使うテストケースはそれぞれ専用の一時 SQLite ファイルで `Database` を作り、並列実行時の干渉を防ぎます。
 
+React の単体テストは `tests/frontend-unit/` に `frontend/src/` と同じ相対パスで配置し、機能間で共有するモジュール（`shared/`、`features/client.ts`）を対象に1モジュールにつき1テストファイルを作ります。単一メンバーのテストはメンバー名の `describe` に、メンバー間の連携テストとコンポーネントのテストはファイル直下に置き、各テストケースは Arrange・Act・Assert のコメントで区切ります。ユースケース固有の画面と API 呼び出しは E2E で確認します。
+
 E2E は Vite と .NET を分離する `dev`、UI を .NET に同梱する `hosted` の両方で同じシナリオを実行します。各テストは .NET プロセスと一時 SQLite ファイルを分離し、UI 操作後は別接続から確定済みデータを確認します。HTTP 契約テストは両モードとも .NET に直接接続します。同一 DB の競合は一つのテスト内で複数の対話を動かして確認します。
 
 <a id="deployment"></a>
