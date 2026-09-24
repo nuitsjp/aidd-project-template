@@ -64,7 +64,7 @@ try {
     writeFileSync(change.path, change.text, 'utf8');
   }
   console.log(`共通資材${files.length}件を ${after} に差し替えました。`);
-  console.log('採用先で python scripts/doc_check.py . を実行し、必要な書式移行を完了してから docs/document-policy.md の採用版・コミットを更新してください。');
+  console.log('採用先で python scripts/doc_check.py . を実行し、必要な書式移行を完了してから docs/document-policy.md の採用元固定コミットを更新してください。');
 } catch (error) {
   console.error(error.stderr?.toString().trim() || error.message);
   process.exitCode = 1;

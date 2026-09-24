@@ -22,7 +22,7 @@ Windows デスクトップを主対象とします（ブラウザ server build �
 <a id="design"></a>
 ## 4. 確認した事実
 
-共通資材の配布元と適用版は [文書方針](document-policy.md#adoption) に従います。生成時は同一チェックアウトの `template/` を先に配置し、Wails 差分を重ねます。
+共通資材の配布元と採用元固定コミットは [文書方針](document-policy.md#adoption) に従います。生成時は同一チェックアウトの `template/` を先に配置し、Wails 差分を重ねます。
 
 Wails 本体・CLI・npm ランタイムは `v3.0.0-beta.23` / `3.0.0-beta.23`、Go 1.25以上を前提とします。Node.js は `.nvmrc` と `mise.toml` で固定し、生成 API・Service 登録・ライフサイクル・runtime Vite plugin は [固定版ソース](https://github.com/wailsapp/wails/tree/v3.0.0-beta.23/v3) および [CLI資料](https://v3.wails.io/guides/cli/) に従います。
 
