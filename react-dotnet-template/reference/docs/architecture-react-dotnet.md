@@ -70,7 +70,7 @@ C# 内の SQL が1行なら `"BEGIN IMMEDIATE;"` のような通常の文字列�
 
 React の単体テストは `tests/frontend-unit/` に `frontend/src/` と同じ相対パスで配置し、機能間で共有するモジュール（`shared/`、`features/client.ts`）を対象に1モジュールにつき1テストファイルを作ります。単一メンバーのテストはメンバー名の `describe` に、メンバー間の連携テストとコンポーネントのテストはファイル直下に置き、各テストケースは Arrange・Act・Assert のコメントで区切ります。ユースケース固有の画面と API 呼び出しは E2E で確認します。
 
-シナリオの E2E は `docs/usecases/` と同じ名称で `tests/e2e/usecases/<ユースケース名>/<シナリオ名>.spec.ts` に1シナリオにつき1テストファイルを作り、そのシナリオの受け入れ条件とユースケースの共通の受け入れ条件を検証します。シナリオ以外の E2E は、HTTP 契約を `tests/e2e/http/`、並列実行時の分離を `tests/e2e/isolation/` に置きます。各テストケースは Arrange・Act・Assert のコメントで区切ります。E2E は Vite と .NET を分離する `dev`、UI を .NET に同梱する `hosted` の両方で同じシナリオを実行します。各テストは .NET プロセスと一時 SQLite ファイルを分離し、UI 操作後は別接続から確定済みデータを確認します。HTTP 契約テストは両モードとも .NET に直接接続します。同一 DB の競合は一つのテスト内で複数の対話を動かして確認します。
+シナリオの E2E は `docs/usecases/` と同じ名称で `tests/e2e/usecases/<ユースケース名>/<シナリオ名>.spec.ts` に1シナリオにつき1テストファイルを作り、そのシナリオの受け入れ条件とユースケースの共通の受け入れ条件を検証します。シナリオ以外の E2E は、HTTP 契約を `tests/e2e/http/`、並列実行時の分離を `tests/e2e/isolation/` に置きます。シナリオの E2E は共通標準（`docs/standards/mock-driven-development.md` の段階6）に従い、`test.step` のラベルで開始条件または分岐条件、`手順1`〜`手順N`、受け入れ条件に区切ります。シナリオ以外の E2E の各テストケースは Arrange・Act・Assert のコメントで区切ります。E2E は Vite と .NET を分離する `dev`、UI を .NET に同梱する `hosted` の両方で同じシナリオを実行します。各テストは .NET プロセスと一時 SQLite ファイルを分離し、UI 操作後は別接続から確定済みデータを確認します。HTTP 契約テストは両モードとも .NET に直接接続します。同一 DB の競合は一つのテスト内で複数の対話を動かして確認します。
 
 <a id="deployment"></a>
 ## 6. 配備・認証

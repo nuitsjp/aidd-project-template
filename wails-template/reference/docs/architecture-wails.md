@@ -58,7 +58,7 @@ Query は機能・取得条件ごとに定義し、ユースケース間で共�
 
 `features/<name>/queries.ts` は `@<name>-service` からのみ Service を import します。実処理へ切り替えた後は固定データを削除または移動し、alias の分岐だけを残します。同梱の `tests/fixtures/notes.ts` はこの機構を示す試験用データです。
 
-検証は Playwright による実処理 E2E を中心とします。ブラウザ確認は Wails server build、ネイティブ操作や環境依存動作は Windows 実機で確認します。Vitest・React Testing Library・Go 標準テストは必要なリスクを補います。
+検証は Playwright による実処理 E2E を中心とします。シナリオの E2E は `frontend/tests/e2e/usecases/<ユースケース名>/<シナリオ名>.spec.ts` に置き、`test.step` の区切りをシナリオの条件・手順・受け入れ条件に合わせます。ブラウザ確認は Wails server build、ネイティブ操作や環境依存動作は Windows 実機で確認します。Vitest・React Testing Library・Go 標準テストは必要なリスクを補います。
 
 ## 5. 実行とデータ保護
 

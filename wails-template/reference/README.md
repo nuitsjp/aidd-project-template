@@ -43,7 +43,7 @@ NSIS はアプリ本体、スタートメニュー、アンインストール情
 | 区分 | 対象 |
 | --- | --- |
 | 残す基盤 | `main.go`（Service 登録の骨格）、`internal/desktop`・`appstate`・`fault`・`diagnostics`・`updates`、`cmd/release`、`frontend/src/app`・`shared`・`features/application`・`features/updates`、`usecases/update-app`、`routes/__root.tsx`・`routes/updates.tsx`、`build/`、`scripts/`、`Taskfile.yml` |
-| 置き換えるサンプル | `internal/notes`、`frontend/src/features/notes`、`usecases/edit-notes`・`import-notes`、`routes/notes.tsx`・`routes/import*.tsx`・`routes/index.tsx` の遷移先、`Shell.tsx` のナビゲーションと `subscribeNotes` の購読、`tests/fixtures/notes.ts`、`tests/e2e/usecases.spec.ts`、`vite.config.ts`・`tsconfig.json`・`eslint.config.mjs` の `@notes-service` 設定 |
+| 置き換えるサンプル | `internal/notes`、`frontend/src/features/notes`、`usecases/edit-notes`・`import-notes`、`routes/notes.tsx`・`routes/import*.tsx`・`routes/index.tsx` の遷移先、`Shell.tsx` のナビゲーションと `subscribeNotes` の購読、`tests/fixtures/notes.ts`、`tests/e2e/usecases/`、`vite.config.ts`・`tsconfig.json`・`eslint.config.mjs` の `@notes-service` 設定 |
 
 新しい機能領域のモック合成点の作り方は [Wails補足第4節](docs/architecture-wails.md#4-モックと検証境界) を参照します。
 

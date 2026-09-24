@@ -1,0 +1,20 @@
+import { test, expect } from '../../fixtures.ts';
+import { signIn, saveFromUI } from '../../helpers.ts';
+test('途中の一意制約違反は先行行もロールバックする', async ({ page, app }) => {
+    await test.step('分岐条件', async () => {
+        await signIn(page);
+        await saveFromUI(page, '既存', '変更されない');
+        await page.getByRole('link', { name: /一括登録/ }).click();
+        await page.getByLabel('タイトル一覧').fill('新規の先行行\n既存');
+        await page.getByRole('button', { name: '内容を確認する' }).click();
+    });
+    await test.step('手順1', async () => {
+        await page.getByRole('button', { name: '一括登録する', exact: true }).click();
+        await expect(page.getByRole('alert')).toContainText('TITLE_EXISTS');
+    });
+    await test.step('受け入れ条件', async () => {
+        expect(app.rows()).toEqual([{ owner_id: 'alice', title: '既存', body: '変更されない', version: 1 }]);
+        await page.getByRole('button', { name: '入力に戻る' }).click();
+        await expect(page.getByLabel('タイトル一覧')).toHaveValue('新規の先行行\n既存');
+    });
+});
