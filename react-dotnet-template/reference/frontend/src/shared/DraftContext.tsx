@@ -1,12 +1,17 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  type ReactNode,
+  type RefObject,
+} from 'react';
 import { useBlocker } from '@tanstack/react-router';
-const Context = createContext<{
-  dirty: boolean;
-  setDirty: (value: boolean) => void;
-} | null>(null);
+// 未保存の有無は確認ダイアログを出す操作時にだけ読むため、再描画を起こさないrefで共有する。
+const Context = createContext<RefObject<boolean> | null>(null);
 export function DraftProvider({ children }: { children: ReactNode }) {
-  const [dirty, setDirty] = useState(false);
-  return <Context.Provider value={{ dirty, setDirty }}>{children}</Context.Provider>;
+  const dirty = useRef(false);
+  return <Context.Provider value={dirty}>{children}</Context.Provider>;
 }
 export function useDraft() {
   const value = useContext(Context);
@@ -18,11 +23,13 @@ export function useDraftDirty(
   dirty: boolean,
   keepsDraft: (pathname: string) => boolean = () => false,
 ) {
-  const { setDirty } = useDraft();
+  const draft = useDraft();
   useEffect(() => {
-    setDirty(dirty);
-    return () => setDirty(false);
-  }, [dirty, setDirty]);
+    draft.current = dirty;
+    return () => {
+      draft.current = false;
+    };
+  }, [dirty, draft]);
   useBlocker({
     shouldBlockFn: ({ next }) =>
       dirty &&
