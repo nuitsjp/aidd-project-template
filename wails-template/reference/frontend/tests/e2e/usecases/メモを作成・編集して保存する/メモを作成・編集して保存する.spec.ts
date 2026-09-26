@@ -1,6 +1,6 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../../fixtures';
 
-test('保存した内容をGoから再取得し、同じメモを編集できる', async ({ page }) => {
+test('保存した内容をGoから再取得し、同じメモを編集できる', async ({ page, app }) => {
   const saved = page.getByText('保存しました。', { exact: true });
   await test.step('開始条件', async () => {
     await page.goto('/#/notes');
@@ -33,6 +33,11 @@ test('保存した内容をGoから再取得し、同じメモを編集できる
     await page.getByRole('button', { name: '保存する', exact: true }).click();
     await expect(saved).toBeVisible();
     await page.reload();
+    await expect(page.getByLabel('本文', { exact: true })).toHaveValue('更新した本文');
+    await expect(page.getByRole('link', { name: /E2E 保存確認/ })).toHaveCount(1);
+    await app.restart();
+    await page.goto(app.url + '/#/notes');
+    await page.getByRole('link', { name: /E2E 保存確認/ }).click();
     await expect(page.getByLabel('本文', { exact: true })).toHaveValue('更新した本文');
     await expect(page.getByRole('link', { name: /E2E 保存確認/ })).toHaveCount(1);
   });

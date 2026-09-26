@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../../fixtures';
 
 test('未保存の変更を破棄し、保存済みの内容に戻す', async ({ page }) => {
   const saved = page.getByText('保存しました。', { exact: true });

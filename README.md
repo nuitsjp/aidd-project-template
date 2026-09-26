@@ -61,11 +61,15 @@ AIエージェントを利用する場合は、プロジェクト側の `AGENTS.
 Windows向けのGo・React参照実装は [wails-template/reference/](wails-template/reference/README.md) にまとめています。miseとNode.js 22.16以上を用意し、本リポジトリのルートで実行します。設定の信頼確認を求められた場合は、`mise.toml` の内容を確認して `mise trust` を実行してください。
 
 ```powershell
-mise run init:wails ../my-wails-app
+mise run init:wails ../my-wails-app --name Company.Product
 cd ../my-wails-app
+mise trust
+mise run setup
+mise run setup:browser
+mise run verify
 ```
 
-生成は `template/` → `wails-template/` の順にコピーし、ルートの `LICENSE` を配置したうえで、参照アプリの `docs/` と `README.md` を除く一式を製品ルートへコピーします。サンプルは生成先の `reference/` に元の内容で残します。ルートの `docs/` は製品の現行仕様を記述する場所で、`template/` の共通版から始まります。参照実装のユースケース・シナリオは `reference/docs/` にあります。出力先の親ディレクトリは事前に用意し、既存の出力先は指定しないでください。生成タスクは依存取得やビルドを行いません。`wails-template/` 単体をコピー・実行せず、生成先で開発してください。共通側の変更を取り込んだ初期状態は新しい出力先へ再生成して確認し、既存プロジェクトへの反映は第5節に従って差分を確認します。必要な環境と生成後のセットアップ・起動は [Wailsの実行手順](wails-template/reference/docs/project.md#commands) に従い、製品ルートと `reference/` のそれぞれで実行します。
+生成は `template/` → `wails-template/` の順にコピーし、ルートの `LICENSE` を配置したうえで、参照アプリの `docs/` と `README.md` を除く一式を製品ルートへコピーします。製品側では `build/app.json` のアプリ ID と表示名を `--name` の値に、実行ファイル名・Go モジュール名・npm パッケージ名を小文字とハイフンにした値（例: `company-product`）に合わせます。アプリ ID は保存先と多重起動の判定に使うため、製品と参照アプリを同じ端末で実行してもデータを共有しません。サンプルは生成先の `reference/` に元の内容で残します。ルートの `docs/` は製品の現行仕様を記述する場所で、`template/` の共通版から始まります。参照実装のユースケース・シナリオは `reference/docs/` にあります。出力先の親ディレクトリは事前に用意し、既存の出力先は指定しないでください。生成タスクは依存取得やビルドを行いません。`wails-template/` 単体をコピー・実行せず、生成先で開発してください。共通側の変更を取り込んだ初期状態は新しい出力先へ再生成して確認し、既存プロジェクトへの反映は第5節に従って差分を確認します。必要な環境と生成後のセットアップ・起動は [Wailsの実行手順](wails-template/reference/docs/project.md#commands) に従い、製品ルートと `reference/` のそれぞれで実行します。
 
 ### Reactアプリの初期状態を生成する
 

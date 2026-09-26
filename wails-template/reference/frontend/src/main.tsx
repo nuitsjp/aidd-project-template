@@ -9,8 +9,21 @@ import { reportFrontendError } from './features/application/queries';
 import './style.css';
 const root = document.getElementById('root');
 if (!root) throw new Error('Root element is missing');
-const theme = createTheme({ primaryColor: 'blue', defaultRadius: 'md', fontFamily: 'system-ui, sans-serif' });
-createRoot(root, { onUncaughtError: reportFrontendError, onCaughtError: reportFrontendError }).render(
-  <React.StrictMode><MantineProvider theme={theme}><QueryClientProvider client={queryClient}><RouterProvider router={router} /></QueryClientProvider></MantineProvider></React.StrictMode>,
+const theme = createTheme({
+  primaryColor: 'blue',
+  defaultRadius: 'md',
+  fontFamily: 'system-ui, sans-serif',
+});
+createRoot(root, {
+  onUncaughtError: reportFrontendError,
+  onCaughtError: reportFrontendError,
+}).render(
+  <React.StrictMode>
+    <MantineProvider theme={theme}>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </MantineProvider>
+  </React.StrictMode>,
 );
 window.addEventListener('unhandledrejection', (event) => reportFrontendError(event.reason));
