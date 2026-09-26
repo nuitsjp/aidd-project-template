@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../../fixtures';
 
 test('入力不正と画面遷移の取り消しで下書きを維持する', async ({ page }) => {
   const body = page.getByLabel('本文', { exact: true });
@@ -15,7 +15,9 @@ test('入力不正と画面遷移の取り消しで下書きを維持する', as
   await test.step('手順2', async () => {
     await page.getByRole('link', { name: '02　一括取り込み' }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.getByText('未保存の変更を破棄して画面を移動しますか？', { exact: true })).toBeVisible();
+    await expect(
+      page.getByText('未保存の変更を破棄して画面を移動しますか？', { exact: true }),
+    ).toBeVisible();
   });
   await test.step('手順3', async () => {
     await page.getByRole('button', { name: '編集に戻る', exact: true }).click();

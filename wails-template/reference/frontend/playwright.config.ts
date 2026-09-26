@@ -1,13 +1,23 @@
 import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
-  testDir: './tests/e2e', fullyParallel: false, workers: 1, retries: 0,
+  // Each test starts its own server through tests/e2e/fixtures.ts, so tests run in parallel.
+  testDir: './tests/e2e',
+  fullyParallel: true,
+  retries: 0,
+  forbidOnly: !!process.env.CI,
   use: {
-    baseURL: 'http://127.0.0.1:34115', ...devices['Desktop Chrome'], headless: true, trace: 'retain-on-failure',
+    ...devices['Desktop Chrome'],
+    headless: true,
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
     launchOptions: {
       executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
-      ignoreDefaultArgs: process.env.PLAYWRIGHT_IGNORE_DISABLE_EXTENSIONS === '1' ? ['--disable-extensions'] : undefined,
+      ignoreDefaultArgs:
+        process.env.PLAYWRIGHT_IGNORE_DISABLE_EXTENSIONS === '1'
+          ? ['--disable-extensions']
+          : undefined,
     },
   },
-  webServer: { command: 'node ../scripts/e2e-server.mjs', url: 'http://127.0.0.1:34115/health', reuseExistingServer: false, timeout: 60_000 },
-  reporter: [['list']], outputDir: 'test-results',
+  reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
+  outputDir: 'test-results',
 });

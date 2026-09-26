@@ -108,15 +108,46 @@ function copyProduct(reference, destination, namespace) {
   }
 }
 
+// 製品と参照アプリが同じアプリID（保存先・多重起動の判定）とGoモジュール名を共有しないようにする。
+function renameWailsProduct(destination, name) {
+  const slug = name.toLowerCase().replaceAll('.', '-').replaceAll('_', '-');
+  const appJson = resolve(destination, 'build/app.json');
+  const app = JSON.parse(readFileSync(appJson, 'utf8'));
+  writeFileSync(appJson, `${JSON.stringify({ ...app, id: name, name, executable: `${slug}.exe` }, null, 2)}\n`);
+  const textExtensions = new Set(['.go', '.mod', '.ts', '.tsx', '.json']);
+  let replacements = 0;
+  function replaceNames(directory) {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const path = resolve(directory, entry.name);
+      if (entry.isDirectory()) {
+        if (path !== resolve(destination, 'reference')) replaceNames(path);
+      } else if (textExtensions.has(entry.name.slice(entry.name.lastIndexOf('.')))) {
+        const original = readFileSync(path, 'utf8');
+        const updated = original.replaceAll('wailstemplate', slug).replaceAll('"wails-template-frontend"', `"${slug}-frontend"`);
+        if (updated !== original) {
+          writeFileSync(path, updated);
+          replacements++;
+        }
+      }
+    }
+  }
+  replaceNames(destination);
+  if (replacements === 0) throw new Error('製品用モジュール名の置換対象が見つかりません。');
+}
+
 try {
   const kind = process.argv[2];
+  const named = kind === 'react-dotnet' || kind === 'wails';
   if (!['wails', 'react', 'react-dotnet'].includes(kind)
-    || (kind === 'react-dotnet' ? process.argv.length !== 6 || process.argv[4] !== '--name' : process.argv.length !== 4)) {
-    throw new Error('使い方: mise run init:wails|init:react <新しい出力先> / mise run init:react-dotnet <新しい出力先> --name Company.Product');
+    || (named ? process.argv.length !== 6 || process.argv[4] !== '--name' : process.argv.length !== 4)) {
+    throw new Error('使い方: mise run init:react <新しい出力先> / mise run init:wails|init:react-dotnet <新しい出力先> --name Company.Product');
   }
-  const namespace = kind === 'react-dotnet' ? process.argv[5] : undefined;
+  const namespace = named ? process.argv[5] : undefined;
   if (kind === 'react-dotnet' && !namespace.split('.').every(part => /^[A-Za-z_][A-Za-z0-9_]*$/.test(part) && !csharpKeywords.has(part))) {
     throw new Error('プロジェクト名は、予約語を除くASCII英数字とアンダースコアのドット区切りC#名前空間で指定してください。');
+  }
+  if (kind === 'wails' && !namespace.split('.').every(part => /^[A-Za-z][A-Za-z0-9_]*$/.test(part))) {
+    throw new Error('製品名は、英字で始まるASCII英数字とアンダースコアをドットで区切って指定してください。');
   }
   const destination = resolve(process.argv[3]);
   const sources = ['template', `${kind}-template`].map(name => resolve(root, name));
@@ -138,6 +169,7 @@ try {
   if (kind === 'react-dotnet')
     copyProduct(resolve(root, 'react-dotnet-template/reference'), destination, namespace);
   else copyApp(resolve(root, `${kind}-template/reference`), destination);
+  if (kind === 'wails') renameWailsProduct(destination, namespace);
   console.log(`${kind}の初期状態を生成しました: ${destination}`);
 } catch (error) {
   console.error(error.code === 'EEXIST' ? '出力先が既に存在します。新しい名前を指定してください。' : error.message);

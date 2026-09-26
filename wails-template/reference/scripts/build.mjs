@@ -9,7 +9,7 @@ const cli = resolve('.tools', windows ? 'wails3.exe' : 'wails3');
 const app = JSON.parse(readFileSync('build/app.json', 'utf8'));
 const arch = process.env.GOARCH || (process.arch === 'arm64' ? 'arm64' : 'amd64');
 const target = resolve('bin', app.executable);
-const server = resolve('bin', 'wails-template-server' + (windows ? '.exe' : ''));
+const server = resolve('bin', app.executable.slice(0, -4) + '-server' + (windows ? '.exe' : ''));
 function run(cmd, args, extra = {}) {
   const result = spawnSync(cmd, args, { stdio: 'inherit', ...extra });
   if (result.error) throw result.error;

@@ -44,6 +44,7 @@ tasks:
       - task: generate
       - npm --prefix frontend run typecheck
       - npm --prefix frontend run lint
+      - npm --prefix frontend run format:check
       - npm --prefix frontend run test
       - go test ./internal/... ./cmd/release/...
       - go vet ./...

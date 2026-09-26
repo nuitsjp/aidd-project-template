@@ -5,7 +5,9 @@ import { confirmQuit } from '../../src/features/application/queries';
 import { useUpdates } from '../../src/features/updates/queries';
 
 const calls = vi.hoisted(() => ({
-  confirm: vi.fn(), apply: vi.fn(), quit: vi.fn(),
+  confirm: vi.fn(),
+  apply: vi.fn(),
+  quit: vi.fn(),
 }));
 vi.mock('@wailsio/runtime', () => ({
   Application: { Quit: calls.quit },
@@ -27,14 +29,18 @@ afterEach(cleanup);
 
 function deferred() {
   let resolve!: () => void;
-  const promise = new Promise<void>(done => { resolve = done; });
+  const promise = new Promise<void>((done) => {
+    resolve = done;
+  });
   return { promise, resolve };
 }
 
 function renderUpdates() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return renderHook(useUpdates, {
-    wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
+    wrapper: ({ children }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    ),
   });
 }
 
@@ -59,7 +65,10 @@ it('keeps the application open when Go rejects quit', async () => {
 it('waits for the update handoff response before requesting native quit', async () => {
   const handedOff = deferred();
   const started = deferred();
-  calls.apply.mockImplementation(() => { started.resolve(); return handedOff.promise; });
+  calls.apply.mockImplementation(() => {
+    started.resolve();
+    return handedOff.promise;
+  });
   const { result } = renderUpdates();
   await act(async () => {
     const applying = result.current.apply.mutateAsync();

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../../fixtures';
 
 test('画面間で入力を保持し、確認後に全件を一括登録する', async ({ page }) => {
   const csv = 'title,body\nE2E 取込A,本文A\nE2E 取込B,本文B\n';

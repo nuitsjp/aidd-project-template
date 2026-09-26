@@ -31,33 +31,31 @@ Wails 本体・CLI・npm ランタイムは `v3.0.0-beta.23` / `3.0.0-beta.23`�
 <a id="commands"></a>
 ## 5. 実行・切り替え・検証手順
 
-生成したプロジェクトの `reference/` を作業ディレクトリとします。製品ルートのアプリも同じ手順で実行します。Go 1.25以上、`.nvmrc` と完全一致する Node.js 24.21.0、Python 3.9以上（mise の指定は3.14系）、WebView2 Evergreen Runtime を導入し、`go`・`node`・`npm`・`python` を PATH 上で使用できるようにします。NSIS 3.11以上はインストーラー作成時のみ必要です。Go の自動ツールチェーン取得を禁止する環境では、依存モジュールが要求する Go 版も事前に導入します。
-
-nvm-windows を使う場合は次の手順で指定版を選択します。mise を使う場合は `mise install` で指定ツールを導入し、`mise exec -- node scripts/run.mjs setup` と `mise exec -- node scripts/run.mjs dev` を実行します（nvm の操作は不要）。
+生成したプロジェクトの `reference/` を作業ディレクトリとします。製品ルートのアプリも同じ手順で実行します。[mise](https://mise.jdx.dev/) と WebView2 Evergreen Runtime を導入します。Go・Node.js・Python は `mise.toml` の固定版を `mise run setup` が導入します（Node.js は `.nvmrc` と同じ版）。NSIS 3.11以上はインストーラー作成時のみ必要です。Go の自動ツールチェーン取得を禁止する環境では、依存モジュールが要求する Go 版も事前に導入します。
 
 ```powershell
-$nodeVersion = (Get-Content .nvmrc -Raw).Trim()
-nvm install $nodeVersion
-nvm use $nodeVersion
-node scripts/run.mjs setup
-node scripts/run.mjs dev
+mise trust
+mise run setup
+mise run setup:browser
+mise run dev
 ```
 
-`setup` は指定版の Wails CLI をローカルの `.tools/` に導入し、Go/npm 依存、実際の Go バインディング、ルートツリーを生成します。初回は外部ネットワークが必要です。`go.sum` と `frontend/package-lock.json` は配布物に含まれ、フロントエンド依存は `frontend/` で `npm ci` を使用します。直接依存の版を変更したときは両ファイルを更新します。
+`setup` は指定版の Wails CLI をローカルの `.tools/` に導入し、`go.sum` と `frontend/package-lock.json` のとおりに Go/npm 依存を取得・検証して、実際の Go バインディングとルートツリーを生成します。`setup` はロックファイルを書き換えません。初回は外部ネットワークが必要です。直接依存の版を変更したときは `go mod tidy` と `npm install` を手動で実行し、両ロックファイルを更新します。
 
-Wails 本体・JavaScript Runtime は固定版の組合せで使用し、`setup` で Go 依存に対応する CLI と生成コードを更新します。採用後の依存定義・ロックは採用先で管理します。Node.js が `.nvmrc` と異なる場合は `scripts/run.mjs` が処理開始前に停止します。CI も `.nvmrc` を使用します。
+Wails 本体・JavaScript Runtime は固定版の組合せで使用し、`setup` で Go 依存に対応する CLI と生成コードを更新します。採用後の依存定義・ロックは採用先で管理します。Node.js が `.nvmrc` と異なる場合は `scripts/run.mjs` が処理開始前に停止します。CI も同じ `mise.toml` を使用します。
 
-| コマンド（先頭に `node scripts/run.mjs`） | 内容 |
+| コマンド（先頭に `mise run`） | 内容 |
 | --- | --- |
+| `setup:browser` | E2E 用の Chromium Headless Shell を導入 |
 | `dev` | Windows アプリを起動し、Go・React の変更を監視 |
 | `dev:mock` | 試験用固定データで起動（実データは変更しない） |
 | `build` | 本番実行ファイルを `bin/` に生成 |
 | `package` | ビルド後、ユーザー単位の未署名 NSIS インストーラーを `bin/` に生成 |
 | `server` | Go 実処理を使うブラウザ確認用サーバーを localhost:34115 で起動 |
-| `verify` | 生成・型検査・Lint・テスト・文書検査・server E2E を一括実行 |
+| `verify` | 生成・型検査・Lint・整形・テスト・文書検査・server E2E を一括実行 |
 | `test:core` | Go の機能・保存・更新検証を実行 |
 
-初回の E2E 実行前に `cd frontend; npx playwright install --only-shell chromium; cd ..` を実行します。`server` は開発・確認用であり、LAN へ公開しません。終了は Ctrl+C とします。`dev:mock` は Wails を起動したままメモ機能のみを固定データへ差し替えます（画面に「試験用モック」が表示されることを確認）。本番ビルドでモック設定を検出した場合はビルドを中止します。
+`server` は開発・確認用であり、LAN へ公開しません。終了は Ctrl+C とします。`dev:mock` は Wails を起動したままメモ機能のみを固定データへ差し替えます（画面に「試験用モック」が表示されることを確認）。本番ビルドでモック設定を検出した場合はビルドを中止します。整形の検査で差分が出た場合は `frontend/` で `npm run format` を実行します。
 
 ブラウザー取得にプロキシが必要な端末では、その環境で指定されたプロキシURLを `HTTPS_PROXY` に設定してから導入コマンドを実行します。端末固有のURLを配布物へ固定せず、ブラウザーやNode.jsを自動的に切り替える処理は設けません。
 
@@ -66,18 +64,18 @@ Wails 本体・JavaScript Runtime は固定版の組合せで使用し、`setup`
 ```powershell
 $env:PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH = Join-Path $env:ProgramFiles 'Google/Chrome/Application/chrome.exe'
 $env:PLAYWRIGHT_IGNORE_DISABLE_EXTENSIONS = '1'
-node scripts/run.mjs verify
+mise run verify
 ```
 
-E2E は実 Go サービスと専用の一時データ領域を使用します。このディレクトリで `python ../scripts/doc_check.py .` を実行すると文書リンク・UC 対応・標準ハッシュ等を確認できます。Windows 実機確認では、保存後の再起動、未保存状態からの終了、多重起動、CSV 処理中の終了、インストール・更新・アンインストール後のデータ保持を確認します。変更後は `node scripts/run.mjs verify` を実行し、生成・型検査・Lint・テスト・文書・server E2E が合格した状態を維持します。
+E2E はテストごとに専用の一時データ領域と空きポートで実 Go サービスを起動し、並列に実行します。失敗時の記録は `frontend/playwright-report/` と `frontend/test-results/` に出力します。更新ユースケースは server build で更新機能を無効にするため E2E の対象外とし、Windows 実機で確認します。このディレクトリで `python ../scripts/doc_check.py .` を実行すると文書リンク・UC 対応・標準ハッシュ等を確認できます。Windows 実機確認では、保存後の再起動、未保存状態からの終了、多重起動、CSV 処理中の終了、インストール・更新・アンインストール後のデータ保持を確認します。変更後は `mise run verify` を実行し、生成・型検査・Lint・整形・テスト・文書・server E2E が合格した状態を維持します。
 
 <a id="release"></a>
 ### 更新元と署名
 
-`build/app.json` の変更後は再ビルドします。公開鍵と更新元は初回インストーラーに埋め込みます。開発者は秘密鍵をリポジトリ外で生成します。
+`build/app.json` の変更後は再ビルドします。生成先の製品ルートでは、`id`・`name`・`executable` に生成時の `--name` から決めた値が入っています。`name` は表示名なので、製品名に書き換えます。`id` は保存先と多重起動の判定に使うため、初回配布後は変更しません。公開鍵と更新元は初回インストーラーに埋め込みます。開発者は秘密鍵をリポジトリ外で生成します。
 
 ```powershell
-node scripts/run.mjs release keygen -out "$env:USERPROFILE/wails-release-private-key.txt"
+mise run release keygen -out "$env:USERPROFILE/wails-release-private-key.txt"
 ```
 
 表示された公開鍵を `build/app.json` の `updatePublicKey` に設定します。`updateSource` には共有フォルダの絶対パス、または公開 GitHub Releases の `https://github.com/OWNER/REPO/releases/latest/download/update.json` を設定します。JSON で Windows パスを記述する場合はバックスラッシュをエスケープします。private リポジトリの認証は対象外です。
@@ -85,8 +83,8 @@ node scripts/run.mjs release keygen -out "$env:USERPROFILE/wails-release-private
 初回版を `package` で作成します。新版発行時は `build/app.json` の版だけを増やし、同じ ID・公開鍵・更新元で `package` を実行します。
 
 ```powershell
-node scripts/run.mjs package
-node scripts/run.mjs release manifest -key "$env:USERPROFILE/wails-release-private-key.txt" -installer bin/wails-template-0.2.0-amd64-setup.exe -app-id io.github.nuitsjp.wails-template -version 0.2.0 -arch amd64 -out bin -notes "更新内容"
+mise run package
+mise run release manifest -key "$env:USERPROFILE/wails-release-private-key.txt" -installer bin/wails-template-0.2.0-amd64-setup.exe -app-id io.github.nuitsjp.wails-template -version 0.2.0 -arch amd64 -out bin -notes "更新内容"
 ```
 
 生成した `update.json` と対象インストーラーを同じ共有フォルダまたは Release assets へ配置します。共有フォルダではインストーラーを先に完全配置し、更新情報を最後に置き換えます。GitHub Releases は Draft へ両方を配置してから公開します。ZIP や別形式を `setup.exe` として指定しません。

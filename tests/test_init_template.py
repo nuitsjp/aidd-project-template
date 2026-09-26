@@ -1,4 +1,5 @@
 """Generate every extension and verify the distribution boundary."""
+import json
 import subprocess
 import sys
 import tempfile
@@ -39,7 +40,7 @@ PRODUCT_PATHS = {
 class InitTemplateTests(unittest.TestCase):
     def generate(self, kind, destination, name=PRODUCT_NAME):
         args = ["node", str(SOURCE / "scripts/init-template.mjs"), kind, str(destination)]
-        if kind == "react-dotnet":
+        if kind in ("react-dotnet", "wails"):
             args.extend(("--name", name))
         return subprocess.run(
             args,
@@ -96,6 +97,14 @@ class InitTemplateTests(unittest.TestCase):
                         source_name = path.relative_to(reference)
                         if path.is_file() and source_name.parts[0] not in ("README.md", "docs"):
                             expected[source_name] = path.read_bytes()
+                    if kind == "wails":
+                        for name, content in list(expected.items()):
+                            if name.parts[0] != "reference" and name.suffix in (".go", ".mod", ".ts", ".tsx", ".json"):
+                                expected[name] = content.replace(b"wailstemplate", b"acme-notes").replace(
+                                    b'"wails-template-frontend"', b'"acme-notes-frontend"')
+                        app = json.loads(expected[Path("build/app.json")])
+                        app.update(id=PRODUCT_NAME, name=PRODUCT_NAME, executable="acme-notes.exe")
+                        expected[Path("build/app.json")] = (json.dumps(app, ensure_ascii=False, indent=2) + "\n").encode()
                 actual = {p.relative_to(destination): p.read_bytes()
                           for p in destination.rglob("*") if p.is_file()}
                 self.assertEqual(actual.keys(), expected.keys())
@@ -121,6 +130,11 @@ class InitTemplateTests(unittest.TestCase):
                     self.assertIn("[tasks.verify]", root_tasks)
                     self.assertIn("[tasks.verify]", reference_tasks)
                     self.assertFalse((destination / "scripts/reference-task.mjs").exists())
+                if kind == "wails":
+                    self.assertTrue((destination / "go.mod").read_text(encoding="utf-8").startswith("module acme-notes\n"))
+                    self.assertTrue((destination / "reference/go.mod").read_text(encoding="utf-8").startswith("module wailstemplate\n"))
+                    self.assertEqual(json.loads((destination / "build/app.json").read_bytes())["id"], PRODUCT_NAME)
+                    self.assertNotEqual(json.loads((destination / "reference/build/app.json").read_bytes())["id"], PRODUCT_NAME)
                 self.assertEqual(list((destination / "docs/usecases").glob("*/README.md")), [])
                 self.assertEqual(len(list((destination / "reference/docs/usecases").glob("*/README.md"))),
                                  3 if kind == "wails" else 2)
@@ -176,6 +190,15 @@ class InitTemplateTests(unittest.TestCase):
                 with self.subTest(name=name):
                     destination = Path(parent) / "invalid"
                     result = self.generate("react-dotnet", destination, name)
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertFalse(destination.exists())
+
+    def test_wails_requires_valid_product_name(self):
+        with tempfile.TemporaryDirectory(prefix="aidd-init-") as parent:
+            for name in ("", "_Acme", "Wrong Name", "Company..Product", "1Company"):
+                with self.subTest(name=name):
+                    destination = Path(parent) / "invalid"
+                    result = self.generate("wails", destination, name)
                     self.assertNotEqual(result.returncode, 0)
                     self.assertFalse(destination.exists())
 

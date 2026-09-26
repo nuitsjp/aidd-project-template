@@ -6,7 +6,7 @@
 
 ## 共通テンプレートと拡張差分の管理
 
-`template/` を技術中立な共通正本、`wails-template/`・`react-template/`・`react-dotnet-template/` を各技術固有の差分とします。初期状態はルートの `mise run init:wails <出力先>`、`mise run init:react <出力先>` または `mise run init:react-dotnet <出力先> --name <製品名>` で、`template/`、選択した拡張ディレクトリ、ルートの `LICENSE` の順に配置し、拡張の `reference/` にあるアプリ一式を製品ルートへコピーします。同名ファイルは拡張側で全体を上書きし、部分マージは行いません。React・.NET の製品側のみ、参照実装の C# 名前空間 `NotesSample` とソリューション・プロジェクト・アセンブリ名、npm パッケージ名を指定した製品名に合わせます（新規ディレクトリへの出力のみを対象とします）。
+`template/` を技術中立な共通正本、`wails-template/`・`react-template/`・`react-dotnet-template/` を各技術固有の差分とします。初期状態はルートの `mise run init:wails <出力先> --name <製品名>`、`mise run init:react <出力先>` または `mise run init:react-dotnet <出力先> --name <製品名>` で、`template/`、選択した拡張ディレクトリ、ルートの `LICENSE` の順に配置し、拡張の `reference/` にあるアプリ一式を製品ルートへコピーします。同名ファイルは拡張側で全体を上書きし、部分マージは行いません。Wails の製品側のみ、`build/app.json` のアプリ ID・表示名・実行ファイル名、Go モジュール名 `wailstemplate`、npm パッケージ名を指定した製品名に合わせます。React・.NET の製品側のみ、参照実装の C# 名前空間 `NotesSample` とソリューション・プロジェクト・アセンブリ名、npm パッケージ名を指定した製品名に合わせます（新規ディレクトリへの出力のみを対象とします）。
 
 | 対象 | 管理ルール |
 | --- | --- |
@@ -34,4 +34,4 @@
 - `template/` 配下の Markdown 合計行数が 410 行以下であること。
 - テンプレート全文に、他ユースケースへの横展開を許可する記述（「独立した機能」「先行して進め」等）が含まれていないこと。
 - 共通側や共有生成処理を変更した場合は全拡張、拡張固有の差分を変更した場合は対象拡張の初期状態を一時ディレクトリへ生成します。隠しファイルを含む配置、拡張側の上書き、共通ファイルと LICENSE の一致、既存出力先の拒否を確認し、生成先で `python scripts/doc_check.py .` が NG なく通ることを確認します。固有文書と共通規則の整合性もレビューします。
-- 拡張の実装を変更した場合は、生成先ルートと `reference/` の双方で、Wails は `node scripts/run.mjs verify`、React は `npm run verify`、React・.NET は `mise run verify` を実行し、実機確認の範囲と分けて報告します。共通側や生成内容・共通継承の確認は、引き続き生成先で行います（文書・生成のみの変更ではアプリ全体の検証を必須とせず、未実施の検証を明記）。
+- 拡張の実装を変更した場合は、生成先ルートと `reference/` の双方で、Wails は `mise run verify`、React は `npm run verify`、React・.NET は `mise run verify` を実行し、実機確認の範囲と分けて報告します。共通側や生成内容・共通継承の確認は、引き続き生成先で行います（文書・生成のみの変更ではアプリ全体の検証を必須とせず、未実施の検証を明記）。

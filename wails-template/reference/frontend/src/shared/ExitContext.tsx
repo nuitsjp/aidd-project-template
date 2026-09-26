@@ -14,5 +14,8 @@ export function useExit() {
 // One active product dialogue owns the draft at a time. No global data store.
 export function useDraftDirty(dirty: boolean) {
   const { setDirty } = useExit();
-  useEffect(() => { setDirty(dirty); return () => setDirty(false); }, [dirty, setDirty]);
+  useEffect(() => {
+    setDirty(dirty);
+    return () => setDirty(false);
+  }, [dirty, setDirty]);
 }

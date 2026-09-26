@@ -31,8 +31,10 @@ try {
     mkdirSync(tools, { recursive: true });
     // No silently substituted local CLI or hand-authored generated files.
     run('go', ['install', `github.com/wailsapp/wails/v3/cmd/wails3@${match[1]}`], root, { GOBIN: tools });
-    run('go', ['mod', 'tidy']);
-    run('npm', [existsSync('frontend/package-lock.json') ? 'ci' : 'install', '--no-audit', '--no-fund'], resolve('frontend'));
+    // Install exactly the committed go.sum and package-lock.json without rewriting them.
+    run('go', ['mod', 'download']);
+    run('go', ['mod', 'verify']);
+    run('npm', ['ci', '--no-audit', '--no-fund'], resolve('frontend'));
     run(cli, ['task', 'generate']);
   } else if (command === 'help') {
     console.log('node scripts/run.mjs setup | dev | dev:mock | build | package | server | verify | test:core | release <args>');
