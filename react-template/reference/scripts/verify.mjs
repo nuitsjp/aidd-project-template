@@ -4,6 +4,7 @@ await npm('run', 'typecheck');
 await npm('run', 'lint');
 // 生成先の reference/ は親ディレクトリの共通検査器を使う。
 await run(process.env.PYTHON ?? 'python', [basename(root) === 'reference' ? '../scripts/doc_check.py' : 'scripts/doc_check.py', '.']);
+await run(process.execPath, ['scripts/check-dbml.mjs']);
 await npm('run', 'test:core');
 await npm('run', 'test:unit');
 await npm('run', 'build');

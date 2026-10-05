@@ -37,18 +37,19 @@
 | [.agents/skills/usecase-docs/](../.agents/skills/usecase-docs/SKILL.md) | ユースケース・シナリオの文書構造、作成手順と新規作成用雛形（雛形は実仕様ではない） |
 | [architecture.md](architecture.md) | システム構成、共通方針、実現パターン一覧、設計上の制約 |
 | `design/UCP-n.md` | 実現パターンごとの処理・役割・境界と UC 固有の差分 |
-| [design/data.md](design/data.md) | DB・ファイル等の保存形式と現在のテーブル設計 |
+| [design/data.md](design/data.md) | DB・ファイル等の保存形式と、DBML の論理型と DB 製品の型の対応 |
+| `design/data.dbml` | 現在のテーブル設計（DBML。DBを使う場合のみ） |
 | `reference/` | 外部システムの実測応答（取得日時・方法・対象版を記録。利用時のみ） |
 | [README.md](../README.md) | プロジェクト概要と参照案内 |
 | [AGENTS.md](../AGENTS.md) | AIエージェントの作業規範 |
 
 - **新設の禁止**: 本表にない規約・方針・プロセス文書は新設しません。固有の規則は第1節の差分欄、[project.md](project.md) 第2節の制約、または実現パターン内に記述します。作業単位と再開は [モック標準第2節](standards/mock-driven-development.md#workflow) に従い、進捗・現在地・未決事項の管理文書は置きません。複数セッションにまたがる長期計画は外部の課題管理システム等で扱います。
 - **文書の分割基準**: 単独参照の必要性や更新頻度の違いにより管理が困難な場合のみ分割を認めます。分割時は元の記述を参照リンクへ置き換え、本表と関連リンクを更新します。
-- **図の形式**: Mermaid を使用します（コンテキスト・コンテナは flowchart または C4 構文、系列は sequenceDiagram、ER図は erDiagram）。
+- **図の形式**: Mermaid を使用します（コンテキスト・コンテナは flowchart または C4 構文、系列は sequenceDiagram）。ER図は文書に置かず、テーブル設計の確認時に `design/data.dbml` から HTML で作成します。
 
 <a id="agreements"></a>
 ## 4. 仕様変更の対象
 
 採用規則、適用範囲、正本の責務、[プロジェクト定義](project.md) と `usecases/` のユースケース・シナリオの要件・制約・仕様・完了条件、および [アーキテクチャ](architecture.md) の構成・設計上の制約と `design/` の処理・保存設計を変更・緩和する場合は [変更手続き](standards/design-and-documentation.md#agreement-changes) に従います。文書再編でも現在有効な仕様を維持し、不要になった記述は削除します。
 
-初期記入欄、検討中の案、モック上の仮定は合意とみなしません。判断に必要な未確定事項は停止点で利用者に確認し、確定するまで仕様・設計として記録しません。
+初期記入欄、検討中の案、モック上の仮定は合意とみなしません。判断に必要な未確定事項は停止点で利用者に確認し、差し戻された内容は仕様・設計から除きます。

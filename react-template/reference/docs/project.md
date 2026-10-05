@@ -84,7 +84,7 @@ worker 数を変更する場合は `npx playwright test --workers=8` を使用�
 
 仕様確認用モックが必要な期間のみ `frontend/src/mocks/notes.ts` を作成し、`npm exec -- vite --config frontend/vite.config.ts --mode mock` で起動します。本番ビルドでのモック使用は禁止します。実処理へ切り替えた後は固定データを削除し、E2E は実 API で検証します。
 
-変更後は `npm run verify` を実行し、型検査、Lint、文書、機能、UI、ビルド、E2E がすべて合格した状態を維持します。
+変更後は `npm run verify` を実行し、型検査、Lint、文書、機能、UI、ビルド、E2E がすべて合格した状態を維持します。文書の検査には `docs/design/data.dbml` の構文検証（`node scripts/check-dbml.mjs`）を含みます。
 
 <a id="deployment"></a>
 ### 認証・配備
