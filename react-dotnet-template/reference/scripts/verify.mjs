@@ -4,6 +4,7 @@ await npm('run', 'typecheck');
 await npm('run', 'lint');
 await npm('run', 'format:check');
 await run(process.execPath, ['scripts/check-docs.mjs']);
+await run(process.execPath, ['scripts/check-dbml.mjs']);
 await npm('run', 'test:core');
 await npm('run', 'test:unit');
 await run(process.execPath, ['scripts/test-e2e.mjs', 'dev']);

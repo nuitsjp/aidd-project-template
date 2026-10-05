@@ -71,12 +71,12 @@ mise run dev
 | `mise run lint` | ESLint による検査 |
 | `mise run format` | Prettier による整形 |
 | `mise run format:check` | Prettier の整形済み検査 |
-| `mise run check:docs` | 参照文書の検査。source では共通の `template/` と拡張側を一時生成先へ配置して検査 |
+| `mise run check:docs` | 参照文書の検査と `docs/design/data.dbml` の構文検証（`node scripts/check-dbml.mjs`）。source では共通の `template/` と拡張側を一時生成先へ配置して文書を検査 |
 | `mise run test:frontend` | Vitest の単体テスト |
 | `mise run test:backend` | UI ビルドを除外した .NET テスト |
 | `mise run test:e2e:dev` | バックエンドだけをビルドし、Vite 開発サーバーで E2E |
 | `mise run test:e2e:hosted` | 一体ビルドを行い、単一 .NET 配信で E2E |
-| `mise run verify` | 型、Lint、整形、参照文書、単体、バックエンド、dev/hosted E2E。source では文書を一時生成先、アプリの build・test を `reference/` で検査 |
+| `mise run verify` | 型、Lint、整形、参照文書、DBML、単体、バックエンド、dev/hosted E2E。source では文書を一時生成先、アプリの build・test を `reference/` で検査 |
 | `mise run package` | `verify` 後に配布物を生成 |
 | `mise run db:backup -- <path>` | 実 DB の整合したバックアップを作成 |
 | `mise run db:check [-- <path>]` | 指定 DB（省略時は設定済み DB）を検査 |

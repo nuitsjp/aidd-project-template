@@ -83,8 +83,8 @@ description = "整形済みであることを検査する"
 run = "npm run format:check"
 
 [tasks."check:docs"]
-description = "文書の整合性を検査する"
-run = "node scripts/check-docs.mjs"
+description = "文書の整合性と DBML の構文を検査する"
+run = ["node scripts/check-docs.mjs", "node scripts/check-dbml.mjs"]
 
 [tasks.contracts]
 description = "C#からOpenAPIとReact用の型を生成する（DB・HTTP待受不要）"

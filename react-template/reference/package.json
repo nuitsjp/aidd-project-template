@@ -39,6 +39,7 @@
     "zod": "4.6.5"
   },
   "devDependencies": {
+    "@dbml/core": "10.2.0",
     "@eslint/js": "9.39.5",
     "@playwright/test": "1.63.0",
     "@tanstack/router-cli": "1.167.38",

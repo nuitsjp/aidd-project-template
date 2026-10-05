@@ -15,7 +15,7 @@
 | [.agents/skills/usecase-docs/](template/.agents/skills/usecase-docs/SKILL.md) | ユースケース・シナリオの文書構造、作成手順と雛形。実仕様は `docs/usecases/<名称>/README.md` とその `scenarios/<名称>.md` に作成 |
 | [docs/architecture.md](template/docs/architecture.md) | システム構成、共通方針、実現パターン一覧、設計上の制約 |
 | [docs/design/UCP-1.md](template/docs/design/UCP-1.md) | 実現パターンごとの具体的な処理・役割・境界 |
-| [docs/design/data.md](template/docs/design/data.md) | 保存形式と現在のテーブル設計 |
+| [docs/design/data.md](template/docs/design/data.md) | 保存形式と型の対応（テーブル設計は DB 使用時に `docs/design/data.dbml` へ DBML で記載） |
 | [docs/standards/design-and-documentation.md](template/docs/standards/design-and-documentation.md) | 設計と文書化の基準、先行成果物の範囲、完了基準、変更手続き |
 | [docs/standards/mock-driven-development.md](template/docs/standards/mock-driven-development.md) | 系列ごとのフェーズと確認内容、仕掛かり上限、モックの境界 |
 | [scripts/doc_check.py](template/scripts/doc_check.py) | 文書整合の判定6件（リンク、絶対パス、禁止記録・重複本文、ユースケース・シナリオ構造、標準ハッシュ、証跡・行数報告）。Python 3 標準ライブラリのみ |
@@ -121,7 +121,7 @@ mise run verify
 - **利用者の動作確認**: モック確認と実装の各フェーズで確認を依頼する前に、アプリを起動して依頼する手順を自動実行し、想定結果を確認します（Web UI では Playwright CLI）。アプリは起動したまま、確認目的、簡潔な手順、期待結果、Web UI では URL を提示します。
 - **テストの追加・更新時点**: 新しい受け入れ条件の検証と、合意済みの仕様変更に伴う既存テストの維持を区別します。実施時点と本番実装の修正時に戻るフェーズは [モック標準第2節](template/docs/standards/mock-driven-development.md#workflow) に従います。
 - **UI 確認が不要な系列・変更**: モック確認を省略し、仕様検討の承認後にテーブル設計（必要時）、実装、仕様固定の各フェーズを実施します。文書のみの変更は `scripts/doc_check.py` で整合性を確認します。
-- **テーブル設計の合意**: 現在のER図と定義を `docs/design/data.md`へ集約し、変更点を会話で提示して合意を得ます。設計に依存する保存処理やマイグレーションは合意後に実装します（設計変更がなければ再合意不要）。
+- **テーブル設計の合意**: 現在のテーブル設計を `docs/design/data.dbml` へ DBML で集約し、差分から作った ER 図 HTML と論点を提示して承認を得ます。設計に依存する保存処理やマイグレーションは合意後に実装します（設計変更がなければ再合意不要）。
 - **記入欄 `{{...}}` の扱い**: 初期段階ですべて埋める必要はありません。未確定事項は推測で埋めず、停止点で利用者に確認します。
 
 ## 4. 既存プロジェクトへの導入
@@ -163,6 +163,6 @@ node scripts/update-common.mjs ../my-project OLD_COMMIT_SHA NEW_COMMIT_SHA
 - 情報ごとに正本が1箇所に定まり、他の箇所がリンクで参照していること。今回変更した事実について重複と古い説明を確認し、更新または削除していること。
 - 不要な文書・階層・依存関係が増加していないこと。
 - モック対象のユースケースにおいて、現在の系列・受け入れ条件・再現手順が整合していること。
-- テーブル追加・変更時、依存する実装の前に `docs/design/data.md`で合意していること（合意の要否・内容は人が確認し、`scripts/doc_check.py` では判定しません）。
+- テーブル追加・変更時、依存する実装の前に `docs/design/data.dbml` で承認を得ていること（合意の要否・内容は人が確認し、`scripts/doc_check.py` では判定しません）。
 - 最新コードで必要なテストと実環境検証が合格していること。未実施の確認は会話で報告し、完了と扱わないこと。
 - ADR・決定経緯・承認原文・検証表が残っていないこと。静的検査は既知の記録形式と完全一致する長い本文の重複を検出する。言い換えた重複・陳腐化・承認内容・実施順序・検証範囲はレビューで確認し、NG 0件だけで完了扱いにしないこと。

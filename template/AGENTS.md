@@ -10,7 +10,7 @@
 | 仕様・設計・実装・テストの作成・変更・レビュー | [設計・実装の原則](docs/standards/design-and-documentation.md#implementation-principles)、対象ユースケースの共通事項と対象シナリオの本文・受け入れ条件 |
 | 全体構造・共通方針・設計上の制約の参照と変更 | [アーキテクチャ](docs/architecture.md)、[全体設計と先行してよい成果物](docs/standards/design-and-documentation.md#architecture-method) |
 | 対象機能の設計・実装・レビュー | 対象ユースケースから参照する `docs/design/UCP-n.md`。必要な設計だけを読む |
-| データ操作・保存設計の参照と変更 | `docs/design/data.md` の関連する定義・制約と対象の実現パターン |
+| データ操作・保存設計の参照と変更 | `docs/design/data.dbml` の関連する定義・制約、`docs/design/data.md` の型の対応、対象の実現パターン |
 | 層・抽象化・依存関係などの追加 | [仕組みの追加基準](docs/standards/design-and-documentation.md#design-decisions) |
 | 系列の追加・変更、次の系列やユースケースへ進む判断 | [適用範囲](docs/document-policy.md#mock-scope)、[モック駆動開発の標準](docs/standards/mock-driven-development.md#workflow)、[ユースケース一覧](docs/project.md#usecases) から参照する本文と受け入れ条件 |
 | 文書の作成・変更・移動・削除 | [文書と記録の基準](docs/standards/design-and-documentation.md#document-roles) |

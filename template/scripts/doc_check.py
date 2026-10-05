@@ -19,8 +19,8 @@ LINE_LIMITS = {"docs/project.md": 300, "docs/architecture.md": 200,
 PLACEHOLDER_HASH = "sha256:" + "0" * 64
 # 配布元が `--print-hashes` の出力で更新する。
 EXPECTED_HASHES = {
-    "docs/standards/design-and-documentation.md": "sha256:aa4f99a2893a6486461fd12ff166f93a8ea44dae619859dfb51a91117e149b90",
-    "docs/standards/mock-driven-development.md": "sha256:35bc03dcda36b4a042d5788be123568b2bfa93963210241c61ae91207b2075d3",
+    "docs/standards/design-and-documentation.md": "sha256:9137bbf8c5f8faad9ecd1d0f5e9cb059389724c54e264fdf97611b71fd4e0bcd",
+    "docs/standards/mock-driven-development.md": "sha256:bf5c64d2950841d9dc0f17e22bdf6fb357c8f637c09d2a09c2e80cf565996479",
 }
 
 DESIGN_UCP_HEAD_RE = re.compile(r"^#\s+UCP-(\d+)\.")

@@ -1,0 +1,23 @@
+// 型は論理型（text / integer）で書き、DB 製品の型との対応は data.md に記載する。
+
+Table users {
+  id text [pk]
+  name text [not null]
+
+  Note: 'メモの所有者となる利用者。'
+}
+
+Table notes {
+  id text [pk]
+  owner_id text [not null, ref: > users.id]
+  title text [not null, note: '前後の空白を除いて1〜100文字']
+  body text [not null, note: '10,000文字以内']
+  version integer [not null, default: 1, check: `version > 0`, note: '版検査に使う正整数']
+  updated_at text [not null, note: 'UTC の ISO 8601 文字列']
+
+  Indexes {
+    (owner_id, title) [unique]
+  }
+
+  Note: '利用者ごとのメモ。同一所有者の複数タブ編集を検証するため、version で版検査を行う。'
+}
