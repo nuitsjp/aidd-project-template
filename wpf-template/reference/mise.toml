@@ -1,0 +1,43 @@
+[tools]
+dotnet = "10.0"
+python = "3.13"
+
+[env]
+PYTHONIOENCODING = "utf-8"
+
+[tasks.setup]
+description = "4.8.1開発環境を確認し、ツールとNuGet依存を準備する"
+run = "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run.ps1 setup"
+
+[tasks.dev]
+description = "実SQLiteを使うWPFアプリを起動する"
+run = "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run.ps1 dev"
+
+[tasks."dev:mock"]
+description = "同じ画面をモック専用構成で起動する"
+run = "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run.ps1 dev:mock"
+
+[tasks.build]
+description = "ReleaseのWPFアプリをビルドする"
+run = "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run.ps1 build"
+
+[tasks."test:unit"]
+run = "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run.ps1 test:unit"
+
+[tasks."test:integration"]
+run = "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run.ps1 test:integration"
+
+[tasks."test:e2e"]
+description = "WindowsデスクトップでFriendlyの実UI検証を行う"
+run = "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run.ps1 test:e2e"
+
+[tasks."check:docs"]
+run = "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-docs.ps1"
+
+[tasks.verify]
+description = "文書・ビルド・単体・統合・実UIを検証する"
+run = "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run.ps1 verify"
+
+[tasks.package]
+description = "検証後のRelease一式とLICENSEをZIPへ配置する"
+run = "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run.ps1 package"

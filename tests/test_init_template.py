@@ -1,16 +1,19 @@
 """Generate every extension and verify the distribution boundary."""
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+import xml.etree.ElementTree as ET
 
 
 SOURCE = Path(__file__).resolve().parents[1]
-KINDS = ("wails", "react", "react-dotnet")
+KINDS = ("wails", "react", "react-dotnet", "wpf")
 DOTNET_GENERATED_NAMES = {".vs", "bin", "obj", "TestResults", "node_modules", "dist", "data",
-                          "release", "coverage", ".e2e-results", "playwright-report", ".env", "mise.local.props"}
+                          "release", "coverage", ".e2e-results", "playwright-report", ".env", "mise.local.props",
+                          "mocks-bin", "mocks-obj", "mise.local.toml", ".mise.local.toml", "dbml-error.log"}
 PRODUCT_FILES = (
     ".env.example", ".nvmrc", ".prettierignore", ".prettierrc.json", "App.slnx", "global.json", "package.json", "package-lock.json",
     "eslint.config.mjs", "playwright.config.ts", "vitest.config.ts", "tsconfig.json",
@@ -35,12 +38,34 @@ PRODUCT_PATHS = {
     "tests/dotnet-integration/Backend.IntegrationTests.csproj": "tests/dotnet-integration/Acme.Notes.IntegrationTests.csproj",
     "frontend/Frontend.esproj": "frontend/Acme.Notes.Frontend.esproj",
 }
+WPF_TEXT_EXTENSIONS = (".cs", ".xaml", ".csproj", ".json", ".toml", ".config", ".ps1", ".slnx")
+WPF_PRODUCT_RENAMES = (
+    (b"WpfNotesSample", b"Acme.Notes"),
+    (b"UnitTests.csproj", b"Acme.Notes.UnitTests.csproj"),
+    (b"IntegrationTests.csproj", b"Acme.Notes.IntegrationTests.csproj"),
+    (b"E2eTests.csproj", b"Acme.Notes.E2eTests.csproj"),
+    (b"App.slnx", b"Acme.Notes.slnx"),
+    (b"App.csproj", b"Acme.Notes.csproj"),
+    (b"App.dll", b"Acme.Notes.dll"),
+    (b"App.exe", b"Acme.Notes.exe"),
+    (b"<AssemblyName>App</AssemblyName>", b"<AssemblyName>Acme.Notes</AssemblyName>"),
+    (b"<AssemblyName>UnitTests</AssemblyName>", b"<AssemblyName>Acme.Notes.UnitTests</AssemblyName>"),
+    (b"<AssemblyName>IntegrationTests</AssemblyName>", b"<AssemblyName>Acme.Notes.IntegrationTests</AssemblyName>"),
+    (b"<AssemblyName>E2eTests</AssemblyName>", b"<AssemblyName>Acme.Notes.E2eTests</AssemblyName>"),
+)
+WPF_PRODUCT_PATHS = {
+    "App.slnx": "Acme.Notes.slnx",
+    "app/App.csproj": "app/Acme.Notes.csproj",
+    "tests/unit/UnitTests.csproj": "tests/unit/Acme.Notes.UnitTests.csproj",
+    "tests/integration/IntegrationTests.csproj": "tests/integration/Acme.Notes.IntegrationTests.csproj",
+    "tests/e2e/E2eTests.csproj": "tests/e2e/Acme.Notes.E2eTests.csproj",
+}
 
 
 class InitTemplateTests(unittest.TestCase):
-    def generate(self, kind, destination, name=PRODUCT_NAME):
-        args = ["node", str(SOURCE / "scripts/init-template.mjs"), kind, str(destination)]
-        if kind in ("react-dotnet", "wails"):
+    def generate(self, kind, destination, name=PRODUCT_NAME, source=SOURCE):
+        args = ["node", str(source / "scripts/init-template.mjs"), kind, str(destination)]
+        if kind in ("react-dotnet", "wails", "wpf"):
             args.extend(("--name", name))
         return subprocess.run(
             args,
@@ -57,7 +82,7 @@ class InitTemplateTests(unittest.TestCase):
                 for source in (SOURCE / "template", SOURCE / f"{kind}-template"):
                     for path in source.rglob("*"):
                         name = path.relative_to(source)
-                        if source.name == "react-dotnet-template" and (
+                        if source.name in ("react-dotnet-template", "wpf-template") and (
                             DOTNET_GENERATED_NAMES.intersection(name.parts)
                             or name.as_posix() == "reference/frontend/src/routeTree.gen.ts"
                         ):
@@ -91,6 +116,19 @@ class InitTemplateTests(unittest.TestCase):
                             if source_name.as_posix() in ("package.json", "package-lock.json"):
                                 content = content.replace(b"aidd-react-dotnet-template", b"acme-notes")
                             expected[Path(PRODUCT_PATHS.get(source_name.as_posix(), source_name.as_posix()))] = content
+                elif kind == "wpf":
+                    reference = SOURCE / "wpf-template/reference"
+                    for path in reference.rglob("*"):
+                        source_name = path.relative_to(reference)
+                        if not path.is_file() or source_name.parts[0] in ("README.md", "docs") or DOTNET_GENERATED_NAMES.intersection(source_name.parts):
+                            continue
+                        content = path.read_bytes()
+                        if path.suffix in WPF_TEXT_EXTENSIONS:
+                            for before, after in WPF_PRODUCT_RENAMES:
+                                content = content.replace(before, after)
+                            if path.name == "packages.lock.json":
+                                content = content.replace(b'"app": {', b'"acme.notes": {')
+                        expected[Path(WPF_PRODUCT_PATHS.get(source_name.as_posix(), source_name.as_posix()))] = content
                 else:
                     reference = SOURCE / f"{kind}-template/reference"
                     for path in reference.rglob("*"):
@@ -135,12 +173,32 @@ class InitTemplateTests(unittest.TestCase):
                     self.assertTrue((destination / "reference/go.mod").read_text(encoding="utf-8").startswith("module wailstemplate\n"))
                     self.assertEqual(json.loads((destination / "build/app.json").read_bytes())["id"], PRODUCT_NAME)
                     self.assertNotEqual(json.loads((destination / "reference/build/app.json").read_bytes())["id"], PRODUCT_NAME)
+                if kind == "wpf":
+                    for before, after in WPF_PRODUCT_PATHS.items():
+                        self.assertTrue((destination / "reference" / before).is_file(), before)
+                        self.assertTrue((destination / after).is_file(), after)
+                        self.assertFalse((destination / before).exists(), before)
+                    for project in (destination / "Acme.Notes.slnx", destination / "reference/App.slnx"):
+                        for entry in ET.parse(project).iter("Project"):
+                            self.assertTrue((project.parent / entry.attrib["Path"]).is_file(), entry.attrib["Path"])
+                    for project in (destination / "tests").rglob("*.csproj"):
+                        for entry in ET.parse(project).iter("ProjectReference"):
+                            self.assertTrue((project.parent / entry.attrib["Include"]).is_file(), entry.attrib["Include"])
+                    for path in destination.rglob("*"):
+                        relative = path.relative_to(destination)
+                        if path.is_file() and relative.parts[0] != "reference" and path.suffix in WPF_TEXT_EXTENSIONS:
+                            self.assertNotIn(b"WpfNotesSample", path.read_bytes(), str(relative))
+                    for directory in (destination, destination / "reference"):
+                        tasks = (directory / "mise.toml").read_text(encoding="utf-8")
+                        for task in ("setup", "dev", "verify", "package"):
+                            self.assertIn(f"[tasks.{task}]", tasks)
+                        self.assertIn('[tasks."dev:mock"]', tasks)
                 self.assertEqual(list((destination / "docs/usecases").glob("*/README.md")), [])
                 self.assertEqual(len(list((destination / "reference/docs/usecases").glob("*/README.md"))),
-                                 3 if kind == "wails" else 2)
+                                     3 if kind == "wails" else 2)
                 for name, content in expected.items():
                     self.assertEqual(actual[name], content, str(name))
-                if kind == "react-dotnet":
+                if kind in ("react-dotnet", "wpf"):
                     second = Path(parent) / "another location"
                     regenerated = self.generate(kind, second)
                     self.assertEqual(regenerated.returncode, 0, regenerated.stderr)
@@ -189,9 +247,34 @@ class InitTemplateTests(unittest.TestCase):
             for name in ("", "class", "Wrong Name", "Company..Product"):
                 with self.subTest(name=name):
                     destination = Path(parent) / "invalid"
-                    result = self.generate("react-dotnet", destination, name)
-                    self.assertNotEqual(result.returncode, 0)
-                    self.assertFalse(destination.exists())
+                    for kind in ("react-dotnet", "wpf"):
+                        result = self.generate(kind, destination, name)
+                        self.assertNotEqual(result.returncode, 0)
+                        self.assertFalse(destination.exists())
+
+    def test_wpf_excludes_generated_content_from_product_and_reference(self):
+        with tempfile.TemporaryDirectory(prefix="aidd-wpf-source-") as parent:
+            source = Path(parent) / "source"
+            (source / "scripts").mkdir(parents=True)
+            shutil.copyfile(SOURCE / "scripts/init-template.mjs", source / "scripts/init-template.mjs")
+            shutil.copyfile(SOURCE / "LICENSE", source / "LICENSE")
+            shutil.copytree(SOURCE / "template", source / "template")
+            shutil.copytree(SOURCE / "wpf-template", source / "wpf-template",
+                            ignore=shutil.ignore_patterns(*DOTNET_GENERATED_NAMES))
+            for name in (".vs", "bin", "obj", "TestResults", "release", "data", "mocks-bin", "mocks-obj"):
+                for directory in (source / "wpf-template", source / "wpf-template/reference/app"):
+                    generated = directory / name
+                    generated.mkdir()
+                    (generated / "must-not-distribute.txt").write_text("generated", encoding="utf-8")
+            for name in ("mise.local.toml", ".mise.local.toml", "dbml-error.log"):
+                for directory in (source / "wpf-template", source / "wpf-template/reference/app"):
+                    (directory / name).write_text("must-not-distribute", encoding="utf-8")
+            destination = Path(parent) / "product"
+            result = self.generate("wpf", destination, source=source)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(list(destination.rglob("must-not-distribute.txt")), [])
+            for name in ("mise.local.toml", ".mise.local.toml", "dbml-error.log"):
+                self.assertEqual(list(destination.rglob(name)), [])
 
     def test_wails_requires_valid_product_name(self):
         with tempfile.TemporaryDirectory(prefix="aidd-init-") as parent:

@@ -1,0 +1,9 @@
+Table notes {
+  id text [pk, not null, note: 'メモを識別する ID']
+  title text [not null, note: '前後の空白を除いて1〜100テキスト要素。重複可']
+  body text [not null, note: 'トリムせず0〜10,000テキスト要素']
+  version integer [not null, note: '新規1、更新時に1増加。保存と削除の版検査に使う']
+  updated_at text [not null, note: 'DateTime.UtcNow の O 書式による日時']
+
+  Note: 'Windows 利用者のローカルメモ。一括登録は全件を一体で確定する。'
+}

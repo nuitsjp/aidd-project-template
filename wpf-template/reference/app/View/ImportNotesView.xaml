@@ -1,0 +1,28 @@
+<UserControl x:Class="WpfNotesSample.View.ImportNotesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <DockPanel>
+    <StackPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+      <TextBlock Text="複数のメモを確認して一括登録" FontSize="22" FontWeight="SemiBold" Margin="0,0,0,12" />
+      <TextBlock Text="1行に1件、タイトルと本文をタブで区切ります。タイトルのみも登録できます（最大100件）。" Margin="0,0,0,12" />
+      <StackPanel Orientation="Horizontal" IsEnabled="{Binding CanInteract}">
+        <Button x:Name="PreviewButton" Content="内容を確認" Command="{Binding PreviewCommand}" />
+        <Button x:Name="ConfirmButton" Content="一括登録" Command="{Binding ConfirmCommand}" IsEnabled="{Binding IsConfirmed}" />
+      </StackPanel>
+      <TextBlock x:Name="ErrorText" Text="{Binding ErrorMessage}" Foreground="#B42318" Margin="0,12,0,0" />
+      <TextBlock x:Name="StatusText" Text="{Binding StatusMessage}" Margin="0,8,0,0" />
+    </StackPanel>
+    <Grid IsEnabled="{Binding CanInteract}">
+      <Grid.RowDefinitions><RowDefinition Height="*" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+      <TextBox x:Name="InputTextBox" Text="{Binding Input, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" AcceptsTab="True"
+               VerticalScrollBarVisibility="Auto" />
+      <TextBlock Grid.Row="1" Text="確認した内容" Margin="0,12,0,8" FontWeight="SemiBold" />
+      <DataGrid x:Name="PreviewGrid" Grid.Row="2" ItemsSource="{Binding PreviewItems}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False">
+        <DataGrid.Columns>
+          <DataGridTextColumn Header="タイトル" Binding="{Binding Title}" Width="2*" />
+          <DataGridTextColumn Header="本文" Binding="{Binding Body}" Width="3*" />
+        </DataGrid.Columns>
+      </DataGrid>
+    </Grid>
+  </DockPanel>
+</UserControl>

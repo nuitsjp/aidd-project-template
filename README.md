@@ -104,6 +104,24 @@ mise run verify
 
 テンプレート開発時は `react-dotnet-template/` で製品文書、`react-dotnet-template/reference/` で参照アプリを検証します。source の文書検査は共通の `template/` と拡張側を一時生成先へ重ねます。製品側の実装・設定と依存ロックは生成後に採用先で管理します。生成・起動・検証の詳細は [参照実装の実行手順](react-dotnet-template/reference/docs/project.md#commands) に従います。
 
+### WPFアプリの初期状態を生成する
+
+Windows向けの純粋なWPF参照実装は [wpf-template/reference/](wpf-template/reference/README.md) にまとめています。.NET Framework 4.8.1を標準とし、KamishibaiでViewとViewModelを構成します。ビルド用の.NET SDKは10.0系列の安定版を `global.json` で指定し、C#の言語版は `latest` を指定します。開発端末には.NET Framework 4.8.1 Developer Packと、Visual Studioの「.NETデスクトップ開発」を用意します。生成コマンドにはmiseとNode.js 22.16以上が必要です。
+
+```powershell
+mise run init:wpf ../my-wpf-app --name Company.Product
+cd ../my-wpf-app
+mise trust
+mise run setup
+mise run verify
+```
+
+`template/`、`wpf-template/`、ルートの `LICENSE` を配置し、参照アプリの `README.md` と `docs/` を除く一式を製品ルートへコピーします。`--name` は予約語を除くASCIIのC#識別子をドットで区切って指定します。製品側のC#名前空間、ソリューション名、プロジェクト名、アセンブリ名を製品名に合わせ、`<製品名>.slnx`、`app/<製品名>.csproj`、`tests/unit/<製品名>.UnitTests.csproj`、`tests/integration/<製品名>.IntegrationTests.csproj`、`tests/e2e/<製品名>.E2eTests.csproj` を配置します。参照アプリは `reference/` に元の名前と内容で残し、製品と参照アプリの保存領域・多重起動判定を分けます。ルートの `docs/` は共通版から始め、製品の現行仕様を記述します。生成は依存取得やビルドを行わず、既存の出力先を拒否し、`bin/`・`obj/`・試験結果・試験用データなどの生成物を配布しません。
+
+製品ルートで `mise run dev` を実行すると実処理で起動し、`mise run dev:mock` では試験用固定データで対話を確認できます。`mise run package` は配布物を作成します。Visual StudioのF5は製品ルートの `<製品名>.slnx` を開き、`app/<製品名>.csproj` をスタートアッププロジェクトにします。参照アプリは `reference/App.slnx` と `reference/app/App.csproj` を使用し、`reference/` で同じセットアップ・起動・検証コマンドを実行します。必要な環境とネイティブUI検証・配布の手順は [WPFの実行手順](wpf-template/reference/docs/project.md#commands) に従います。
+
+テンプレート開発時は `wpf-template/` でツール導入と製品文書検査、`wpf-template/reference/` で参照アプリのビルド・テストを行います。生成先ルートの `mise.toml` は参照実装から配置したアプリ用タスクです。共通の標準・検査器・文書スキルは拡張側へ複製せず、生成先で一組として検証します。製品側の実装・設定と依存ロックは生成後に採用先で管理します。
+
 ## 3. 初期セットアップと最初のユースケース
 
 以下の順序で、最初のユースケース1件を実処理まで通します。作業単位・再開時の確認・停止点は [モック標準](template/docs/standards/mock-driven-development.md#workflow) に従います。
@@ -141,7 +159,7 @@ mise run verify
 | --- | --- |
 | `AGENTS.md`、`docs/standards/` の2標準、`scripts/doc_check.py`、`.agents/skills/usecase-docs/` のスキルと雛形2件 | 配布元が管理する7ファイル。同じ固定コミットから一組で差し替える。固有規則は `docs/document-policy.md` の差分欄で管理する。 |
 | `README.md`、`docs/project.md`、`docs/architecture.md`、`docs/document-policy.md`、`docs/design/`・ユースケース／シナリオ本文・技術固有文書 | 初回生成後は採用先が管理する。雛形の全文は同期せず、コミット間の差分にある必須項目の移行だけを適用する。現在の仕様と検証手順を維持する。 |
-| React/Wails/React・.NETの実装・設定・DB移行履歴 | 初回生成後は採用先が管理する。参照実装の差分は個別に評価する。現在、継続同期する共通コードパッケージは提供しない。 |
+| React/Wails/React・.NET/WPFの実装・設定・DB移行履歴 | 初回生成後は採用先が管理する。参照実装の差分は個別に評価する。現在、継続同期する共通コードパッケージは提供しない。 |
 | 外部依存と生成コード | 各プロジェクトで依存定義とロックを更新し、既存の生成・検証コマンドを実行する。生成コードは手でマージしない。最低対応版と検証に使ったツール版は区別する。 |
 
 共通7ファイルは、配布元リポジトリで次を実行して更新できます（Node.jsとGitが必要です）。`OLD_COMMIT_SHA` は文書方針の更新前コミット、`NEW_COMMIT_SHA` は採用する更新後コミットの40桁SHAに置き換え、両コミットを配布元のローカルGitで参照できる状態にします。

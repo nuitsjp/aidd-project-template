@@ -14,6 +14,10 @@ run = "node scripts/init-template.mjs react"
 description = "共通テンプレートとReact・.NET差分を新しいディレクトリへ配置する"
 run = "node scripts/init-template.mjs react-dotnet"
 
+[tasks."init:wpf"]
+description = "共通テンプレートとWPF差分を新しいディレクトリへ配置する"
+run = "node scripts/init-template.mjs wpf"
+
 [tasks."update:common"]
 description = "採用先の共通資材7件（標準・検査・文書スキル）を固定コミット間で更新する"
 run = "node scripts/update-common.mjs"
