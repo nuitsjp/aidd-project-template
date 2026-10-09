@@ -40,7 +40,7 @@ mise run setup:browser
 mise run dev
 ```
 
-`setup` は指定版の Wails CLI をローカルの `.tools/` に導入し、`go.sum` と `frontend/package-lock.json` のとおりに Go/npm 依存を取得・検証して、実際の Go バインディングとルートツリーを生成します。`setup` はロックファイルを書き換えません。初回は外部ネットワークが必要です。直接依存の版を変更したときは `go mod tidy` と `npm install` を手動で実行し、両ロックファイルを更新します。
+`setup` は指定版の Wails CLI と静的検査用の golangci-lint・actionlint・govulncheck をローカルの `.tools/` に導入し、`go.sum` と `frontend/package-lock.json` のとおりに Go/npm 依存を取得・検証して、実際の Go バインディングとルートツリーを生成します。`setup` はロックファイルを書き換えません。初回は外部ネットワークが必要です。直接依存の版を変更したときは `go mod tidy` と `npm install` を手動で実行し、両ロックファイルを更新します。
 
 Wails 本体・JavaScript Runtime は固定版の組合せで使用し、`setup` で Go 依存に対応する CLI と生成コードを更新します。採用後の依存定義・ロックは採用先で管理します。Node.js が `.nvmrc` と異なる場合は `scripts/run.mjs` が処理開始前に停止します。CI も同じ `mise.toml` を使用します。
 
@@ -54,8 +54,14 @@ Wails 本体・JavaScript Runtime は固定版の組合せで使用し、`setup`
 | `server` | Go 実処理を使うブラウザ確認用サーバーを localhost:34115 で起動 |
 | `verify` | 生成・型検査・Lint・整形・テスト・文書検査・server E2E を一括実行 |
 | `test:core` | Go の機能・保存・更新検証を実行 |
+| `audit` | 画面をビルドし、npm と Go の既知脆弱性を外部データベースで検査 |
+| `lint` | TypeScript・設定・Node 運用スクリプト・workflow を検査 |
+| `lint:go` | 画面をビルドし、Go のエラー処理・検査除外を本番・server 構成で検査 |
+| `format` / `format:check` | Go と TypeScript を整形 / 整形状態を検査 |
 
-`server` は開発・確認用であり、LAN へ公開しません。終了は Ctrl+C とします。`dev:mock` は Wails を起動したままメモ機能のみを固定データへ差し替えます（画面に「試験用モック」が表示されることを確認）。本番ビルドでモック設定を検出した場合はビルドを中止します。整形の検査で差分が出た場合は `frontend/` で `npm run format` を実行します。
+`server` は開発・確認用であり、LAN へ公開しません。終了は Ctrl+C とします。`dev:mock` は Wails を起動したままメモ機能のみを固定データへ差し替えます（画面に「試験用モック」が表示されることを確認）。本番ビルドでモック設定を検出した場合はビルドを中止します。整形の検査で差分が出た場合は `mise run format` を実行します。
+
+`verify` は型付き ESLint で Promise 処理と React Hooks の依存を検査し、警告も失敗として扱います。Node 運用スクリプトと設定ファイル、actionlint による workflow（ShellCheck・Pyflakes を除く）、自作 Go ファイルの gofmt、go vet、golangci-lint の errcheck・nolintlint も対象です。Go の解析は埋め込み画面のビルド後に本番・server 構成で実行します。`audit` は日常検証から独立した外部データベースの検査であり、PR・main 更新・週次実行は `.github/workflows/dependencies.yml` が製品と参照アプリの双方を対象にします。VS Code は推奨拡張と保存時の整形を `.vscode/` に設定しています。
 
 ブラウザー取得にプロキシが必要な端末では、その環境で指定されたプロキシURLを `HTTPS_PROXY` に設定してから導入コマンドを実行します。端末固有のURLを配布物へ固定せず、ブラウザーやNode.jsを自動的に切り替える処理は設けません。
 

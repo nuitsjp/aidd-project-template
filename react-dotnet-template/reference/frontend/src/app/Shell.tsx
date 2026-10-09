@@ -30,7 +30,13 @@ function Application() {
     return (
       <div className={classes.center}>
         <Alert color="red">サーバーへ接続できませんでした。</Alert>
-        <Button onClick={() => void session.refetch()}>再試行</Button>
+        <Button
+          onClick={() => {
+            session.refetch().catch(console.error);
+          }}
+        >
+          再試行
+        </Button>
       </div>
     );
   if (!session.data.user)

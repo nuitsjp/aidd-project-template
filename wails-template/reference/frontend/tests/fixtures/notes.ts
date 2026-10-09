@@ -42,13 +42,14 @@ export function PreviewImport(_csv: string) {
   });
 }
 export function Import(request: ImportRequest) {
-  void Events.Emit('notes:import-progress', {
-    operationID: request.operationID,
-    completed: 1,
-    total: 1,
-    phase: 'completed',
-  });
-  return CancellablePromise.resolve<ImportResult>({ ids: ['fixture-import'], count: 1 });
+  return CancellablePromise.resolve(
+    Events.Emit('notes:import-progress', {
+      operationID: request.operationID,
+      completed: 1,
+      total: 1,
+      phase: 'completed',
+    }),
+  ).then((): ImportResult => ({ ids: ['fixture-import'], count: 1 }));
 }
 export function GetImportProgress(operationID: string) {
   return CancellablePromise.resolve<ImportProgress>({

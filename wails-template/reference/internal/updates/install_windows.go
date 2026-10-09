@@ -16,6 +16,6 @@ func LaunchInstaller(path string) error {
 		return err
 	}
 	// The parent exits shortly. Reaping in the normal case avoids a handle leak.
-	go cmd.Wait()
+	go cmd.Wait() //nolint:errcheck // The app exits after handing off; installer completion is not an app result.
 	return nil
 }

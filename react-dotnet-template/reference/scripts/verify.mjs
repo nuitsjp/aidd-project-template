@@ -3,6 +3,7 @@ await npm('run', 'contracts:check');
 await npm('run', 'typecheck');
 await npm('run', 'lint');
 await npm('run', 'format:check');
+await npm('run', 'check:workflow');
 await run(process.execPath, ['scripts/check-docs.mjs']);
 await run(process.execPath, ['scripts/check-dbml.mjs']);
 await npm('run', 'test:core');

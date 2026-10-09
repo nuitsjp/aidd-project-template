@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Application as RuntimeApplication, Events } from '@wailsio/runtime';
 import * as Updates from '@bindings/wailstemplate/internal/updates/service';
+import { reportFrontendError } from '../application/queries';
 const key = ['updates', 'status'] as const;
 export function useUpdates() {
   const client = useQueryClient();
@@ -41,5 +42,13 @@ export function useUpdates() {
       await RuntimeApplication.Quit();
     },
   });
-  return { status, check, download, apply, cancel: () => active.current?.cancel() };
+  return {
+    status,
+    check,
+    download,
+    apply,
+    cancel: () => {
+      if (active.current) void active.current.cancel().catch(reportFrontendError);
+    },
+  };
 }

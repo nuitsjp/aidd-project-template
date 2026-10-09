@@ -21,6 +21,7 @@ import { getNote, listNotes, useSaveNote } from '../../features/notes/queries';
 import { useDraftDirty } from '../../shared/ExitContext';
 import { ErrorNotice } from '../../shared/ErrorNotice';
 import { publicError } from '../../shared/errors';
+import { reportFrontendError } from '../../features/application/queries';
 
 export function EditNotes({ selectedID }: { selectedID?: string }) {
   const list = useQuery(listNotes());
@@ -41,7 +42,12 @@ export function EditNotes({ selectedID }: { selectedID?: string }) {
       </div>
       <ErrorNotice error={list.error} />
       {list.isError && (
-        <Button variant="light" onClick={() => void list.refetch()}>
+        <Button
+          variant="light"
+          onClick={() => {
+            void list.refetch().catch(reportFrontendError);
+          }}
+        >
           一覧を再取得
         </Button>
       )}
@@ -197,7 +203,12 @@ function Editor({
           >
             変更を破棄
           </Button>
-          <Button onClick={() => void commit()} loading={save.isPending}>
+          <Button
+            onClick={() => {
+              void commit().catch(reportFrontendError);
+            }}
+            loading={save.isPending}
+          >
             保存する
           </Button>
         </Group>

@@ -1,0 +1,8 @@
+node_modules/
+dist/
+frontend/dist/
+frontend/src/routeTree.gen.ts
+package-lock.json
+.e2e-results/
+playwright-report/
+release/

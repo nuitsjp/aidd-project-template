@@ -75,7 +75,11 @@ func run() error {
 		logger = slog.Default()
 		logger.Warn("診断ログを保存できません。標準エラー出力を使用します。", "cause", err)
 	} else {
-		defer logs.Close()
+		defer func() {
+			if err := logs.Close(); err != nil {
+				fmt.Fprintln(os.Stderr, "diagnostic log close failed:", err)
+			}
+		}()
 	}
 	logger.Info("starting", "version", cfg.Version, "os", runtime.GOOS, "arch", runtime.GOARCH, "server", serverMode)
 	root, err := fs.Sub(webAssets, "frontend/dist")
@@ -100,7 +104,11 @@ func run() error {
 		return err
 	}
 	// Also clean up if application construction or startup fails.
-	defer noteService.ServiceShutdown()
+	defer func() {
+		if err := noteService.ServiceShutdown(); err != nil {
+			logger.Error("notes shutdown failed", "cause", err)
+		}
+	}()
 	info := desktop.Info{Name: cfg.Name, Version: cfg.Version, AppID: cfg.ID, Server: serverMode, UpdateConfigured: cfg.UpdateSource != "" && cfg.UpdatePublicKey != "", DiagnosticsAvailable: diagnosticsAvailable}
 	appService := desktop.New(info, state, controls, logger)
 	updateService := updates.New(updates.Config{

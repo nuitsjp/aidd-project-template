@@ -57,7 +57,10 @@ func TestSaveAndReload(t *testing.T) {
 		t.Fatalf("reload %v %#v", err, all)
 	}
 	all[0].Title = "mutation outside service"
-	actual, _ := restored.Get(ctx, n.ID)
+	actual, err := restored.Get(ctx, n.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if actual.Title != "updated" {
 		t.Fatal("mutable state escaped")
 	}
@@ -85,7 +88,10 @@ func TestCorruptionIsNotReset(t *testing.T) {
 			if err == nil {
 				t.Fatal("corruption accepted")
 			}
-			data, _ := os.ReadFile(path)
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
 			if string(data) != contents {
 				t.Fatal("corrupted file was overwritten")
 			}
@@ -131,7 +137,10 @@ func TestCSVPreviewAndAtomicImport(t *testing.T) {
 	if err != nil || preview.Count != 2 {
 		t.Fatalf("preview %#v %v", preview, err)
 	}
-	empty, _ := s.List(ctx)
+	empty, err := s.List(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(empty) != 0 {
 		t.Fatal("preview mutated data")
 	}
@@ -148,7 +157,10 @@ func TestCSVPreviewAndAtomicImport(t *testing.T) {
 	if err == nil {
 		t.Fatal("invalid batch accepted")
 	}
-	all, _ := s.List(ctx)
+	all, err := s.List(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(all) != 2 {
 		t.Fatal("partial batch saved")
 	}
@@ -168,7 +180,10 @@ func TestCancellationBeforeCommitKeepsData(t *testing.T) {
 	if err == nil {
 		t.Fatal("cancel ignored")
 	}
-	all, _ := s.List(context.Background())
+	all, err := s.List(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(all) != 0 {
 		t.Fatal("cancelled batch partially committed")
 	}
@@ -186,7 +201,10 @@ func TestWriteFailureDoesNotPublishOrChangeMemory(t *testing.T) {
 	if _, err := s.Save(context.Background(), SaveRequest{Title: "no write"}); err == nil {
 		t.Fatal("expected storage failure")
 	}
-	all, _ := s.List(context.Background())
+	all, err := s.List(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(all) != 0 || count != 0 {
 		t.Fatal("failure changed state or published success")
 	}
@@ -204,7 +222,10 @@ func TestConcurrentSavesDoNotLoseData(t *testing.T) {
 		}()
 	}
 	wg.Wait()
-	all, _ := s.List(context.Background())
+	all, err := s.List(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(all) != 12 {
 		t.Fatalf("lost records: %d", len(all))
 	}

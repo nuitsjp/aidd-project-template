@@ -4,6 +4,7 @@ import { Button, Group, Paper, Stack, Text, Textarea, Title } from '@mantine/cor
 import { listNotes, usePreviewImport } from '../../features/notes/queries';
 import { ErrorNotice } from '../../shared/ErrorNotice';
 import { publicError } from '../../shared/errors';
+import { reportFrontendError } from '../../features/application/queries';
 import { useImportDialogue } from './ImportDialogue';
 
 export function ImportInput() {
@@ -49,7 +50,12 @@ export function ImportInput() {
           disabled={preview.isPending || dialogue.execution.mutation.isPending}
         />
         <Group justify="flex-end">
-          <Button loading={preview.isPending} onClick={() => void next()}>
+          <Button
+            loading={preview.isPending}
+            onClick={() => {
+              void next().catch(reportFrontendError);
+            }}
+          >
             内容を確認
           </Button>
         </Group>

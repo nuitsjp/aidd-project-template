@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
 	"wailstemplate/internal/updates"
 )
 
@@ -26,9 +27,18 @@ func TestKeygenAndSignedManifest(t *testing.T) {
 	if err := run([]string{"manifest", "-key", keyPath, "-installer", path, "-app-id", "test.app", "-version", "1.0.0", "-out", dir}); err != nil {
 		t.Fatal(err)
 	}
-	keyBytes, _ := os.ReadFile(keyPath)
-	key, _ := base64.StdEncoding.DecodeString(strings.TrimSpace(string(keyBytes)))
-	data, _ := os.ReadFile(filepath.Join(dir, updates.ManifestName))
+	keyBytes, err := os.ReadFile(keyPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	key, err := base64.StdEncoding.DecodeString(strings.TrimSpace(string(keyBytes)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(filepath.Join(dir, updates.ManifestName))
+	if err != nil {
+		t.Fatal(err)
+	}
 	manifest, err := updates.Verify(data, ed25519.PrivateKey(key).Public().(ed25519.PublicKey))
 	if err != nil || manifest.Version != "1.0.0" {
 		t.Fatalf("manifest %v %#v", err, manifest)

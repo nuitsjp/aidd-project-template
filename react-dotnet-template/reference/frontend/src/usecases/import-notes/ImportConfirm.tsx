@@ -15,7 +15,12 @@ export function ImportConfirm() {
         <Notification color="teal" role="status" withCloseButton={false} withBorder>
           {count}件を登録しました
         </Notification>
-        <Button onClick={() => void navigate({ to: '/notes' })} mt="lg">
+        <Button
+          onClick={() => {
+            navigate({ to: '/notes' }).catch(console.error);
+          }}
+          mt="lg"
+        >
           メモ一覧へ
         </Button>
       </section>
@@ -49,7 +54,9 @@ export function ImportConfirm() {
             一括登録する
           </Button>
           <Button
-            onClick={() => void navigate({ to: '/import' })}
+            onClick={() => {
+              navigate({ to: '/import' }).catch(console.error);
+            }}
             variant="default"
             disabled={commit.isPending}
           >

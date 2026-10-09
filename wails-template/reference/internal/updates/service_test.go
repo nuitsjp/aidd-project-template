@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
 	"wailstemplate/internal/appstate"
 )
 
@@ -78,17 +79,31 @@ func TestVerifiedFolderUpdate(t *testing.T) {
 }
 func TestTamperingAndWrongKey(t *testing.T) {
 	cfg, key, m := fixture(t, "0.2.0")
-	b, _ := Sign(m, key)
+	b, err := Sign(m, key)
+	if err != nil {
+		t.Fatal(err)
+	}
 	var envelope Envelope
-	json.Unmarshal(b, &envelope)
-	payload, _ := base64.StdEncoding.DecodeString(envelope.Payload)
+	if err := json.Unmarshal(b, &envelope); err != nil {
+		t.Fatal(err)
+	}
+	payload, err := base64.StdEncoding.DecodeString(envelope.Payload)
+	if err != nil {
+		t.Fatal(err)
+	}
 	payload[5] ^= 1
 	envelope.Payload = base64.StdEncoding.EncodeToString(payload)
-	tampered, _ := json.Marshal(envelope)
+	tampered, err := json.Marshal(envelope)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if _, err := Verify(tampered, key.Public().(ed25519.PublicKey)); err == nil {
 		t.Fatal("tampered payload accepted")
 	}
-	wrong, _, _ := ed25519.GenerateKey(rand.Reader)
+	wrong, _, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
 	cfg.PublicKey = base64.StdEncoding.EncodeToString(wrong)
 	if _, err := testUpdater(cfg, &appstate.State{}, nil, func() {}).Check(context.Background()); err == nil {
 		t.Fatal("wrong key accepted")
@@ -170,13 +185,18 @@ func TestVersionAndPathValidation(t *testing.T) {
 func TestCancelledDownloadCleansStage(t *testing.T) {
 	cfg, _, _ := fixture(t, "0.2.0")
 	s := testUpdater(cfg, &appstate.State{}, nil, func() {})
-	s.Check(context.Background())
+	if _, err := s.Check(context.Background()); err != nil {
+		t.Fatal(err)
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	if _, err := s.Download(ctx); err == nil {
 		t.Fatal("cancellation ignored")
 	}
-	entries, _ := os.ReadDir(cfg.CacheDir)
+	entries, err := os.ReadDir(cfg.CacheDir)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(entries) != 0 {
 		t.Fatal("failed download retained")
 	}

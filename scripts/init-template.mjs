@@ -8,6 +8,7 @@ const dotnetGeneratedNames = new Set([
   'coverage', '.e2e-results', 'playwright-report', '.env', 'mise.local.props',
 ]);
 const productFiles = [
+  '.vscode',
   '.env.example', '.nvmrc', '.prettierignore', '.prettierrc.json', 'App.slnx', 'global.json', 'package.json',
   'package-lock.json', 'eslint.config.mjs', 'playwright.config.ts',
   'vitest.config.ts', 'tsconfig.json', 'tsr.config.json', 'mise.toml',

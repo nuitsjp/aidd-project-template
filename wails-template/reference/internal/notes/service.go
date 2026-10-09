@@ -146,7 +146,7 @@ func (s *Service) List(ctx context.Context) ([]Note, error) {
 	withTimes := make([]noteWithTime, len(result))
 	for i, note := range result {
 		// New validates persisted timestamps; Save and Import generate them.
-		updatedAt, _ := time.Parse(time.RFC3339Nano, note.UpdatedAt)
+		updatedAt, _ := time.Parse(time.RFC3339Nano, note.UpdatedAt) //nolint:errcheck // New validates timestamps; Save and Import create them in this format.
 		withTimes[i] = noteWithTime{note: note, updatedAt: updatedAt}
 	}
 	sort.SliceStable(withTimes, func(i, j int) bool {
@@ -402,7 +402,7 @@ func (s *Service) persist(notes []Note) error {
 		return err
 	}
 	name := f.Name()
-	defer os.Remove(name)
+	defer os.Remove(name) //nolint:errcheck // A replaced file no longer exists; failed writes retain their original error.
 	if _, err = f.Write(b); err == nil {
 		err = f.Sync()
 	}

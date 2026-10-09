@@ -1,6 +1,6 @@
 # Node.jsは.nvmrcと同じ版を指定する。Go・Pythonは以下の検証用ツール版を使用する。
 [tools]
-go = "1.26.5"
+go = "1.26.9"
 node = "24.21.0"
 python = "3.14"
 
@@ -43,6 +43,26 @@ run = "node scripts/run.mjs verify"
 [tasks."test:core"]
 description = "Goの機能・保存・更新検証を実行する"
 run = "node scripts/run.mjs test:core"
+
+[tasks.audit]
+description = "外部DBを使いGo・npm依存の既知脆弱性を検査する"
+run = "node scripts/run.mjs audit"
+
+[tasks.format]
+description = "GoとTypeScriptを整形する"
+run = "node scripts/run.mjs format"
+
+[tasks."format:check"]
+description = "GoとTypeScriptの整形状態を検査する"
+run = "node scripts/run.mjs format:check"
+
+[tasks.lint]
+description = "TypeScript・設定・Node運用スクリプト・workflowを検査する"
+run = "node scripts/run.mjs lint"
+
+[tasks."lint:go"]
+description = "画面をビルドし、Goのエラー処理と検査除外を本番・server構成で検査する"
+run = "node scripts/run.mjs lint:go"
 
 [tasks.release]
 description = "更新用の鍵生成と署名済み更新情報の作成（引数はrelease以降に指定）"

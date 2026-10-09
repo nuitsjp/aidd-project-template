@@ -6,5 +6,7 @@ await npm('exec', '--', 'vite', 'build', '--config', 'frontend/vite.config.ts');
 rmSync(join(root, 'dist'), { recursive: true, force: true });
 await npm('exec', '--', 'tsc', '-p', 'tsconfig.backend.json');
 mkdirSync(join(root, 'dist/backend/db/migrations'), { recursive: true });
-cpSync(join(root, 'backend/db/migrations'), join(root, 'dist/backend/db/migrations'), { recursive: true });
+cpSync(join(root, 'backend/db/migrations'), join(root, 'dist/backend/db/migrations'), {
+  recursive: true,
+});
 console.log('ビルド完了。npm start で同梱UIとAPIを同じoriginで起動します。');

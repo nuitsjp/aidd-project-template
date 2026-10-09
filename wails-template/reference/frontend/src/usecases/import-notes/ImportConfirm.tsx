@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { Alert, Button, Group, Paper, Progress, Stack, Table, Text, Title } from '@mantine/core';
 import { ErrorNotice } from '../../shared/ErrorNotice';
+import { reportFrontendError } from '../../features/application/queries';
 import { useImportDialogue } from './ImportDialogue';
 
 export function ImportConfirm() {
@@ -85,7 +86,12 @@ export function ImportConfirm() {
                 メモ一覧へ
               </Button>
             ) : (
-              <Button loading={mutation.isPending} onClick={() => void execute()}>
+              <Button
+                loading={mutation.isPending}
+                onClick={() => {
+                  void execute().catch(reportFrontendError);
+                }}
+              >
                 取り込む
               </Button>
             )}

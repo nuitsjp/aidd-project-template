@@ -12,6 +12,7 @@ KINDS = ("wails", "react", "react-dotnet")
 DOTNET_GENERATED_NAMES = {".vs", "bin", "obj", "TestResults", "node_modules", "dist", "data",
                           "release", "coverage", ".e2e-results", "playwright-report", ".env", "mise.local.props"}
 PRODUCT_FILES = (
+    ".vscode",
     ".env.example", ".nvmrc", ".prettierignore", ".prettierrc.json", "App.slnx", "global.json", "package.json", "package-lock.json",
     "eslint.config.mjs", "playwright.config.ts", "vitest.config.ts", "tsconfig.json",
     "tsr.config.json", "mise.toml", "backend", "frontend", "contracts", "tests", "scripts",
