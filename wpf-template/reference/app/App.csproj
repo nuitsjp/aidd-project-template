@@ -20,9 +20,11 @@
     <PackageReference Include="Kamishibai.Hosting" Version="4.0.0" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.12" />
-    <EmbeddedResource Include="Model/Infrastructure/Sqlite/Migrations/*.sql" LogicalName="App.Migrations.%(Filename)%(Extension)" />
+    <PackageReference Include="WpfAnalyzers" Version="4.1.1" PrivateAssets="all" />
+    <EmbeddedResource Include="Infrastructure/Sqlite/Migrations/*.sql" LogicalName="App.Migrations.%(Filename)%(Extension)" />
+    <ProjectReference Include="../analyzers/ArchitectureAnalyzer/ArchitectureAnalyzer.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)' != 'Mock'">
-    <Compile Remove="Model/Domain/Notes/InMemoryNotesService.cs" />
+    <Compile Remove="Infrastructure/InMemory/**/*.cs" />
   </ItemGroup>
 </Project>

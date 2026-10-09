@@ -1,0 +1,90 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+  <!--  Ant Design 6.6.5 の既定ライトテーマのトークンを、WPF のデバイス非依存単位で表す。キー名はトークン名に合わせる。  -->
+  <Color x:Key="ColorPrimary">#1677FF</Color>
+  <SolidColorBrush x:Key="ColorPrimaryBrush" Color="{StaticResource ColorPrimary}" />
+  <SolidColorBrush x:Key="ColorPrimaryHoverBrush" Color="#4096FF" />
+  <SolidColorBrush x:Key="ColorPrimaryActiveBrush" Color="#0958D9" />
+  <SolidColorBrush x:Key="ColorPrimaryBgBrush" Color="#E6F4FF" />
+  <SolidColorBrush x:Key="ColorPrimaryBgHoverBrush" Color="#BAE0FF" />
+  <SolidColorBrush x:Key="ColorPrimaryBorderBrush" Color="#91CAFF" />
+  <SolidColorBrush x:Key="ColorLinkHoverBrush" Color="#69B1FF" />
+
+  <SolidColorBrush x:Key="ColorTextBrush" Color="#E0000000" />
+  <SolidColorBrush x:Key="ColorTextSecondaryBrush" Color="#A6000000" />
+  <SolidColorBrush x:Key="ColorTextTertiaryBrush" Color="#73000000" />
+  <SolidColorBrush x:Key="ColorTextQuaternaryBrush" Color="#40000000" />
+  <SolidColorBrush x:Key="ColorTextDisabledBrush" Color="#40000000" />
+  <SolidColorBrush x:Key="ColorTextLightSolidBrush" Color="#FFFFFF" />
+
+  <SolidColorBrush x:Key="ColorBorderBrush" Color="#D9D9D9" />
+  <SolidColorBrush x:Key="ColorBorderSecondaryBrush" Color="#F0F0F0" />
+  <SolidColorBrush x:Key="ColorSplitBrush" Color="#0F050505" />
+  <SolidColorBrush x:Key="ColorFillBrush" Color="#26000000" />
+  <SolidColorBrush x:Key="ColorFillTertiaryBrush" Color="#0A000000" />
+  <SolidColorBrush x:Key="ColorBgContainerBrush" Color="#FFFFFF" />
+  <SolidColorBrush x:Key="ColorBgContainerDisabledBrush" Color="#0A000000" />
+  <SolidColorBrush x:Key="ColorBgLayoutBrush" Color="#F5F5F5" />
+  <SolidColorBrush x:Key="ColorBgMaskBrush" Color="#73000000" />
+  <SolidColorBrush x:Key="ColorBgSpotlightBrush" Color="#D9000000" />
+  <SolidColorBrush x:Key="ColorBgTextHoverBrush" Color="#0F000000" />
+
+  <SolidColorBrush x:Key="ColorErrorBrush" Color="#FF4D4F" />
+  <SolidColorBrush x:Key="ColorErrorHoverBrush" Color="#FF7875" />
+  <SolidColorBrush x:Key="ColorErrorActiveBrush" Color="#D9363E" />
+  <SolidColorBrush x:Key="ColorErrorBgBrush" Color="#FFF2F0" />
+  <SolidColorBrush x:Key="ColorErrorBgActiveBrush" Color="#FFCCC7" />
+  <SolidColorBrush x:Key="ColorErrorBorderBrush" Color="#FFCCC7" />
+  <SolidColorBrush x:Key="ColorSuccessBrush" Color="#52C41A" />
+  <SolidColorBrush x:Key="ColorSuccessBgBrush" Color="#F6FFED" />
+  <SolidColorBrush x:Key="ColorSuccessBorderBrush" Color="#B7EB8F" />
+  <SolidColorBrush x:Key="ColorWarningBrush" Color="#FAAD14" />
+  <SolidColorBrush x:Key="ColorWarningBgBrush" Color="#FFFBE6" />
+
+  <!--  Table のヘッダー背景と行 hover（colorFillAlter を白背景で不透明化した値）。  -->
+  <SolidColorBrush x:Key="TableHeaderBgBrush" Color="#FAFAFA" />
+  <!--  Input の activeShadow（controlOutline）。Button の影（defaultShadow 等）は各 Button スタイルの Style.Resources に置く。  -->
+  <SolidColorBrush x:Key="ControlOutlineBrush" Color="#1A0591FF" />
+  <!--  Empty の簡易画像（colorFill・colorFillTertiary・colorFillQuaternary を白背景で不透明化した値）。  -->
+  <SolidColorBrush x:Key="EmptyBorderBrush" Color="#D9D9D9" />
+  <SolidColorBrush x:Key="EmptyShadowBrush" Color="#F5F5F5" />
+  <SolidColorBrush x:Key="EmptyContentBrush" Color="#FAFAFA" />
+
+  <FontFamily x:Key="FontFamilyUi">Segoe UI, Yu Gothic UI</FontFamily>
+  <sys:Double x:Key="FontSize">14</sys:Double>
+  <sys:Double x:Key="FontSizeSM">12</sys:Double>
+  <sys:Double x:Key="FontSizeLG">16</sys:Double>
+  <sys:Double x:Key="FontSizeHeading4">20</sys:Double>
+  <sys:Double x:Key="FontSizeHeading5">16</sys:Double>
+  <sys:Double x:Key="LineHeight">22</sys:Double>
+  <sys:Double x:Key="LineHeightSM">20</sys:Double>
+  <sys:Double x:Key="LineHeightLG">24</sys:Double>
+  <sys:Double x:Key="LineHeightHeading4">28</sys:Double>
+  <sys:Double x:Key="LineHeightHeading5">24</sys:Double>
+
+  <sys:Double x:Key="ControlHeight">32</sys:Double>
+  <sys:Double x:Key="ControlHeightSM">24</sys:Double>
+  <sys:Double x:Key="ControlHeightLG">40</sys:Double>
+  <CornerRadius x:Key="BorderRadius">6</CornerRadius>
+  <CornerRadius x:Key="BorderRadiusSM">4</CornerRadius>
+  <CornerRadius x:Key="BorderRadiusLG">8</CornerRadius>
+  <Thickness x:Key="LineWidth">1</Thickness>
+
+  <Thickness x:Key="ButtonPadding">15,0</Thickness>
+  <Thickness x:Key="ButtonPaddingSM">7,0</Thickness>
+  <Thickness x:Key="InputPadding">11,4</Thickness>
+  <Thickness x:Key="TableCellPaddingSM">8</Thickness>
+  <Thickness x:Key="AlertPadding">12,8</Thickness>
+  <Thickness x:Key="TagPadding">7,0</Thickness>
+  <Thickness x:Key="ModalContentPadding">24,20</Thickness>
+  <Thickness x:Key="CardBodyPadding">24</Thickness>
+  <Thickness x:Key="TooltipPadding">8,6</Thickness>
+  <Thickness x:Key="LayoutPadding">16</Thickness>
+  <Thickness x:Key="PageBarSpacing">0,0,0,16</Thickness>
+  <Thickness x:Key="FormItemSpacing">0,0,0,24</Thickness>
+  <Thickness x:Key="FormLabelPadding">0,0,0,8</Thickness>
+  <Thickness x:Key="AlertSpacing">0,0,0,16</Thickness>
+  <Thickness x:Key="IconGap">0,0,8,0</Thickness>
+  <Thickness x:Key="ItemGap">8,0,0,0</Thickness>
+</ResourceDictionary>

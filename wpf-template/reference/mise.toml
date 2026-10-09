@@ -22,20 +22,38 @@ description = "ReleaseのWPFアプリをビルドする"
 run = "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run.ps1 build"
 
 [tasks."test:unit"]
+description = "単体テストと製品の行網羅率計測を行う（閾値判定なし）"
 run = "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run.ps1 test:unit"
 
 [tasks."test:integration"]
+description = "統合テストと製品の行網羅率計測を行う（閾値判定なし）"
 run = "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run.ps1 test:integration"
 
 [tasks."test:e2e"]
-description = "WindowsデスクトップでFriendlyの実UI検証を行う"
+description = "Friendlyの実UI検証と子アプリを含む行網羅率計測を行う（閾値判定なし）"
 run = "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run.ps1 test:e2e"
 
 [tasks."check:docs"]
 run = "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-docs.ps1"
 
+[tasks.format]
+description = "C# を dotnet format、XAML を XamlStyler で整形する"
+run = "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run.ps1 format"
+
+[tasks."check:format"]
+description = "C# と XAML の整形漏れとコード規約の違反を検査する"
+run = "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run.ps1 check:format"
+
+[tasks."check:xaml"]
+description = "画面側のStyle・ControlTemplate定義を検査する"
+run = "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run.ps1 check:xaml"
+
+[tasks."test:xaml"]
+description = "XAMLチェッカーの回帰検証を行う"
+run = "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run.ps1 test:xaml"
+
 [tasks.verify]
-description = "文書・ビルド・単体・統合・実UIを検証する"
+description = "文書・整形・コード規約・XAMLを順に検査し、回帰検証を並走させて静的解析・ビルド・単体・統合・E2Eと統合行網羅率を検証する"
 run = "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run.ps1 verify"
 
 [tasks.package]

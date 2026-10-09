@@ -1,11 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Shouldly;
-using WpfNotesSample.Model.Domain.Notes;
-using WpfNotesSample.Model.UseCase;
+using WpfNotesSample.Domain.Notes;
 using WpfNotesSample.ViewModel;
 using Xunit;
 
@@ -21,7 +19,7 @@ public sealed class ViewModelDraftTests
         Exception error = conflict ? new NoteConflictException() : new NoteValidationException("入力を確認してください。");
         var service = new StubNotesService { Save = (_, _, _, _) => Task.FromException<Note>(error) };
         var saved = new Note(Guid.NewGuid(), "保存済みタイトル", "保存済み本文", 3, DateTime.UtcNow);
-        var editor = new NoteEditViewModel(saved, service, null!, new NavigationState())
+        var editor = new NoteEditViewModel(saved, service, null!, null!, new NavigationState())
         {
             NoteTitle = "作業中のタイトル",
             Body = "作業中の本文",
@@ -52,7 +50,7 @@ public sealed class ViewModelDraftTests
                 return Task.FromResult(new Note(id, title.Trim(), body, ids.Count, DateTime.UtcNow));
             },
         };
-        var editor = new NoteEditViewModel(service, null!, new NavigationState())
+        var editor = new NoteEditViewModel(service, null!, null!, new NavigationState())
         {
             NoteTitle = "  最初のタイトル  ",
             Body = "最初の本文",
@@ -80,66 +78,51 @@ public sealed class ViewModelDraftTests
     }
 
     [Fact]
-    public void ChangingImportInputClearsThePreviewAndRequiresConfirmationAgain()
+    public async Task DetailsLoadsTheRequestedNoteWithoutCreatingADraft()
     {
-        var importer = CreateImporter(new StubNotesService());
-        importer.Input = "タイトル1\t本文1\nタイトル2\t本文2";
-        importer.PreviewCommand.Execute(null);
-        importer.IsConfirmed.ShouldBeTrue();
-        importer.PreviewItems.Count.ShouldBe(2);
-
-        importer.Input += "\nタイトル3\t本文3";
-
-        importer.IsConfirmed.ShouldBeFalse();
-        importer.PreviewItems.ShouldBeEmpty();
-        importer.IsDirty.ShouldBeTrue();
-        importer.StatusMessage.ShouldBeEmpty();
-    }
-
-    [Fact]
-    public async Task FailedImportPreservesInputAndTheConfirmedPreviewForRetry()
-    {
-        var error = new SqliteException("保存先に書き込めません。", 10);
+        var saved = new Note(Guid.NewGuid(), "詳細のタイトル", "詳細の本文", 2, DateTime.UtcNow);
         var service = new StubNotesService
         {
-            Import = _ => Task.FromException<IReadOnlyList<Note>>(error),
+            Get = id =>
+            {
+                id.ShouldBe(saved.Id);
+                return Task.FromResult<Note?>(saved);
+            },
         };
-        var importer = CreateImporter(service);
-        const string input = "タイトル1\t本文1\nタイトル2\t本文2";
-        importer.Input = input;
-        importer.PreviewCommand.Execute(null);
+        var navigation = new NavigationState();
+        var details = new NoteDetailsViewModel(saved.Id, service, null!, null!, navigation);
 
-        await importer.ConfirmCommand.ExecuteAsync(null);
+        await details.OnNavigatedAsync(null!);
 
-        importer.Input.ShouldBe(input);
-        importer.PreviewItems.Count.ShouldBe(2);
-        importer.IsConfirmed.ShouldBeTrue();
-        importer.IsDirty.ShouldBeTrue();
-        importer.ErrorMessage.ShouldBe(error.Message);
-        importer.CanInteract.ShouldBeTrue();
-        importer.IsBusy.ShouldBeFalse();
+        navigation.CurrentPage.ShouldBeSameAs(details);
+        details.NoteTitle.ShouldBe(saved.Title);
+        details.Body.ShouldBe(saved.Body);
+        details.EditNoteCommand.CanExecute(null).ShouldBeTrue();
+        details.IsDirty.ShouldBeFalse();
+        details.ErrorMessage.ShouldBeEmpty();
     }
 
-    [Fact]
-    public async Task SuccessfulImportClearsTheDraftAndDisplaysTheSavedCount()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task MissingOrFailedDetailsCannotStartEditing(bool storageFailure)
     {
+        var error = new SqliteException("詳細を読み込めません。", 10);
         var service = new StubNotesService
         {
-            Import = inputs => Task.FromResult<IReadOnlyList<Note>>(inputs.Select(input =>
-                new Note(Guid.NewGuid(), input.Title, input.Body, 1, DateTime.UtcNow)).ToList()),
+            Get = _ => storageFailure ? Task.FromException<Note?>(error) : Task.FromResult<Note?>(null),
         };
-        var importer = CreateImporter(service);
-        importer.Input = "タイトル1\t本文1\nタイトル2\t本文2";
-        importer.PreviewCommand.Execute(null);
+        var details = new NoteDetailsViewModel(Guid.NewGuid(), service, null!, null!, new NavigationState());
 
-        await importer.ConfirmCommand.ExecuteAsync(null);
+        await details.OnNavigatedAsync(null!);
 
-        importer.Input.ShouldBeEmpty();
-        importer.PreviewItems.ShouldBeEmpty();
-        importer.IsConfirmed.ShouldBeFalse();
-        importer.IsDirty.ShouldBeFalse();
-        importer.ErrorMessage.ShouldBeEmpty();
-        importer.StatusMessage.ShouldBe("2 件を登録しました。");
+        details.NoteTitle.ShouldBeEmpty();
+        details.Body.ShouldBeEmpty();
+        details.EditNoteCommand.CanExecute(null).ShouldBeFalse();
+        details.ErrorMessage.ShouldBe(storageFailure ? error.Message :
+            "対象のノートは削除されています。一覧を読み直してください。");
+        details.IsDirty.ShouldBeFalse();
+        details.CanInteract.ShouldBeTrue();
     }
 
     [Fact]
@@ -147,14 +130,14 @@ public sealed class ViewModelDraftTests
     {
         var saved = new[]
         {
-            new Note(Guid.NewGuid(), "表示済みメモ1", "本文1", 1, DateTime.UtcNow),
-            new Note(Guid.NewGuid(), "表示済みメモ2", "本文2", 2, DateTime.UtcNow),
+            new Note(Guid.NewGuid(), "表示済みノート1", "本文1", 1, DateTime.UtcNow),
+            new Note(Guid.NewGuid(), "表示済みノート2", "本文2", 2, DateTime.UtcNow),
         };
         var service = new StubNotesService
         {
             List = () => Task.FromResult<IReadOnlyList<Note>>(saved),
         };
-        var list = new NoteListViewModel(service, null!, new NavigationState());
+        var list = new NoteListViewModel(service, null!, null!, new NavigationState());
         await list.RefreshCommand.ExecuteAsync(null);
         list.Notes.ShouldBe(saved);
         var error = new SqliteException("一覧を読み込めません。", 10);
@@ -168,20 +151,16 @@ public sealed class ViewModelDraftTests
         list.IsBusy.ShouldBeFalse();
     }
 
-    private static ImportNotesViewModel CreateImporter(INotesService service) =>
-        new ImportNotesViewModel(new PreviewNotesUseCase(service), null!, new NavigationState());
-
     private sealed class StubNotesService : INotesService
     {
         public Func<Guid?, int?, string, string, Task<Note>>? Save { get; set; }
-        public Func<IReadOnlyList<NoteInput>, Task<IReadOnlyList<Note>>>? Import { get; set; }
+        public Func<Guid, Task<Note?>>? Get { get; set; }
         public Func<Task<IReadOnlyList<Note>>>? List { get; set; }
 
         public Task<Note> SaveAsync(Guid? id, int? expectedVersion, string title, string body) =>
             Save?.Invoke(id, expectedVersion, title, body) ?? throw new NotSupportedException();
 
-        public Task<IReadOnlyList<Note>> ImportAsync(IReadOnlyList<NoteInput> inputs) =>
-            Import?.Invoke(inputs) ?? throw new NotSupportedException();
+        public Task<Note?> GetAsync(Guid id) => Get?.Invoke(id) ?? throw new NotSupportedException();
 
         public Task<IReadOnlyList<Note>> ListAsync() =>
             List?.Invoke() ?? throw new NotSupportedException();

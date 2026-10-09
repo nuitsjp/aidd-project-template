@@ -108,6 +108,8 @@ mise run verify
 
 Windows向けの純粋なWPF参照実装は [wpf-template/reference/](wpf-template/reference/README.md) にまとめています。.NET Framework 4.8.1を標準とし、KamishibaiでViewとViewModelを構成します。ビルド用の.NET SDKは10.0系列の安定版を `global.json` で指定し、C#の言語版は `latest` を指定します。開発端末には.NET Framework 4.8.1 Developer Packと、Visual Studioの「.NETデスクトップ開発」を用意します。生成コマンドにはmiseとNode.js 22.16以上が必要です。
 
+参照実装のユースケースはノート一覧の表示、ノート詳細の表示、ノートの追加、ノートの更新、ノートの削除の5件です。文書とFriendlyのE2Eテストをユースケース・シナリオごとの同名ファイルで対応させています。
+
 ```powershell
 mise run init:wpf ../my-wpf-app --name Company.Product
 cd ../my-wpf-app
@@ -118,7 +120,7 @@ mise run verify
 
 `template/`、`wpf-template/`、ルートの `LICENSE` を配置し、参照アプリの `README.md` と `docs/` を除く一式を製品ルートへコピーします。`--name` は予約語を除くASCIIのC#識別子をドットで区切って指定します。製品側のC#名前空間、ソリューション名、プロジェクト名、アセンブリ名を製品名に合わせ、`<製品名>.slnx`、`app/<製品名>.csproj`、`tests/unit/<製品名>.UnitTests.csproj`、`tests/integration/<製品名>.IntegrationTests.csproj`、`tests/e2e/<製品名>.E2eTests.csproj` を配置します。参照アプリは `reference/` に元の名前と内容で残し、製品と参照アプリの保存領域・多重起動判定を分けます。ルートの `docs/` は共通版から始め、製品の現行仕様を記述します。生成は依存取得やビルドを行わず、既存の出力先を拒否し、`bin/`・`obj/`・試験結果・試験用データなどの生成物を配布しません。
 
-製品ルートで `mise run dev` を実行すると実処理で起動し、`mise run dev:mock` では試験用固定データで対話を確認できます。`mise run package` は配布物を作成します。Visual StudioのF5は製品ルートの `<製品名>.slnx` を開き、`app/<製品名>.csproj` をスタートアッププロジェクトにします。参照アプリは `reference/App.slnx` と `reference/app/App.csproj` を使用し、`reference/` で同じセットアップ・起動・検証コマンドを実行します。必要な環境とネイティブUI検証・配布の手順は [WPFの実行手順](wpf-template/reference/docs/project.md#commands) に従います。
+製品ルートで `mise run dev` を実行すると、リポジトリで管理する開発用の初期データ `dev-data/notes.db` を使って実処理で起動します（初期状態へは `git restore dev-data/notes.db` で戻します）。`mise run dev:mock` では試験用固定データで対話を確認できます。`mise run package` は配布物を作成します。Visual StudioのF5は製品ルートの `<製品名>.slnx` を開き、`app/<製品名>.csproj` をスタートアッププロジェクトにします。参照アプリは `reference/App.slnx` と `reference/app/App.csproj` を使用し、`reference/` で同じセットアップ・起動・検証コマンドを実行します。必要な環境とネイティブUI検証・配布の手順は [WPFの実行手順](wpf-template/reference/docs/project.md#commands) に従います。
 
 テンプレート開発時は `wpf-template/` でツール導入と製品文書検査、`wpf-template/reference/` で参照アプリのビルド・テストを行います。生成先ルートの `mise.toml` は参照実装から配置したアプリ用タスクです。共通の標準・検査器・文書スキルは拡張側へ複製せず、生成先で一組として検証します。製品側の実装・設定と依存ロックは生成後に採用先で管理します。
 

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
@@ -7,10 +8,12 @@ using System.Windows;
 using Kamishibai;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using WpfNotesSample.Model.Domain.Notes;
-using WpfNotesSample.Model.Infrastructure.Sqlite;
-using WpfNotesSample.Model.Infrastructure.Sqlite.Notes;
-using WpfNotesSample.Model.UseCase;
+using WpfNotesSample.Domain.Notes;
+#if MOCK
+using WpfNotesSample.Infrastructure.InMemory.Notes;
+#endif
+using WpfNotesSample.Infrastructure.Sqlite;
+using WpfNotesSample.Infrastructure.Sqlite.Notes;
 using WpfNotesSample.View;
 using WpfNotesSample.ViewModel;
 
@@ -18,9 +21,13 @@ namespace WpfNotesSample;
 
 public partial class App : Application
 {
+    private const int StartupFailureExitCode = 1;
+    private const int AlreadyRunningExitCode = 2;
+
     public App() => InitializeComponent();
 
     [STAThread]
+    [SuppressMessage("Minor Code Smell", "S2221", Justification = "起動の失敗はすべて原因を表示して終了する受け口。")]
     public static void Main(string[] args)
     {
         try
@@ -33,13 +40,14 @@ public partial class App : Application
             if (!isFirst)
             {
                 MessageBox.Show("この保存先を使用するアプリは既に起動しています。", "起動済み");
-                Environment.ExitCode = 2;
+                Environment.ExitCode = AlreadyRunningExitCode;
                 return;
             }
 
             var builder = KamishibaiApplication<App, MainWindow>.CreateBuilder();
             builder.Services.AddSingleton(options);
             builder.Services.AddSingleton<NavigationState>();
+            builder.Services.AddSingleton<IDialogService, DialogService>();
 #if MOCK
             builder.Services.AddSingleton<INotesService, InMemoryNotesService>();
 #else
@@ -48,18 +56,17 @@ public partial class App : Application
             builder.Services.AddSingleton(database);
             builder.Services.AddSingleton<INotesService, NotesService>();
 #endif
-            builder.Services.AddTransient<PreviewNotesUseCase>();
             builder.Services.AddPresentation<MainWindow, MainViewModel>();
             builder.Services.AddPresentation<NoteListView, NoteListViewModel>();
             builder.Services.AddPresentation<NoteEditView, NoteEditViewModel>();
-            builder.Services.AddPresentation<ImportNotesView, ImportNotesViewModel>();
+            builder.Services.AddPresentation<NoteDetailsView, NoteDetailsViewModel>();
             using var host = builder.Build();
             host.RunAsync().GetAwaiter().GetResult();
         }
-        catch (Exception error)
+        catch (Exception error) when (error is not OutOfMemoryException)
         {
             MessageBox.Show(error.Message, "アプリを起動できません", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
-            Environment.ExitCode = 1;
+            Environment.ExitCode = StartupFailureExitCode;
         }
     }
 }

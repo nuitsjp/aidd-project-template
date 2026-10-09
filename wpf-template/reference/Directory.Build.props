@@ -1,0 +1,13 @@
+<Project>
+  <!-- 全プロジェクトに .NET アナライザーの推奨セットと .editorconfig のコード規約をビルド時に適用する。 -->
+  <PropertyGroup>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <TreatWarningsAsErrors Condition="'$(Configuration)' != 'Debug'">true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- 複雑度・規模などの品質規則。開発時のみで配布物に含めない（Sonar Source-Available License v1.0）。 -->
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.35.0.4138" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

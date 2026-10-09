@@ -1,7 +1,6 @@
-using System;
 using System.Linq;
 using Shouldly;
-using WpfNotesSample.Model.Domain.Notes;
+using WpfNotesSample.Domain.Notes;
 using Xunit;
 
 namespace WpfNotesSample.UnitTests;
@@ -50,26 +49,5 @@ public sealed class NoteRulesTests
 
         Should.Throw<NoteValidationException>(() => NoteRules.Normalize(new NoteInput("タイトル", body)))
             .Message.ShouldBe("本文は10,000文字以内で入力してください。");
-    }
-
-    [Theory]
-    [InlineData(0)]
-    [InlineData(101)]
-    public void ImportRequiresOneToOneHundredNotes(int count)
-    {
-        var inputs = Enumerable.Range(0, count).Select(index => new NoteInput("メモ " + index, "")).ToList();
-
-        Should.Throw<NoteValidationException>(() => NoteRules.NormalizeAll(inputs))
-            .Message.ShouldBe("一括登録は1～100件で入力してください。");
-    }
-
-    [Theory]
-    [InlineData(1)]
-    [InlineData(100)]
-    public void ImportAcceptsTheMinimumAndMaximumNumberOfNotes(int count)
-    {
-        var inputs = Enumerable.Range(0, count).Select(index => new NoteInput("メモ " + index, "")).ToList();
-
-        NoteRules.NormalizeAll(inputs).Count.ShouldBe(count);
     }
 }

@@ -16,6 +16,8 @@
     <PackageReference Include="xunit.v3" Version="4.0.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="4.0.0" />
     <PackageReference Include="Shouldly" Version="4.3.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" PrivateAssets="all" />
     <ProjectReference Include="../../app/App.csproj" />
+    <ProjectReference Include="../../analyzers/ArchitectureAnalyzer/ArchitectureAnalyzer.csproj" />
   </ItemGroup>
 </Project>

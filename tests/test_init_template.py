@@ -195,7 +195,7 @@ class InitTemplateTests(unittest.TestCase):
                         self.assertIn('[tasks."dev:mock"]', tasks)
                 self.assertEqual(list((destination / "docs/usecases").glob("*/README.md")), [])
                 self.assertEqual(len(list((destination / "reference/docs/usecases").glob("*/README.md"))),
-                                     3 if kind == "wails" else 2)
+                                     5 if kind == "wpf" else 3 if kind == "wails" else 2)
                 for name, content in expected.items():
                     self.assertEqual(actual[name], content, str(name))
                 if kind in ("react-dotnet", "wpf"):

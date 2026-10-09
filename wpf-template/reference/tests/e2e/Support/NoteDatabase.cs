@@ -7,9 +7,9 @@ namespace WpfNotesSample.E2eTests.Support;
 
 internal sealed class NoteDatabase
 {
-    private readonly string dataDirectory;
+    private readonly string _dataDirectory;
 
-    public NoteDatabase(string dataDirectory) => this.dataDirectory = dataDirectory;
+    public NoteDatabase(string dataDirectory) => _dataDirectory = dataDirectory;
 
     public List<SavedNote> ReadNotes()
     {
@@ -19,7 +19,10 @@ internal sealed class NoteDatabase
         using var reader = command.ExecuteReader();
         var notes = new List<SavedNote>();
         while (reader.Read())
+        {
             notes.Add(new SavedNote(reader.GetString(0), reader.GetString(1), reader.GetInt32(2)));
+        }
+
         return notes;
     }
 
@@ -53,7 +56,7 @@ internal sealed class NoteDatabase
     {
         var connection = new SqliteConnection(new SqliteConnectionStringBuilder
         {
-            DataSource = Path.Combine(dataDirectory, "notes.db"),
+            DataSource = Path.Combine(_dataDirectory, "notes.db"),
             Mode = SqliteOpenMode.ReadWrite,
             Pooling = false,
         }.ToString());

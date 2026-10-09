@@ -1,25 +1,66 @@
-<UserControl x:Class="WpfNotesSample.View.NoteListView"
+﻿<UserControl x:Class="WpfNotesSample.View.NoteListView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:v="clr-namespace:WpfNotesSample.View">
   <DockPanel>
     <StackPanel DockPanel.Dock="Top">
-      <TextBlock Text="メモ一覧" FontSize="22" FontWeight="SemiBold" Margin="0,0,0,16" />
-      <StackPanel Orientation="Horizontal" IsEnabled="{Binding CanInteract}">
-        <Button x:Name="NewNoteButton" Content="新規作成" Command="{Binding NewNoteCommand}" />
-        <Button x:Name="EditNoteButton" Content="編集" Command="{Binding EditNoteCommand}" />
-        <Button x:Name="DeleteNoteButton" Content="削除" Command="{Binding DeleteNoteCommand}" />
-        <Button x:Name="RefreshButton" Content="再読み込み" Command="{Binding RefreshCommand}" />
-      </StackPanel>
-      <TextBlock x:Name="ErrorText" Text="{Binding ErrorMessage}" Foreground="#B42318" Margin="0,12,0,0" />
-      <TextBlock x:Name="StatusText" Text="{Binding StatusMessage}" Margin="0,8,0,12" />
+      <Grid Style="{StaticResource PageBarStyle}">
+        <StackPanel IsEnabled="{Binding CanInteract}" Style="{StaticResource PageActionsStyle}">
+          <Button x:Name="NewNoteButton"
+                  v:Icon.Data="{StaticResource IconPlus}"
+                  Command="{Binding NewNoteCommand}"
+                  Content="追加"
+                  Style="{StaticResource PrimaryButtonStyle}" />
+          <Button x:Name="RefreshButton"
+                  Margin="{StaticResource ItemGap}"
+                  v:Icon.Data="{StaticResource IconReload}"
+                  Command="{Binding RefreshCommand}"
+                  Content="再読み込み" />
+        </StackPanel>
+      </Grid>
+      <Border Style="{StaticResource ErrorAlertStyle}">
+        <DockPanel>
+          <Control Style="{StaticResource ErrorAlertIconStyle}" />
+          <TextBlock x:Name="ErrorText"
+                     Style="{StaticResource AlertTextStyle}"
+                     Text="{Binding ErrorMessage}" />
+        </DockPanel>
+      </Border>
     </StackPanel>
-    <DataGrid x:Name="NotesGrid" ItemsSource="{Binding Notes}" SelectedItem="{Binding SelectedNote}" AutoGenerateColumns="False"
-              IsReadOnly="True" SelectionMode="Single" CanUserAddRows="False" IsEnabled="{Binding CanInteract}">
-      <DataGrid.Columns>
-        <DataGridTextColumn Header="タイトル" Binding="{Binding Title}" Width="2*" />
-        <DataGridTextColumn Header="本文" Binding="{Binding Body}" Width="3*" />
-        <DataGridTextColumn Header="更新日時（UTC）" Binding="{Binding UpdatedAt, StringFormat=yyyy-MM-dd HH:mm}" Width="160" />
-      </DataGrid.Columns>
-    </DataGrid>
+    <Border Style="{StaticResource TableCardStyle}">
+      <Grid>
+        <DataGrid x:Name="NotesGrid"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  IsEnabled="{Binding CanInteract}"
+                  IsReadOnly="True"
+                  ItemsSource="{Binding Notes}"
+                  SelectionMode="Single"
+                  SelectionUnit="FullRow">
+          <DataGrid.Columns>
+            <DataGridTextColumn Width="*"
+                                Binding="{Binding Title}"
+                                Header="タイトル" />
+            <DataGridTextColumn Width="160"
+                                Binding="{Binding UpdatedAt, StringFormat=yyyy-MM-dd HH:mm}"
+                                Header="更新日時（UTC）" />
+            <DataGridTemplateColumn Width="64">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate>
+                  <Button Command="{Binding DataContext.ShowDetailsCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                          CommandParameter="{Binding}"
+                          Content="詳細"
+                          Style="{StaticResource RowActionButtonStyle}" />
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+          </DataGrid.Columns>
+        </DataGrid>
+        <StackPanel Style="{StaticResource EmptyStateStyle}">
+          <Control Style="{StaticResource EmptyImageStyle}" />
+          <TextBlock Style="{StaticResource EmptyStateTextStyle}" Text="まだノートがありません。&#10;「追加」から最初のノートを作成できます。" />
+        </StackPanel>
+      </Grid>
+    </Border>
   </DockPanel>
 </UserControl>

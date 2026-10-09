@@ -1,3 +1,4 @@
+using System;
 using Codeer.Friendly;
 using Codeer.Friendly.Dynamic;
 using Codeer.Friendly.Windows;
@@ -14,22 +15,23 @@ public sealed class MainWindowDriver : IAppVarOwner
 {
     public WindowControl Core { get; }
     public AppVar AppVar => Core.AppVar;
-    public WPFTextBlock Mode => new(AppVar.Dynamic().ModeText);
-    public WPFButtonBase ShowNotes => new(AppVar.Dynamic().ShowNotesButton);
-    public WPFButtonBase ShowImport => new(AppVar.Dynamic().ShowImportButton);
+    public WPFTextBlock Mode => new(AppVar.Dynamic().Template.FindName("ModeText", AppVar));
 
     public MainWindowDriver(WindowControl core) => Core = core;
     public MainWindowDriver(AppVar appVar) : this(new WindowControl(appVar)) { }
 
-    public NoteListViewDriver NoteList => new(WaitForView<NoteListView>());
-    public NoteEditViewDriver NoteEdit => new(WaitForView<NoteEditView>());
-    public ImportNotesViewDriver ImportNotes => new(WaitForView<ImportNotesView>());
+    public NoteListViewDriver NoteList => new(WaitForView(typeof(NoteListView)));
+    public NoteEditViewDriver NoteEdit => new(WaitForView(typeof(NoteEditView)));
+    public NoteDetailsViewDriver NoteDetails => new(WaitForView(typeof(NoteDetailsView)));
 
-    private AppVar WaitForView<T>() where T : System.Windows.DependencyObject
+    private AppVar WaitForView(Type viewType)
     {
         AppVar? view = null;
-        UiWait.Until(() => (view = AppVar.VisualTree().ByType<T>().SingleOrDefault()) != null,
-            $"{typeof(T).Name} が表示されません。");
+        UiWait.Until(() =>
+        {
+            view = AppVar.VisualTree().ByType(viewType.FullName!).SingleOrDefault();
+            return view != null;
+        }, $"{viewType.Name} が表示されません。");
         return view!;
     }
 

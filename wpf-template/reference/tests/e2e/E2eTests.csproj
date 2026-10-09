@@ -18,7 +18,6 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="4.0.0" />
     <PackageReference Include="Shouldly" Version="4.3.0" />
     <PackageReference Include="RM.Friendly.WPFStandardControls" Version="1.63.0" />
-    <PackageReference Include="Codeer.Friendly.Windows.NativeStandardControls" Version="2.20.0" />
     <ProjectReference Include="../../app/App.csproj" />
   </ItemGroup>
 </Project>

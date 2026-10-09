@@ -11,7 +11,11 @@ internal static class UiWait
         var elapsed = Stopwatch.StartNew();
         while (!condition())
         {
-            if (elapsed.Elapsed >= TimeSpan.FromSeconds(20)) throw new TimeoutException(message);
+            if (elapsed.Elapsed >= TimeSpan.FromSeconds(20))
+            {
+                throw new TimeoutException(message);
+            }
+
             Thread.Sleep(100);
         }
     }

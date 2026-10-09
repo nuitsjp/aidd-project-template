@@ -1,21 +1,12 @@
-<Window x:Class="WpfNotesSample.View.MainWindow"
+﻿<Window x:Class="WpfNotesSample.View.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:k="clr-namespace:Kamishibai;assembly=Kamishibai.View"
-        Title="{Binding Title}" Width="960" Height="720" MinWidth="720" MinHeight="540"
-        FontFamily="Yu Gothic UI" FontSize="14" Background="#F4F6F8"
-        Loaded="OnLoaded">
-  <DockPanel Margin="24">
-    <StackPanel DockPanel.Dock="Top" Margin="0,0,0,20">
-      <TextBlock Text="メモ" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,6" />
-      <TextBlock x:Name="ModeText" Text="{Binding Mode}" Foreground="#52606D" Margin="0,0,0,16" />
-      <StackPanel Orientation="Horizontal" IsEnabled="{Binding Navigation.CurrentPage.CanInteract}">
-        <Button x:Name="ShowNotesButton" Content="メモ一覧" Command="{Binding ShowNotesCommand}" />
-        <Button x:Name="ShowImportButton" Content="一括登録" Command="{Binding ShowImportCommand}" />
-      </StackPanel>
-    </StackPanel>
-    <Border Background="White" BorderBrush="#D8DEE5" BorderThickness="1" Padding="20">
-      <k:NavigationFrame />
-    </Border>
-  </DockPanel>
+        Title="{Binding Title}"
+        Loaded="OnLoaded"
+        Style="{StaticResource AppWindowStyle}"
+        WindowStartupLocation="CenterScreen">
+  <Border Style="{StaticResource AppContentStyle}">
+    <k:NavigationFrame />
+  </Border>
 </Window>

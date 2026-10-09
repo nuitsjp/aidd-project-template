@@ -5,5 +5,5 @@ namespace WpfNotesSample.ViewModel;
 public partial class NavigationState : ObservableObject
 {
     [ObservableProperty]
-    private PageViewModel? currentPage;
+    private PageViewModel? _currentPage;
 }

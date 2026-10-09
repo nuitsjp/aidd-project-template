@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Windows.Controls;
 using Codeer.Friendly;
 using Codeer.Friendly.Dynamic;
 using Codeer.TestAssistant.GeneratorToolKit;
@@ -11,14 +12,13 @@ public sealed class NoteListViewDriver : IAppVarOwner
 {
     public AppVar AppVar { get; }
     public WPFButtonBase NewNote => new(AppVar.Dynamic().NewNoteButton);
-    public WPFButtonBase EditNote => new(AppVar.Dynamic().EditNoteButton);
-    public WPFButtonBase DeleteNote => new(AppVar.Dynamic().DeleteNoteButton);
     public WPFButtonBase Refresh => new(AppVar.Dynamic().RefreshButton);
     public WPFTextBlock Error => new(AppVar.Dynamic().ErrorText);
-    public WPFTextBlock Status => new(AppVar.Dynamic().StatusText);
     public WPFDataGrid Notes => new(AppVar.Dynamic().NotesGrid);
 
     public NoteListViewDriver(AppVar appVar) => AppVar = appVar;
+
+    public WPFButtonBase ShowDetails(int index) => new(Notes.GetCell(index, 2).VisualTree().ByType<Button>().Single());
 
     public string[] Titles
     {

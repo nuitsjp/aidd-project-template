@@ -7,7 +7,7 @@ namespace WpfNotesSample.E2eTests.Support;
 
 public static class WindowScreenshot
 {
-    public static void Capture(Window window, string path)
+    public static void Capture(FrameworkElement window, string path)
     {
         var image = new RenderTargetBitmap((int)window.ActualWidth, (int)window.ActualHeight,
             96, 96, PixelFormats.Pbgra32);
