@@ -22,7 +22,7 @@ SPA、単一 ASP.NET Core サーバー、同一 origin、SQLite を既定とし�
 <a id="design"></a>
 ## 4. 確認した事実
 
-共通資材の配布元と採用元固定コミットは [ルートの文書方針](../../docs/document-policy.md#adoption) に従います。直接依存は `package.json` と各 `.csproj`、参照アプリの実行ツールとタスクはこのディレクトリの `mise.toml` に記載します。`mise.toml` の `[tools]` は Node.js 24.21.0、.NET SDK 10.0.401、Python 3.13.15 です。
+共通資材の配布元と採用元固定コミットは [ルートの文書方針](../../docs/document-policy.md#adoption) に従います。直接依存は `package.json` と各 `.csproj`、参照アプリの実行ツールとタスクはこのディレクトリの `mise.toml` に記載します。`mise.toml` の `[tools]` は Node.js 24.21.0、.NET SDK 10.0.401、Python 3.13.15、actionlint 1.7.12 です。
 
 - **ASP.NET Core / .NET SDK**: .NET SDK 10.0.401 と ASP.NET Core .NET 10 を使用します。`backend/App.csproj` が単一サーバーの実行単位で、UI のビルドと静的ファイルの配置も所有します。`App.slnx` は `frontend/Frontend.esproj`、バックエンド、単体テスト、統合テストを束ねます。
 - **HTTP JSON / SSE**: ブラウザとサーバーは HTTP JSON の公開エンドポイントで通信し、`/events/notes` は確定後の変更通知に SSE を使用します。エンドポイント、DTO、エラー形状は [React + .NET アーキテクチャ](architecture-react-dotnet.md) に記録します。
@@ -68,15 +68,17 @@ mise run dev
 | `mise run build:backend` | UI ビルドを除外して API だけをビルド |
 | `mise run start` | ビルド済みの単一 .NET 配布物を起動 |
 | `mise run typecheck` | ルートツリー生成と TypeScript 型検査 |
-| `mise run lint` | ESLint による検査 |
+| `mise run lint` | 型付き ESLint による Promise 処理・React Hooks・設定と開発スクリプトの検査（警告も失敗） |
 | `mise run format` | Prettier による整形 |
 | `mise run format:check` | Prettier の整形済み検査 |
+| `mise run check:workflow` | 固定版 actionlint による全 workflow の検査（ShellCheck・Pyflakes は省略） |
+| `mise run audit` | npm 依存の脆弱性を low 以上で検出 |
 | `mise run check:docs` | 参照文書の検査と `docs/design/data.dbml` の構文検証（`node scripts/check-dbml.mjs`）。source では共通の `template/` と拡張側を一時生成先へ配置して文書を検査 |
 | `mise run test:frontend` | Vitest の単体テスト |
 | `mise run test:backend` | UI ビルドを除外した .NET テスト |
 | `mise run test:e2e:dev` | バックエンドだけをビルドし、Vite 開発サーバーで E2E |
 | `mise run test:e2e:hosted` | 一体ビルドを行い、単一 .NET 配信で E2E |
-| `mise run verify` | 型、Lint、整形、参照文書、DBML、単体、バックエンド、dev/hosted E2E。source では文書を一時生成先、アプリの build・test を `reference/` で検査 |
+| `mise run verify` | 型、Lint、整形、workflow、参照文書、DBML、単体、バックエンド、dev/hosted E2E。source では文書を一時生成先、アプリの build・test を `reference/` で検査 |
 | `mise run package` | `verify` 後に配布物を生成 |
 | `mise run db:backup -- <path>` | 実 DB の整合したバックアップを作成 |
 | `mise run db:check [-- <path>]` | 指定 DB（省略時は設定済み DB）を検査 |
@@ -95,7 +97,9 @@ mise run test:e2e:hosted
 
 仕様確認用モックが必要な期間のみ、既存のモック標準に従って作成します。本番ビルドでモックを使用せず、実処理へ切り替えた後は固定データを削除し、E2E は実 HTTP API で検証します。
 
-変更後は `mise run verify` を実行し、型検査、Lint、整形、文書、Vitest、.NET 機能テスト、開発サーバー形式 E2E、配布形式 E2E がすべて合格した状態を維持します。
+VS Code は `.vscode/` の推奨拡張と保存時の Prettier 整形、ESLint 検査を使用します。依存の脆弱性監査は日常の検証と分け、`mise run audit` および PR・main 更新・週次の監査 workflow で実行します。
+
+変更後は `mise run verify` を実行し、型検査、Lint、整形、workflow、文書、Vitest、.NET 機能テスト、開発サーバー形式 E2E、配布形式 E2E がすべて合格した状態を維持します。
 
 <a id="deployment"></a>
 ### 認証・配備

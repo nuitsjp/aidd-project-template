@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { root } from './lib.mjs';
 const target = join(root, 'release/app');
 if (existsSync(target))
-    throw new Error('release/app が既にあります。内容を確認し別名へ移動してから実行してください。');
+  throw new Error('release/app が既にあります。内容を確認し別名へ移動してから実行してください。');
 const lock = readFileSync(join(root, 'package-lock.json'));
 mkdirSync(target, { recursive: true });
 cpSync(join(root, 'dist'), join(target, 'dist'), { recursive: true });
@@ -15,4 +15,6 @@ writeFileSync(join(target, 'package.json'), JSON.stringify(pkg, null, 2) + '\n')
 writeFileSync(join(target, 'package-lock.json'), lock);
 cpSync(join(root, '.env.example'), join(target, '.env.example'));
 cpSync(join(root, '.nvmrc'), join(target, '.nvmrc'));
-console.log('release/app を配備しました。.nvmrcの指定版Node.jsを選択し、npm ci --omit=dev、.env設定、npm start を実行してください。dataは配備領域の外へ置いてください。');
+console.log(
+  'release/app を配備しました。.nvmrcの指定版Node.jsを選択し、npm ci --omit=dev、.env設定、npm start を実行してください。dataは配備領域の外へ置いてください。',
+);

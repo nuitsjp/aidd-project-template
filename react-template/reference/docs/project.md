@@ -31,7 +31,7 @@ SPA、単一 Node.js、同一 origin、SQLite を既定とします。各利用�
 <a id="commands"></a>
 ## 5. 実行・切り替え・検証手順
 
-生成したプロジェクトの `reference/` を作業ディレクトリとします。製品ルートのアプリも同じ手順で実行します。Node.js は `.nvmrc` と `package.json` に固定した24.21.0を使用し、文書検査に Python 3 を使用します。Docker や外部 DB は不要です。nvm を使う場合は指定版を導入して選択します。nvm-windows では版番号を明示してください。
+生成したプロジェクトの `reference/` を作業ディレクトリとします。製品ルートのアプリも同じ手順で実行します。`mise.toml` で Node.js 24.21.0、Python 3.13.15、actionlint 1.7.12を固定しています。mise を導入し、作業ディレクトリで `mise trust` と `mise install` を実行してください。Node.js は `.nvmrc` と `package.json` にも同版を指定しています。Docker や外部 DB は不要です。nvm を併用する場合は指定版を導入して選択します。nvm-windows では版番号を明示してください。
 
 ```powershell
 $nodeVersion = (Get-Content .nvmrc -Raw).Trim()
@@ -84,7 +84,11 @@ worker 数を変更する場合は `npx playwright test --workers=8` を使用�
 
 仕様確認用モックが必要な期間のみ `frontend/src/mocks/notes.ts` を作成し、`npm exec -- vite --config frontend/vite.config.ts --mode mock` で起動します。本番ビルドでのモック使用は禁止します。実処理へ切り替えた後は固定データを削除し、E2E は実 API で検証します。
 
-変更後は `npm run verify` を実行し、型検査、Lint、文書、機能、UI、ビルド、E2E がすべて合格した状態を維持します。文書の検査には `docs/design/data.dbml` の構文検証（`node scripts/check-dbml.mjs`）を含みます。
+変更後は `npm run verify` を実行し、型検査、型情報を使った Promise・React Hooks の Lint、Prettier 整形、workflow、文書、機能、UI、ビルド、E2E がすべて合格した状態を維持します。ESLint の警告も失敗として扱い、Node.js 運用スクリプトと設定ファイルも検査します。workflow 検査は `npm run lint:workflows` で実行でき、ShellCheck と Pyflakes は対象外です。文書の検査には `docs/design/data.dbml` の構文検証（`node scripts/check-dbml.mjs`）を含みます。
+
+整形は `npm run format`、整形確認は `npm run format:check` で行います。VS Code 用の設定と推奨拡張を同梱し、保存時に Prettier と ESLint を実行します。
+
+依存の脆弱性監査は `npm run audit` で実行し、low 以上を失敗として扱います。外部の脆弱性情報を参照するため `verify` とは分け、GitHub Actions で PR、main への push、毎週月曜日に実行します。
 
 <a id="deployment"></a>
 ### 認証・配備

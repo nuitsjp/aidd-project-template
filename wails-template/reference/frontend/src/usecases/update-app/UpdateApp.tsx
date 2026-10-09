@@ -12,7 +12,7 @@ import {
   Text,
   Title,
 } from '@mantine/core';
-import { appInfo } from '../../features/application/queries';
+import { appInfo, reportFrontendError } from '../../features/application/queries';
 import { useUpdates } from '../../features/updates/queries';
 import { ErrorNotice } from '../../shared/ErrorNotice';
 
@@ -121,7 +121,12 @@ export function UpdateApp() {
             >
               戻る
             </Button>
-            <Button loading={update.apply.isPending} onClick={() => void apply()}>
+            <Button
+              loading={update.apply.isPending}
+              onClick={() => {
+                void apply().catch(reportFrontendError);
+              }}
+            >
               適用して再起動
             </Button>
           </Group>

@@ -1,0 +1,125 @@
+name: Template checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  distribution:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v4
+        with:
+          version: '2026.9.5'
+      - run: mise run setup
+      - run: mise run verify
+        if: github.event_name != 'schedule'
+      - run: mise run audit
+
+  applications:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - kind: wails
+            os: windows-latest
+          - kind: react
+            os: ubuntu-latest
+          - kind: react
+            os: windows-latest
+          - kind: react-dotnet
+            os: ubuntu-latest
+          - kind: react-dotnet
+            os: windows-latest
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    env:
+      CI: 'true'
+      E2E_WORKERS: '4'
+      VALIDATION_ROOT: ${{ github.workspace }}/../template-app
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v4
+        with:
+          version: '2026.9.5'
+      - name: Generate product and reference
+        run: |
+          if ('${{ matrix.kind }}' -eq 'react') {
+            node scripts/init-template.mjs react $env:VALIDATION_ROOT
+          } else {
+            node scripts/init-template.mjs '${{ matrix.kind }}' $env:VALIDATION_ROOT --name Acme.Notes
+          }
+      - uses: jdx/mise-action@v4
+        with:
+          version: '2026.9.5'
+          working_directory: ${{ env.VALIDATION_ROOT }}
+      - name: Set up product
+        working-directory: ${{ env.VALIDATION_ROOT }}
+        run: |
+          mise trust
+          if ('${{ matrix.kind }}' -eq 'react') { npm run setup } else { mise run setup }
+      - name: Set up reference
+        working-directory: ${{ env.VALIDATION_ROOT }}/reference
+        run: |
+          mise trust
+          if ('${{ matrix.kind }}' -eq 'react') { npm run setup } else { mise run setup }
+      - name: Install browser and platform libraries
+        if: github.event_name != 'schedule'
+        working-directory: ${{ env.VALIDATION_ROOT }}
+        run: |
+          if ('${{ matrix.kind }}' -eq 'react-dotnet') {
+            mise run setup:browser
+          } elseif ('${{ matrix.kind }}' -eq 'wails') {
+            npm --prefix frontend exec -- playwright install --only-shell chromium
+          } elseif ($IsLinux) {
+            npx playwright install --with-deps --only-shell chromium
+          } else {
+            npx playwright install --only-shell chromium
+          }
+      - name: Verify product
+        if: github.event_name != 'schedule'
+        working-directory: ${{ env.VALIDATION_ROOT }}
+        run: |
+          if ('${{ matrix.kind }}' -eq 'react') { npm run verify } else { mise run verify }
+      - name: Verify reference
+        if: github.event_name != 'schedule'
+        working-directory: ${{ env.VALIDATION_ROOT }}/reference
+        run: |
+          if ('${{ matrix.kind }}' -eq 'react') { npm run verify } else { mise run verify }
+      - name: Audit product dependencies
+        if: success() || failure()
+        working-directory: ${{ env.VALIDATION_ROOT }}
+        run: |
+          if ('${{ matrix.kind }}' -eq 'react') { npm run audit } else { mise run audit }
+      - name: Audit reference dependencies
+        if: success() || failure()
+        working-directory: ${{ env.VALIDATION_ROOT }}/reference
+        run: |
+          if ('${{ matrix.kind }}' -eq 'react') { npm run audit } else { mise run audit }
+      - name: Upload failed-test diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostics-${{ matrix.kind }}-${{ matrix.os }}
+          path: |
+            ${{ env.VALIDATION_ROOT }}/**/playwright-report*/
+            ${{ env.VALIDATION_ROOT }}/**/test-results/
+            ${{ env.VALIDATION_ROOT }}/**/.e2e-results/
+            ${{ env.VALIDATION_ROOT }}/**/e2e-results-*/
+          if-no-files-found: ignore

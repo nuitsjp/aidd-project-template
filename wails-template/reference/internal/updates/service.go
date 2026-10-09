@@ -96,7 +96,7 @@ func (s *Service) Check(ctx context.Context) (status Status, err error) {
 	if err != nil {
 		return status, err
 	}
-	defer reader.Close()
+	defer reader.Close() //nolint:errcheck // This source is read-only; reading and signature verification determine the result.
 	b, err := io.ReadAll(io.LimitReader(reader, maxManifestSize+1))
 	if err != nil {
 		return status, err
@@ -122,8 +122,8 @@ func (s *Service) Check(ctx context.Context) (status Status, err error) {
 	status = s.status
 	s.mu.Unlock()
 	if oldStage != "" {
-		os.Remove(oldStage)
-		os.Remove(filepath.Dir(oldStage))
+		os.Remove(oldStage)               //nolint:errcheck // Invalidated installers are no longer used; deletion is best-effort cleanup.
+		os.Remove(filepath.Dir(oldStage)) //nolint:errcheck // The invalidated staging directory is removed only if empty.
 	}
 	return status, nil
 }
@@ -156,7 +156,7 @@ func (s *Service) Download(ctx context.Context) (status Status, err error) {
 	path := filepath.Join(stageDir, m.Filename)
 	defer func() {
 		if err != nil {
-			os.RemoveAll(stageDir)
+			os.RemoveAll(stageDir) //nolint:errcheck // Preserve the download failure; the staged file is never published.
 			s.report("failed", 0, m.Size)
 		}
 	}()
@@ -164,7 +164,7 @@ func (s *Service) Download(ctx context.Context) (status Status, err error) {
 	if err != nil {
 		return status, err
 	}
-	defer source.Close()
+	defer source.Close() //nolint:errcheck // This source is read-only; copying and hash verification determine the result.
 	target, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
 	if err != nil {
 		return status, err
@@ -218,8 +218,8 @@ func (s *Service) Download(ctx context.Context) (status Status, err error) {
 	s.staged = path
 	s.mu.Unlock()
 	if previous != "" {
-		os.Remove(previous)
-		os.Remove(filepath.Dir(previous))
+		os.Remove(previous)               //nolint:errcheck // The previous installer is no longer used; deletion is best-effort cleanup.
+		os.Remove(filepath.Dir(previous)) //nolint:errcheck // The previous staging directory is removed only if empty.
 	}
 	s.report("ready", copied, m.Size)
 	return s.GetStatus(), nil
@@ -256,7 +256,7 @@ func (s *Service) Apply() (err error) {
 	}
 	h := sha256.New()
 	n, err := io.Copy(h, io.LimitReader(f, m.Size+1))
-	f.Close()
+	f.Close() //nolint:errcheck // The staged file is read-only; io.Copy and the hash check determine trust.
 	if err != nil {
 		return err
 	}

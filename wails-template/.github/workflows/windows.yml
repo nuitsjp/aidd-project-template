@@ -42,12 +42,11 @@ jobs:
               paths = subprocess.check_output(command).decode('utf-8').split('\0')
               paths = [path for path in paths if path]
               shared_paths = {
-                  '.github/workflows/windows.yml',
                   'scripts/doc_check.py',
                   'docs/document-policy.md',
                   'LICENSE',
               }
-              shared = any(path in shared_paths or path.startswith('docs/standards/') for path in paths)
+              shared = any(path in shared_paths or path.startswith(('docs/standards/', '.github/workflows/')) for path in paths)
               directories = []
               if shared or any(not path.startswith('reference/') for path in paths):
                   directories.append('.')

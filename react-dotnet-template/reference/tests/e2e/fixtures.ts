@@ -129,7 +129,7 @@ export const test = base.extend<{
       backendAddress = '';
       const running = spawn(
         'dotnet',
-        [resolve(mode === 'dev' ? 'dist/backend/App.dll' : 'dist/server/App.dll')],
+        [resolve('dist', mode === 'dev' ? 'backend' : 'server', 'App.dll')],
         {
           cwd: process.cwd(),
           stdio: ['pipe', 'pipe', 'pipe'],

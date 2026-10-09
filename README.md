@@ -58,7 +58,7 @@ AIエージェントを利用する場合は、プロジェクト側の `AGENTS.
 
 ### Wailsアプリの初期状態を生成する
 
-Windows向けのGo・React参照実装は [wails-template/reference/](wails-template/reference/README.md) にまとめています。miseとNode.js 22.16以上を用意し、本リポジトリのルートで実行します。設定の信頼確認を求められた場合は、`mise.toml` の内容を確認して `mise trust` を実行してください。
+Windows向けのGo・React参照実装は [wails-template/reference/](wails-template/reference/README.md) にまとめています。miseを用意し、本リポジトリのルートで実行します。設定の信頼確認を求められた場合は、`mise.toml` の内容を確認して `mise trust` を実行してください。生成に使うNode.jsの版はルートの`mise.toml`で指定しています。
 
 ```powershell
 mise run init:wails ../my-wails-app --name Company.Product
@@ -78,6 +78,10 @@ React・Node.js・SQLiteの参照実装は [react-template/reference/](react-tem
 ```powershell
 mise run init:react ../my-react-app
 cd ../my-react-app
+mise trust
+npm run setup
+npx playwright install --only-shell chromium
+npm run verify
 ```
 
 配置の規則はWailsと同様です。参照アプリを製品ルートへコピーし、サンプルを `reference/` に残します。生成タスクは依存取得やビルドを行わず、既存の出力先は拒否します。`react-template/` 単体をコピー・実行せず、生成先で開発してください。必要な環境と生成後のセットアップ・起動は [Reactの実行手順](react-template/reference/docs/project.md#commands) に従い、製品ルートと `reference/` のそれぞれで実行します。
@@ -166,3 +170,11 @@ node scripts/update-common.mjs ../my-project OLD_COMMIT_SHA NEW_COMMIT_SHA
 - テーブル追加・変更時、依存する実装の前に `docs/design/data.dbml` で承認を得ていること（合意の要否・内容は人が確認し、`scripts/doc_check.py` では判定しません）。
 - 最新コードで必要なテストと実環境検証が合格していること。未実施の確認は会話で報告し、完了と扱わないこと。
 - ADR・決定経緯・承認原文・検証表が残っていないこと。静的検査は既知の記録形式と完全一致する長い本文の重複を検出する。言い換えた重複・陳腐化・承認内容・実施順序・検証範囲はレビューで確認し、NG 0件だけで完了扱いにしないこと。
+
+## 7. 配布元の検証
+
+配布元の保守では、ルートで`mise trust`、`mise run setup`、`mise run verify`を実行します。配布元スクリプトのESLint、全workflowのactionlint、共通文書検査と生成・更新処理のテストを実行します。`mise run audit`は配布元のnpm依存にある既知脆弱性を検査します。
+
+各拡張は生成先の製品ルートと`reference/`の双方で検証します。型情報を使うESLint、設定・運用スクリプトの検査、整形確認とworkflow検査を既存の検証コマンドに含め、WailsではGoの未処理エラー・検査除外・整形も検査します。脆弱性監査は別タスクで行います。詳細は各参照実装の実行手順を参照してください。
+
+配布元の`Template checks`はPR、mainへのpush、手動実行でWindowsとLinuxの生成処理とReact系アプリ、WindowsのWailsを検証し、生成先の製品・参照アプリ双方の既存テストとE2E、依存関係の監査を実行します。毎週月曜09:00（日本時間）の定期実行では依存関係を監査します。各拡張に含むworkflowは生成後の採用先で実行するものです。

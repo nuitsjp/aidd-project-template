@@ -53,9 +53,31 @@ tasks:
   test:core:
     cmds: [go test ./internal/... ./cmd/release/...]
   lint:
+    deps: [lint:frontend, lint:scripts, check:workflow]
+  lint:frontend:
     cmds: [npm --prefix frontend run lint]
+  lint:scripts:
+    cmds: [npm --prefix frontend run lint:scripts]
+  check:workflow:
+    cmds: [node scripts/run.mjs check:workflow]
+  lint:go:
+    cmds:
+      - task: frontend:build
+      - task: lint:go:prepared
+  lint:go:prepared:
+    cmds: [node scripts/run.mjs lint:go:prepared]
+  audit:
+    cmds:
+      - task: frontend:build
+      - node scripts/run.mjs audit:dependencies
+  format:
+    cmds:
+      - node scripts/run.mjs format:go
+      - npm --prefix frontend run format
   format:check:
-    cmds: [npm --prefix frontend run format:check]
+    cmds:
+      - node scripts/run.mjs format:go:check
+      - npm --prefix frontend run format:check
   test:frontend:
     cmds: [npm --prefix frontend run test]
   check:docs:
@@ -70,9 +92,14 @@ tasks:
   verify:prepared:
     deps: [frontend:build, lint, format:check, test:frontend, test:core, check:docs]
     cmds:
-      - go vet -tags production ./...
-      - go vet -tags server,production ./...
+      - task: verify:go:prepared
       - task: build:server
+  verify:go:prepared:
+    deps: [vet:go:prepared, lint:go:prepared]
+  vet:go:prepared:
+    cmds:
+      - go vet -tags production . ./internal/... ./cmd/...
+      - go vet -tags server,production . ./internal/... ./cmd/...
   verify:
     cmds:
       - task: verify:prepare

@@ -3,11 +3,17 @@ import { useRef } from 'react';
 import { Events } from '@wailsio/runtime';
 import * as Notes from '@notes-service';
 import type { ImportRequest, SaveRequest } from '@bindings/wailstemplate/internal/notes/models';
+import { reportFrontendError } from '../application/queries';
 
 export const notesKey = ['notes'] as const;
 export const noteMutationKey = ['notes', 'write'] as const;
-function withSignal<T>(call: Promise<T> & { cancel(): void }, signal: AbortSignal): Promise<T> {
-  const abort = () => call.cancel();
+function withSignal<T>(
+  call: Promise<T> & { cancel(): Promise<void> },
+  signal: AbortSignal,
+): Promise<T> {
+  const abort = () => {
+    void call.cancel().catch(reportFrontendError);
+  };
   if (signal.aborted) abort();
   else signal.addEventListener('abort', abort, { once: true });
   return call.finally(() => signal.removeEventListener('abort', abort));
@@ -29,7 +35,7 @@ export function subscribeNotes(client: ReturnType<typeof useQueryClient>) {
     // Local mutations invalidate on settlement. Avoid duplicate refreshes while
     // they are pending; external changes still refresh a displayed collection.
     if (!client.isMutating({ mutationKey: noteMutationKey }))
-      void client.invalidateQueries({ queryKey: notesKey });
+      void client.invalidateQueries({ queryKey: notesKey }).catch(reportFrontendError);
   });
 }
 export function useSaveNote() {
@@ -40,9 +46,7 @@ export function useSaveNote() {
     onSuccess: (note) => {
       client.setQueryData(getNote(note.id).queryKey, note);
     },
-    onSettled: () => {
-      void client.invalidateQueries({ queryKey: notesKey });
-    },
+    onSettled: () => client.invalidateQueries({ queryKey: notesKey }),
   });
 }
 export function usePreviewImport() {
@@ -61,11 +65,14 @@ export function useImportNotes() {
       });
     },
     // A cancel request racing the commit does not prove that nothing was saved.
-    onSettled: () => {
-      void client.invalidateQueries({ queryKey: notesKey });
-    },
+    onSettled: () => client.invalidateQueries({ queryKey: notesKey }),
   });
-  return { mutation, cancel: () => call.current?.cancel() };
+  return {
+    mutation,
+    cancel: () => {
+      if (call.current) void call.current.cancel().catch(reportFrontendError);
+    },
+  };
 }
 export function subscribeImport(
   callback: (value: {

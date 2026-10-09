@@ -3,6 +3,7 @@ package appstate
 
 import (
 	"sync"
+
 	"wailstemplate/internal/fault"
 )
 

@@ -12,7 +12,7 @@ export function ImportInput() {
     preview.mutate(state.input, {
       onSuccess: (result) => {
         state.setPreview(result);
-        void navigate({ to: '/import/confirm' });
+        navigate({ to: '/import/confirm' }).catch(console.error);
       },
     });
   }

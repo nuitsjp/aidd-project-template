@@ -84,7 +84,7 @@ func run(args []string) error {
 		}
 		h := sha256.New()
 		size, err := io.Copy(h, f)
-		f.Close()
+		f.Close() //nolint:errcheck // The installer was opened read-only; io.Copy reports read failures.
 		if err != nil {
 			return err
 		}

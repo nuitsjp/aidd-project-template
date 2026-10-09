@@ -1,0 +1,60 @@
+name: Dependency checks
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 0 * * 1'
+permissions:
+  contents: read
+jobs:
+  audit:
+    strategy:
+      fail-fast: false
+      matrix:
+        directory: ['.', 'reference']
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: ${{ matrix.directory }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v4
+        with:
+          version: '2026.9.5'
+          working_directory: ${{ matrix.directory }}
+      - run: mise trust
+      - name: Read Go cache paths and version
+        id: cache-paths
+        run: |
+          "gomod=$(go env GOMODCACHE)" >> $env:GITHUB_OUTPUT
+          "gobuild=$(go env GOCACHE)" >> $env:GITHUB_OUTPUT
+          "go=$(go env GOVERSION)" >> $env:GITHUB_OUTPUT
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ${{ steps.cache-paths.outputs.gomod }}
+            ${{ steps.cache-paths.outputs.gobuild }}
+          key: ${{ runner.os }}-audit-go-${{ steps.cache-paths.outputs.go }}-${{ hashFiles(format('{0}/go.sum', matrix.directory)) }}
+          restore-keys: ${{ runner.os }}-audit-go-${{ steps.cache-paths.outputs.go }}-
+      - name: Install locked dependencies
+        run: |
+          npm --prefix frontend ci --no-audit --no-fund
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          go mod download
+      - name: npm vulnerabilities
+        id: npm
+        run: npm --prefix frontend audit --audit-level=low
+      - name: Build embedded frontend for Go analysis
+        if: success() || failure() && steps.npm.outcome == 'failure'
+        run: |
+          node scripts/run.mjs cli:install
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node scripts/run.mjs generate
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm --prefix frontend run build:prepared
+      - name: Go vulnerabilities in production and server builds
+        if: success() || failure() && steps.npm.outcome == 'failure'
+        run: node scripts/run.mjs audit:go

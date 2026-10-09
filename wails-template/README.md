@@ -4,4 +4,6 @@
 
 生成先ルートで `mise trust`、`mise run setup`、`mise run setup:browser` を実行し、`mise run dev` で製品アプリを起動するか `mise run verify` で検証します。サンプルは `reference/` へ移動して同じコマンドを実行します。製品と参照アプリはアプリ ID が異なるため、保存データと多重起動の判定を共有しません。`.github/workflows/windows.yml` は変更した製品または参照アプリを検証する CI 例です。共通の文書検査資材・LICENSE・workflow の変更時と手動実行時は両方を検証します。Go と Wails CLI のキャッシュを再利用し、単一の `ci` タスクでコード生成とフロントエンドビルドを共有して検査を並列実行します。`package:prepared` はその実行ファイルを再ビルドせずインストーラーにまとめ、artifact として保存します。
 
+`mise run audit` は npm と Go の既知脆弱性を外部データベースで検査します。`.github/workflows/dependencies.yml` は PR・main 更新・週次実行で製品と参照アプリの双方を監査します。通常の検証には型付き ESLint、Node 運用スクリプト・workflow の Lint、gofmt、go vet、Go の未処理エラーと検査除外の解析が含まれます。VS Code の推奨拡張と保存時の整形は `.vscode/` に配置します。
+
 サンプルの構成、実行手順、配布・更新の設定と、製品固有の実装へ置き換える箇所は [reference/README.md](reference/README.md) から参照してください。共通の `AGENTS.md`、標準、文書検査スクリプトは生成時に `template/` からルートへ配置します。生成時に依存取得やビルドは行わず、既存の出力先は上書きしません。`wails-template/` は単体では実行せず、生成先で開発・検証します。

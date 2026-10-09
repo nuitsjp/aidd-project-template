@@ -99,7 +99,12 @@ function Content() {
             <Button variant="default" onClick={() => setClosing(false)}>
               戻る
             </Button>
-            <Button disabled={busy} onClick={() => void close()}>
+            <Button
+              disabled={busy}
+              onClick={() => {
+                void close().catch(setError);
+              }}
+            >
               終了する
             </Button>
           </Group>

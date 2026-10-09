@@ -4,6 +4,7 @@ package desktop
 import (
 	"log/slog"
 	"sync/atomic"
+
 	"wailstemplate/internal/appstate"
 	"wailstemplate/internal/fault"
 )
