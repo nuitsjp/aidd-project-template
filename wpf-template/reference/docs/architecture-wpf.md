@@ -6,31 +6,34 @@
 
 `app/App.csproj` は `net481`・C# `latest` の単一 WPF プロジェクトです。起動処理は Kamishibai の Generic Host で Domain の契約に対応する Infrastructure と View / ViewModel を登録します。アプリ ID・データ領域・実処理またはモックのモードに対応するインスタンス判定を行い、同じ対象の 2 回目の起動は新しい通常ウィンドウを開きません。多重起動と起動失敗の通知はメインウィンドウの表示前に行うため、OS 標準の MessageBox を使います。
 
-一覧、詳細、追加・更新で共有する編集画面を `NavigationFrame` 内で切り替えます。ウィンドウ枠は OS のタイトルバーを使わず、`WindowChrome` でアプリ側に描きます。タイトルバーにはアプリの印・アプリ名・モック時のタグと、最小化・最大化・閉じる操作を置きます。移動・ダブルクリックでの最大化・端でのサイズ変更は OS の機能を使います。最大化ボタンは自前のため、Windows 11 のスナップレイアウトはボタンに重ねても表示されません。画面の中身は各画面の上部 1 行に操作をまとめ、一覧は上部に追加・再取得、詳細・編集は左端に一覧へ戻る操作を置きます。Kamishibai の `IPresentationService` が遷移を担当し、`AddPresentation` で View と ViewModel を対応付けます。確認は ViewModel が `IDialogService` に依頼し、View 側の `DialogService` が確認ダイアログを表示します。CommunityToolkit.Mvvm の通知と Command を使います。画面の XAML に SQL や業務確定を置きません。
+一覧、詳細、追加・更新で共有する編集画面を `NavigationFrame` 内で切り替えます。ウィンドウ枠は OS のタイトルバーを使わず、`WindowChrome` でアプリ側に描きます。タイトルバーにはアプリの印・アプリ名・モック時のタグと、テーマ切り替え・最小化・最大化・閉じる操作を置きます。移動・ダブルクリックでの最大化・端でのサイズ変更は OS の機能を使います。最大化ボタンは自前のため、Windows 11 のスナップレイアウトはボタンに重ねても表示されません。画面の中身は各画面の上部 1 行に操作をまとめ、一覧は上部に再取得、一覧の色面の右下に追加、詳細・編集は左端に一覧へ戻る操作を置きます。Kamishibai の `IPresentationService` が遷移を担当し、`AddPresentation` で View と ViewModel を対応付けます。確認は ViewModel が `IDialogService` に依頼し、View 側の `DialogService` が確認ダイアログを表示します。CommunityToolkit.Mvvm の通知と Command を使います。画面の XAML に SQL や業務確定を置きません。
 
 <a id="style-boundary"></a>
 ### 共通テーマとスタイル
 
-[Ant Design 6.6.5 の既定のライトテーマ](https://ant.design/docs/react/customize-theme/)に準拠し、トークンの値とコンポーネントの見た目をネイティブ WPF で再現します。React のコンポーネントや API との互換性はありません。値は antd 6.6.5 の配布物にある解決済みのテーマ値とスタイル定義から取得しています。
+[Material Design 3](https://m3.material.io/) の役割トークン・タイプスケール・形状スケールに準拠し、コンポーネントの見た目をネイティブ WPF で再現します。Material Components のライブラリや API との互換性はありません。配色はソースカラー #0F6CBD から作ったトーナルパレットで、ライトとダークの 2 組を持ちます。
 
 `App.xaml` は次の順に ResourceDictionary を読み込みます。
 
 | ファイル | 保持するもの |
 | --- | --- |
-| `View/Styles/Theme.xaml` | Design Token（色、書体、文字サイズと行高、コントロールの高さ、角丸、余白） |
-| `View/Styles/Icons.xaml` | Ant Design Icons の形状（`@ant-design/icons-svg` 4.6.0、MIT License。全文は `THIRD-PARTY-NOTICES.txt`） |
-| `View/Styles/Controls.xaml` | アイコン表示と Button（default）・Input・Form のラベル・Tooltip・Table（size small）の標準スタイル |
-| `View/Styles/Roles.xaml` | Button の primary・danger・text・link と戻る操作の形、Typography の見出し、Card、Alert、Tag、Empty、Form の必須ラベル、Modal.confirm |
-| `View/Styles/Window.xaml` | タイトルバーを含むウィンドウ枠と確認ダイアログの器。操作ボタンの処理は同名の `.xaml.cs` に置く |
+| `View/Styles/Colors.Light.xaml` | ライトの色の役割トークンと、テーマ切り替えボタンのアイコン・文言 |
+| `View/Styles/Theme.xaml` | 色以外のトークン（書体、文字サイズと行高、コントロールの高さ、角丸、余白） |
+| `View/Styles/Icons.xaml` | Ant Design Icons の形状（`@ant-design/icons-svg` 4.6.0、MIT License。全文は `THIRD-PARTY-NOTICES.txt`）と、このアプリで描いたノート・時計の形 |
+| `View/Styles/Controls.xaml` | アイコン表示と Button（outlined）・入力欄の本体・ラベル・Tooltip・List・スクロールバーの標準スタイル |
+| `View/Styles/Roles.xaml` | Button の filled・tonal・text・error の outlined・icon と extended FAB、見出し、色面、Banner、タグ、一覧の項目、空表示、filled text field、dialog |
+| `View/Styles/Window.xaml` | タイトルバーを含むウィンドウ枠と確認ダイアログの器。操作ボタンとテーマ切り替えの処理は同名の `.xaml.cs` に置く |
 
-ボタン・アイコン・入力欄は Ant Design の値に合わせます。
-- **ボタン**: 高さは 32（行の操作は small の 24）です。default・primary・danger の 2px の影と、フォーカス時の 3px の outline を持ちます。
-- **アイコン**: 操作は文字で示し、必要に応じてアイコンを左に添えます（間隔 8）。アイコンのみのボタンは、PageHeader と同じ戻る操作とウィンドウ操作に限ります。表の操作列は type="link" の文字です。アイコンの大きさは文字サイズと同じ 14 で、戻る操作だけ 16 です。形は `View/Icon.cs` の添付プロパティ `Icon.Data` で指定します。
-- **入力欄**: フォーカス時に、外側へ 2px の影を表示します。
+`View/Styles/Colors.Dark.xaml` は `Colors.Light.xaml` と同じキーを持つダークの配色です。色は画面とスタイルから `DynamicResource` で参照し、タイトルバーのテーマ切り替えで先頭の配色辞書を差し替えて、全画面と確認ダイアログに反映します。起動時はライトで、選んだテーマは保存しません。色以外の値は `StaticResource` で参照します。
 
-ページの背景は colorBgLayout（#f5f5f5）とし、表・詳細の本文・編集フォームを白い Card（角丸 8）に載せて境界を示します。これは Ant Design Pro と同じ構成で、表を載せる Card は内側の余白を置きません。Table は bordered なしの small サイズです。ヘッダーは上側の角丸 8、列の間の区切り線、行の区切り線と hover・選択の背景を持ち、空のときは Empty の簡易画像を表示します。エラーと保存結果は Alert、モック表示は warning の Tag で示します。確認ダイアログは Modal.confirm と同じ幅 416・警告アイコン・キャンセルと OK の配置で表示し、表示中は親ウィンドウを mask で覆います。
+ボタン・アイコン・入力欄は Material Design 3 の値に合わせます。
+- **ボタン**: 高さ 40 の全丸で、アイコンの左に 16、文字の右に 24 の余白を置きます（text は左右 12）。hover と pressed は内容色の層（8% と 10%）、フォーカスは外側の 2 の線で示します。無効時は容器を on-surface の 12%、内容を 38% にします。
+- **アイコン**: 操作は文字で示し、必要に応じてアイコンを左に添えます（間隔 8）。アイコンのみのボタンは、戻る操作とタイトルバーの操作に限ります。大きさはボタンで 18、戻る操作と追加で 24 です。形は `View/Icon.cs` の添付プロパティ `Icon.Data` で指定します。
+- **入力欄**: filled text field です。上側だけ角丸 4 の色面にラベルと入力を重ね、下辺の線をフォーカス時に 1 から 3 へ太くして primary で示します。制約は欄の下の補足文で示します。
 
-書体は Segoe UI と日本語の Yu Gothic UI です。ウィンドウと確認ダイアログの角丸・影は Windows 11 の OS（DWM）が描きます。
+ページの背景は surface とし、一覧と詳細の本文を surface container lowest の色面（角丸 28）に載せて境界を示します。一覧は List の 2 行の項目で、タイトルの頭文字の円、タイトル、更新日時、詳細の text ボタンを並べ、選択中の項目は secondary container の色面で示します。追加は一覧の色面の右下に重ねた extended FAB です。空のときは傾けた角丸の色面にノートの形と次の操作を表示します。エラーは error container、保存結果は secondary container の Banner、モック表示は tertiary container のタグで示します。確認ダイアログは basic dialog と同じく、中央揃えのアイコンと見出し、本文、右寄せの text ボタン（キャンセルと OK）を並べ、親ウィンドウの中央に表示します。表示中は親ウィンドウを scrim で覆います。
+
+書体は欧文の Roboto と日本語の Noto Sans JP で、Regular（400）と Medium（500）の TrueType を `app/Fonts/` に置き、WPF の Resource として実行ファイルに埋め込みます。ボタン・ラベル・見出しの強調は Medium です。どちらも SIL Open Font License 1.1 で、表示と全文は `THIRD-PARTY-NOTICES.txt` に置きます。ウィンドウと確認ダイアログの角丸・影は Windows 11 の OS（DWM）が描くため、dialog の角丸は Material Design 3 の 28 ではなく OS の値になります。
 
 通常のコントロールは型に対応する暗黙のスタイルを使い、用途による違いは共通の名前付きスタイルを参照します。各画面には配置、Binding、入力動作と共通スタイルへの参照を置き、Style・ControlTemplate の定義は `View/Styles/` に集約します。
 
@@ -61,9 +64,9 @@ Domain は変更可能な業務状態を保持しません。参照型は `seale
 
 ## 3. 一覧と詳細
 
-一覧は起動時と一覧への移動時に取得し、タイトル・更新日時を表示します。更新日時の降順、同じ日時では ID 順です。画面上部に追加と再取得、各行に詳細表示の操作を持ちます。再取得は取得に成功してから一覧を置き換え、失敗時は表示中の一覧を維持してエラーを表示します。
+一覧は起動時と一覧への移動時に取得し、タイトル・更新日時を表示します。更新日時の降順、同じ日時では ID 順です。画面上部に再取得、一覧の右下に追加、各項目に詳細表示の操作を持ちます。再取得は取得に成功してから一覧を置き換え、失敗時は表示中の一覧を維持してエラーを表示します。
 
-詳細は選択した ID で DB の最新のノートを再取得し、タイトル・本文を読み取り専用で表示します。本文は画面の残りの高さを使います。対象なしや取得失敗を明示し、編集・削除不可とします。取得できた詳細からは、アイコン付きの「編集」「削除」ボタンで共有の編集画面への移動と削除を行い、左端の戻る操作で一覧へ戻ります。保存後は編集画面に確定値と成功表示を維持し、一覧へ戻る操作で再取得します。
+詳細は選択した ID で DB の最新のノートを再取得し、タイトル・更新日時・本文を読み取り専用で表示します。本文は画面の残りの高さを使います。対象なしや取得失敗を明示し、編集・削除不可とします。取得できた詳細からは、アイコン付きの「削除」「編集」ボタンで共有の編集画面への移動と削除を行い、左端の戻る操作で一覧へ戻ります。保存後は編集画面に確定値と成功表示を維持し、一覧へ戻る操作で再取得します。
 
 <a id="mock-boundary"></a>
 ## 4. モック境界

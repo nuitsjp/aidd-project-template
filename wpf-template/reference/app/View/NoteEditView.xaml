@@ -14,62 +14,76 @@
                 v:Icon.Data="{StaticResource IconArrowLeft}"
                 AutomationProperties.Name="一覧へ戻る"
                 Command="{Binding BackCommand}"
-                Style="{StaticResource BackButtonStyle}"
+                Style="{StaticResource IconButtonStyle}"
                 ToolTip="一覧へ戻る" />
         <StackPanel Grid.Column="2" Style="{StaticResource PageActionsStyle}">
           <Button x:Name="DiscardButton"
                   v:Icon.Data="{StaticResource IconUndo}"
                   Command="{Binding DiscardCommand}"
-                  Content="変更を破棄" />
+                  Content="変更を破棄"
+                  Style="{StaticResource TextButtonStyle}" />
           <Button x:Name="SaveButton"
                   Margin="{StaticResource ItemGap}"
                   v:Icon.Data="{StaticResource IconSave}"
                   Command="{Binding SaveCommand}"
                   Content="保存"
-                  Style="{StaticResource PrimaryButtonStyle}" />
+                  Style="{StaticResource FilledButtonStyle}" />
         </StackPanel>
       </Grid>
-      <Border Style="{StaticResource ErrorAlertStyle}">
+      <Border Style="{StaticResource ErrorBannerStyle}">
         <DockPanel>
-          <Control Style="{StaticResource ErrorAlertIconStyle}" />
+          <Control Style="{StaticResource ErrorBannerIconStyle}" />
           <TextBlock x:Name="ErrorText"
-                     Style="{StaticResource AlertTextStyle}"
+                     Style="{StaticResource BannerTextStyle}"
                      Text="{Binding ErrorMessage}" />
         </DockPanel>
       </Border>
-      <Border Style="{StaticResource SuccessAlertStyle}">
+      <Border Style="{StaticResource SuccessBannerStyle}">
         <DockPanel>
-          <Control Style="{StaticResource SuccessAlertIconStyle}" />
+          <Control Style="{StaticResource SuccessBannerIconStyle}" />
           <TextBlock x:Name="StatusText"
-                     Style="{StaticResource AlertTextStyle}"
+                     Style="{StaticResource BannerTextStyle}"
                      Text="{Binding StatusMessage}" />
         </DockPanel>
       </Border>
     </StackPanel>
-    <Border Style="{StaticResource CardStyle}">
-      <Grid IsEnabled="{Binding CanInteract}">
-        <Grid.RowDefinitions>
-          <RowDefinition Height="Auto" />
-          <RowDefinition Height="Auto" />
-          <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-        <StackPanel Style="{StaticResource FormItemStyle}">
-          <Label Content="タイトル（1～100文字）"
-                 Style="{StaticResource RequiredLabelStyle}"
+    <Grid IsEnabled="{Binding CanInteract}">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
+        <RowDefinition Height="Auto" />
+      </Grid.RowDefinitions>
+      <Border Style="{StaticResource FilledFieldStyle}">
+        <StackPanel>
+          <Label Content="タイトル"
+                 Style="{StaticResource RequiredFieldLabelStyle}"
                  Target="{Binding ElementName=TitleInput}" />
           <TextBox x:Name="TitleInput" Text="{Binding NoteTitle, UpdateSourceTrigger=PropertyChanged}" />
         </StackPanel>
-        <Label Grid.Row="1"
-               Content="本文（10,000文字以内）"
-               Target="{Binding ElementName=BodyInput}" />
-        <TextBox x:Name="BodyInput"
-                 Grid.Row="2"
-                 AcceptsReturn="True"
-                 Style="{StaticResource TextAreaStyle}"
-                 Text="{Binding Body, UpdateSourceTrigger=PropertyChanged}"
-                 TextWrapping="Wrap"
-                 VerticalScrollBarVisibility="Auto" />
-      </Grid>
-    </Border>
+      </Border>
+      <TextBlock Grid.Row="1"
+                 Style="{StaticResource FieldHelpTextStyle}"
+                 Text="1～100 文字" />
+      <Border Grid.Row="2"
+              Margin="{StaticResource FormItemGap}"
+              Style="{StaticResource FilledFieldStyle}">
+        <DockPanel>
+          <Label Content="本文"
+                 DockPanel.Dock="Top"
+                 Style="{StaticResource FieldLabelStyle}"
+                 Target="{Binding ElementName=BodyInput}" />
+          <TextBox x:Name="BodyInput"
+                   AcceptsReturn="True"
+                   Style="{StaticResource TextAreaStyle}"
+                   Text="{Binding Body, UpdateSourceTrigger=PropertyChanged}"
+                   TextWrapping="Wrap"
+                   VerticalScrollBarVisibility="Auto" />
+        </DockPanel>
+      </Border>
+      <TextBlock Grid.Row="3"
+                 Style="{StaticResource FieldHelpTextStyle}"
+                 Text="10,000 文字以内" />
+    </Grid>
   </DockPanel>
 </UserControl>

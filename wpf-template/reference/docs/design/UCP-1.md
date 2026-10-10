@@ -6,12 +6,12 @@
 
 | 役割 | 責務 | 実装パス |
 | --- | --- | --- |
-| 一覧の対話 | 一覧取得、行からの詳細表示、取得エラー | `app/ViewModel/NoteListViewModel.cs` |
+| 一覧の対話 | 一覧取得、項目からの詳細表示、取得エラー | `app/ViewModel/NoteListViewModel.cs` |
 | 詳細の対話 | ID による最新取得、対象なし・取得エラー、編集への移動、削除確認・削除エラー | `app/ViewModel/NoteDetailsViewModel.cs` |
 | 編集の対話 | 追加・更新の下書き、入力エラー、未保存確認、保存結果 | `app/ViewModel/NoteEditViewModel.cs` |
 | 画面 | 一覧・詳細・編集の表示と Binding | `app/View/NoteListView.xaml`、`NoteDetailsView.xaml`、`NoteEditView.xaml` |
 | 確認の依頼 | 削除・未保存の破棄の確認を求め、承認の有無を返す | `app/ViewModel/IDialogService.cs` |
-| 確認の表示 | Modal.confirm 形式の確認ダイアログと親ウィンドウの mask | `app/View/DialogService.cs`、`ConfirmDialog.xaml` |
+| 確認の表示 | basic dialog 形式の確認ダイアログと親ウィンドウの scrim | `app/View/DialogService.cs`、`ConfirmDialog.xaml` |
 | 機能の境界 | 一覧・詳細取得、保存、削除の入出力 | `app/Domain/Notes/INotesService.cs` |
 | 入出力の値 | 不変な positional record の `Note`・`NoteInput` | `app/Domain/Notes/Note.cs`、`NoteInput.cs` |
 | 値の規則 | タイトル・本文の検証と正規化 | `app/Domain/Notes/NoteRules.cs` |

@@ -3,7 +3,7 @@ using System.Windows.Media;
 
 namespace WpfNotesSample.View;
 
-// ボタンやアイコン表示に Ant Design Icons の形状を指定する。描画は View/Styles/ のテンプレートが担当する。
+// ボタンやアイコン表示にアイコンの形状を指定する。描画は View/Styles/ のテンプレートが担当する。
 public static class Icon
 {
     public static readonly DependencyProperty DataProperty = DependencyProperty.RegisterAttached(

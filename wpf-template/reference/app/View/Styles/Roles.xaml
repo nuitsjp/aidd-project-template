@@ -1,181 +1,166 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib"
                     xmlns:v="clr-namespace:WpfNotesSample.View">
-  <!--  Layout。ページ背景は colorBgLayout とし、内容は白い Card に載せて境界を示す（Ant Design Pro と同じ構成）。  -->
+  <!--  Layout。ページは surface の上に置き、一覧と本文は surface container lowest の色面（角丸 28）に載せる。  -->
   <Style x:Key="AppContentStyle" TargetType="Border">
-    <Setter Property="Background" Value="{StaticResource ColorBgLayoutBrush}" />
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
     <Setter Property="Padding" Value="{StaticResource LayoutPadding}" />
   </Style>
   <Style x:Key="PageBarStyle" TargetType="Grid">
+    <Setter Property="MinHeight" Value="56" />
     <Setter Property="Margin" Value="{StaticResource PageBarSpacing}" />
   </Style>
   <Style x:Key="PageActionsStyle" TargetType="StackPanel">
     <Setter Property="Orientation" Value="Horizontal" />
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
-  <!--  Typography.Title level 4  -->
+  <Style x:Key="PageHeadingStyle" TargetType="StackPanel">
+    <Setter Property="Orientation" Value="Horizontal" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <!--  一覧の見出し（headline medium）と件数（label large）。  -->
+  <Style x:Key="PageHeadlineTextStyle"
+         BasedOn="{StaticResource {x:Type TextBlock}}"
+         TargetType="TextBlock">
+    <Setter Property="FontSize" Value="{StaticResource FontSizeHeadlineMedium}" />
+    <Setter Property="LineHeight" Value="{StaticResource LineHeightHeadlineMedium}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style x:Key="PageCountTextStyle"
+         BasedOn="{StaticResource {x:Type TextBlock}}"
+         TargetType="TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource OnSurfaceVariantBrush}" />
+    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="Margin" Value="12,6,0,0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <!--  詳細の見出し（title large）。  -->
   <Style x:Key="PageTitleTextStyle"
          BasedOn="{StaticResource {x:Type TextBlock}}"
          TargetType="TextBlock">
-    <Setter Property="FontSize" Value="{StaticResource FontSizeHeading4}" />
-    <Setter Property="LineHeight" Value="{StaticResource LineHeightHeading4}" />
-    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="FontSize" Value="{StaticResource FontSizeTitleLarge}" />
+    <Setter Property="LineHeight" Value="{StaticResource LineHeightTitleLarge}" />
+    <Setter Property="TextWrapping" Value="NoWrap" />
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
-  <!--  Card  -->
-  <Style x:Key="CardStyle" TargetType="Border">
-    <Setter Property="Background" Value="{StaticResource ColorBgContainerBrush}" />
-    <Setter Property="BorderBrush" Value="{StaticResource ColorBorderSecondaryBrush}" />
-    <Setter Property="BorderThickness" Value="{StaticResource LineWidth}" />
-    <Setter Property="CornerRadius" Value="{StaticResource BorderRadiusLG}" />
-    <Setter Property="Padding" Value="{StaticResource CardBodyPadding}" />
+  <Style x:Key="ListSurfaceStyle" TargetType="Border">
+    <Setter Property="Background" Value="{DynamicResource SurfaceContainerLowestBrush}" />
+    <Setter Property="CornerRadius" Value="{StaticResource ShapeExtraLarge}" />
+    <Setter Property="Padding" Value="{StaticResource ListSurfacePadding}" />
   </Style>
-  <!--  表を載せる Card。表のヘッダーの角丸が Card の角に重なるよう、内側の余白を置かない。  -->
-  <Style x:Key="TableCardStyle"
-         BasedOn="{StaticResource CardStyle}"
-         TargetType="Border">
-    <Style.Resources>
-      <!--  表の背景を透明にし、Card の角丸を見せる。  -->
-      <Style BasedOn="{StaticResource {x:Type DataGrid}}" TargetType="DataGrid">
-        <Setter Property="Background" Value="Transparent" />
-      </Style>
-    </Style.Resources>
-    <Setter Property="Padding" Value="0" />
+  <Style x:Key="PaperStyle" TargetType="Border">
+    <Setter Property="Background" Value="{DynamicResource SurfaceContainerLowestBrush}" />
+    <Setter Property="CornerRadius" Value="{StaticResource ShapeExtraLarge}" />
+    <Setter Property="Padding" Value="{StaticResource PaperPadding}" />
   </Style>
 
   <!--
-    Button: type="primary"、danger、type="text"、type="link"。操作は文字（必要ならアイコン付き）で示し、
-    アイコンのみは PageHeader の戻る操作とウィンドウ操作に限る。
+    Button: filled・tonal・text・error の outlined・icon と、一覧の追加に使う extended FAB。
+    操作は文字（必要ならアイコン付き）で示し、アイコンのみは戻る操作とタイトルバーの操作に限る。
   -->
-  <Style x:Key="PrimaryButtonStyle"
+  <Style x:Key="FilledButtonStyle"
          BasedOn="{StaticResource BaseButtonStyle}"
          TargetType="Button">
-    <Style.Resources>
-      <SolidColorBrush x:Key="ButtonShadowBrush" Color="#1A0591FF" />
-    </Style.Resources>
-    <Setter Property="Background" Value="{StaticResource ColorPrimaryBrush}" />
-    <Setter Property="BorderBrush" Value="Transparent" />
-    <Setter Property="Foreground" Value="{StaticResource ColorTextLightSolidBrush}" />
+    <Setter Property="Background" Value="{DynamicResource PrimaryBrush}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Foreground" Value="{DynamicResource OnPrimaryBrush}" />
     <Style.Triggers>
-      <Trigger Property="IsMouseOver" Value="True">
-        <Setter Property="Background" Value="{StaticResource ColorPrimaryHoverBrush}" />
-        <Setter Property="BorderBrush" Value="Transparent" />
-        <Setter Property="Foreground" Value="{StaticResource ColorTextLightSolidBrush}" />
-      </Trigger>
-      <Trigger Property="IsPressed" Value="True">
-        <Setter Property="Background" Value="{StaticResource ColorPrimaryActiveBrush}" />
-        <Setter Property="BorderBrush" Value="Transparent" />
-        <Setter Property="Foreground" Value="{StaticResource ColorTextLightSolidBrush}" />
-      </Trigger>
       <Trigger Property="IsEnabled" Value="False">
-        <Setter Property="Background" Value="{StaticResource ColorBgContainerDisabledBrush}" />
-        <Setter Property="BorderBrush" Value="{StaticResource ColorBorderBrush}" />
-        <Setter Property="Foreground" Value="{StaticResource ColorTextDisabledBrush}" />
+        <Setter Property="Background" Value="{DynamicResource DisabledContainerBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DisabledContentBrush}" />
       </Trigger>
     </Style.Triggers>
   </Style>
-  <Style x:Key="DangerButtonStyle"
+  <Style x:Key="TonalButtonStyle"
          BasedOn="{StaticResource BaseButtonStyle}"
          TargetType="Button">
-    <Style.Resources>
-      <SolidColorBrush x:Key="ButtonShadowBrush" Color="#0FFF2605" />
-    </Style.Resources>
-    <Setter Property="BorderBrush" Value="{StaticResource ColorErrorBrush}" />
-    <Setter Property="Foreground" Value="{StaticResource ColorErrorBrush}" />
+    <Setter Property="Background" Value="{DynamicResource SecondaryContainerBrush}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Foreground" Value="{DynamicResource OnSecondaryContainerBrush}" />
     <Style.Triggers>
-      <Trigger Property="IsMouseOver" Value="True">
-        <Setter Property="BorderBrush" Value="{StaticResource ColorErrorHoverBrush}" />
-        <Setter Property="Foreground" Value="{StaticResource ColorErrorHoverBrush}" />
-      </Trigger>
-      <Trigger Property="IsPressed" Value="True">
-        <Setter Property="BorderBrush" Value="{StaticResource ColorErrorActiveBrush}" />
-        <Setter Property="Foreground" Value="{StaticResource ColorErrorActiveBrush}" />
-      </Trigger>
       <Trigger Property="IsEnabled" Value="False">
-        <Setter Property="Background" Value="{StaticResource ColorBgContainerDisabledBrush}" />
-        <Setter Property="BorderBrush" Value="{StaticResource ColorBorderBrush}" />
-        <Setter Property="Foreground" Value="{StaticResource ColorTextDisabledBrush}" />
+        <Setter Property="Background" Value="{DynamicResource DisabledContainerBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DisabledContentBrush}" />
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+  <Style x:Key="ErrorOutlinedButtonStyle"
+         BasedOn="{StaticResource BaseButtonStyle}"
+         TargetType="Button">
+    <Setter Property="BorderBrush" Value="{DynamicResource OutlineVariantBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource ErrorBrush}" />
+    <Style.Triggers>
+      <Trigger Property="IsEnabled" Value="False">
+        <Setter Property="BorderBrush" Value="{DynamicResource DisabledContainerBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DisabledContentBrush}" />
       </Trigger>
     </Style.Triggers>
   </Style>
   <Style x:Key="TextButtonStyle"
          BasedOn="{StaticResource BaseButtonStyle}"
          TargetType="Button">
-    <Style.Resources>
-      <SolidColorBrush x:Key="ButtonShadowBrush" Color="Transparent" />
-    </Style.Resources>
-    <Setter Property="Background" Value="Transparent" />
-    <Setter Property="BorderBrush" Value="Transparent" />
-    <Style.Triggers>
-      <Trigger Property="IsMouseOver" Value="True">
-        <Setter Property="Background" Value="{StaticResource ColorFillTertiaryBrush}" />
-        <Setter Property="BorderBrush" Value="Transparent" />
-        <Setter Property="Foreground" Value="{StaticResource ColorTextBrush}" />
-      </Trigger>
-      <Trigger Property="IsPressed" Value="True">
-        <Setter Property="Background" Value="{StaticResource ColorFillBrush}" />
-        <Setter Property="BorderBrush" Value="Transparent" />
-        <Setter Property="Foreground" Value="{StaticResource ColorTextBrush}" />
-      </Trigger>
-      <Trigger Property="IsEnabled" Value="False">
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="BorderBrush" Value="Transparent" />
-        <Setter Property="Foreground" Value="{StaticResource ColorTextDisabledBrush}" />
-      </Trigger>
-    </Style.Triggers>
+    <Setter Property="Padding" Value="{StaticResource TextButtonPadding}" />
+    <Setter Property="BorderThickness" Value="0" />
   </Style>
-  <!--  PageHeader の戻る操作。アイコンは 16。  -->
-  <Style x:Key="BackButtonStyle"
+  <!--  戻る操作。40 の円で、アイコンは 24。  -->
+  <Style x:Key="IconButtonStyle"
          BasedOn="{StaticResource TextButtonStyle}"
          TargetType="Button">
+    <Style.Resources>
+      <sys:Double x:Key="ButtonIconSize">24</sys:Double>
+    </Style.Resources>
     <Setter Property="Width" Value="{StaticResource ControlHeight}" />
     <Setter Property="Padding" Value="0" />
-    <Setter Property="FontSize" Value="{StaticResource FontSizeLG}" />
-    <Setter Property="Margin" Value="0,0,8,0" />
+    <Setter Property="Foreground" Value="{DynamicResource OnSurfaceVariantBrush}" />
+    <Setter Property="Margin" Value="-8,0,8,0" />
   </Style>
-  <!--  表の操作列。size="small" の type="link"。  -->
-  <Style x:Key="RowActionButtonStyle"
+  <!--  Extended FAB。一覧の色面の右下に重ね、elevation 3 の影を落とす。  -->
+  <Style x:Key="FabStyle"
          BasedOn="{StaticResource BaseButtonStyle}"
          TargetType="Button">
     <Style.Resources>
-      <SolidColorBrush x:Key="ButtonShadowBrush" Color="Transparent" />
-      <CornerRadius x:Key="ButtonCornerRadius">4</CornerRadius>
+      <CornerRadius x:Key="ButtonCornerRadius">16</CornerRadius>
+      <sys:Double x:Key="ButtonIconSize">24</sys:Double>
     </Style.Resources>
-    <Setter Property="Height" Value="{StaticResource ControlHeightSM}" />
-    <Setter Property="Padding" Value="{StaticResource ButtonPaddingSM}" />
-    <Setter Property="HorizontalAlignment" Value="Left" />
-    <Setter Property="Background" Value="Transparent" />
-    <Setter Property="BorderBrush" Value="Transparent" />
-    <Setter Property="Foreground" Value="{StaticResource ColorPrimaryBrush}" />
+    <Setter Property="Height" Value="{StaticResource FabHeight}" />
+    <Setter Property="Padding" Value="{StaticResource FabPadding}" />
+    <Setter Property="Margin" Value="0,0,16,16" />
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="VerticalAlignment" Value="Bottom" />
+    <Setter Property="Background" Value="{DynamicResource PrimaryContainerBrush}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Foreground" Value="{DynamicResource OnPrimaryContainerBrush}" />
+    <Setter Property="FontSize" Value="{StaticResource FontSizeBodyLarge}" />
+    <Setter Property="Effect">
+      <Setter.Value>
+        <DropShadowEffect BlurRadius="12"
+                          Direction="270"
+                          Opacity="0.25"
+                          ShadowDepth="3" />
+      </Setter.Value>
+    </Setter>
     <Style.Triggers>
-      <Trigger Property="IsMouseOver" Value="True">
-        <Setter Property="BorderBrush" Value="Transparent" />
-        <Setter Property="Foreground" Value="{StaticResource ColorLinkHoverBrush}" />
-      </Trigger>
-      <Trigger Property="IsPressed" Value="True">
-        <Setter Property="BorderBrush" Value="Transparent" />
-        <Setter Property="Foreground" Value="{StaticResource ColorPrimaryActiveBrush}" />
-      </Trigger>
       <Trigger Property="IsEnabled" Value="False">
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="BorderBrush" Value="Transparent" />
-        <Setter Property="Foreground" Value="{StaticResource ColorTextDisabledBrush}" />
+        <Setter Property="Background" Value="{DynamicResource DisabledContainerBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DisabledContentBrush}" />
+        <Setter Property="Effect" Value="{x:Null}" />
       </Trigger>
     </Style.Triggers>
   </Style>
 
-  <!--  Alert（description なし）  -->
-  <Style x:Key="AlertStyle" TargetType="Border">
-    <Setter Property="BorderThickness" Value="{StaticResource LineWidth}" />
-    <Setter Property="CornerRadius" Value="{StaticResource BorderRadiusLG}" />
-    <Setter Property="Padding" Value="{StaticResource AlertPadding}" />
-    <Setter Property="Margin" Value="{StaticResource AlertSpacing}" />
+  <!--  Banner。エラーは error container、操作の結果は secondary container の色面で示す。  -->
+  <Style x:Key="BannerStyle" TargetType="Border">
+    <Setter Property="CornerRadius" Value="{StaticResource ShapeMedium}" />
+    <Setter Property="Padding" Value="{StaticResource BannerPadding}" />
+    <Setter Property="Margin" Value="{StaticResource BannerSpacing}" />
   </Style>
-  <Style x:Key="ErrorAlertStyle"
-         BasedOn="{StaticResource AlertStyle}"
+  <Style x:Key="ErrorBannerStyle"
+         BasedOn="{StaticResource BannerStyle}"
          TargetType="Border">
-    <Setter Property="Background" Value="{StaticResource ColorErrorBgBrush}" />
-    <Setter Property="BorderBrush" Value="{StaticResource ColorErrorBorderBrush}" />
+    <Setter Property="Background" Value="{DynamicResource ErrorContainerBrush}" />
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource OnErrorContainerBrush}" />
     <Style.Triggers>
       <DataTrigger Binding="{Binding ErrorMessage}" Value="">
         <Setter Property="Visibility" Value="Collapsed" />
@@ -185,11 +170,11 @@
       </DataTrigger>
     </Style.Triggers>
   </Style>
-  <Style x:Key="SuccessAlertStyle"
-         BasedOn="{StaticResource AlertStyle}"
+  <Style x:Key="SuccessBannerStyle"
+         BasedOn="{StaticResource BannerStyle}"
          TargetType="Border">
-    <Setter Property="Background" Value="{StaticResource ColorSuccessBgBrush}" />
-    <Setter Property="BorderBrush" Value="{StaticResource ColorSuccessBorderBrush}" />
+    <Setter Property="Background" Value="{DynamicResource SecondaryContainerBrush}" />
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource OnSecondaryContainerBrush}" />
     <Style.Triggers>
       <DataTrigger Binding="{Binding StatusMessage}" Value="">
         <Setter Property="Visibility" Value="Collapsed" />
@@ -199,36 +184,32 @@
       </DataTrigger>
     </Style.Triggers>
   </Style>
-  <Style x:Key="ErrorAlertIconStyle"
+  <Style x:Key="ErrorBannerIconStyle"
          BasedOn="{StaticResource IconStyle}"
          TargetType="Control">
-    <Setter Property="v:Icon.Data" Value="{StaticResource IconCloseCircleFilled}" />
-    <Setter Property="Foreground" Value="{StaticResource ColorErrorBrush}" />
-    <Setter Property="Margin" Value="{StaticResource IconGap}" />
+    <Setter Property="v:Icon.Data" Value="{StaticResource IconExclamationCircleFilled}" />
+    <Setter Property="Width" Value="{StaticResource IconSizeLarge}" />
+    <Setter Property="Height" Value="{StaticResource IconSizeLarge}" />
+    <Setter Property="Margin" Value="0,0,16,0" />
   </Style>
-  <Style x:Key="SuccessAlertIconStyle"
-         BasedOn="{StaticResource IconStyle}"
+  <Style x:Key="SuccessBannerIconStyle"
+         BasedOn="{StaticResource ErrorBannerIconStyle}"
          TargetType="Control">
     <Setter Property="v:Icon.Data" Value="{StaticResource IconCheckCircleFilled}" />
-    <Setter Property="Foreground" Value="{StaticResource ColorSuccessBrush}" />
-    <Setter Property="Margin" Value="{StaticResource IconGap}" />
   </Style>
-  <Style x:Key="AlertTextStyle"
+  <Style x:Key="BannerTextStyle"
          BasedOn="{StaticResource {x:Type TextBlock}}"
          TargetType="TextBlock">
-    <Setter Property="Foreground" Value="{StaticResource ColorTextBrush}" />
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
 
-  <!--  Tag（warning、filled）  -->
+  <!--  モック表示のタグ（tertiary container）。  -->
   <Style x:Key="ModeTagStyle" TargetType="Border">
-    <Setter Property="Background" Value="{StaticResource ColorWarningBgBrush}" />
-    <Setter Property="BorderBrush" Value="Transparent" />
-    <Setter Property="BorderThickness" Value="{StaticResource LineWidth}" />
-    <Setter Property="CornerRadius" Value="{StaticResource BorderRadiusSM}" />
+    <Setter Property="Background" Value="{DynamicResource TertiaryContainerBrush}" />
+    <Setter Property="CornerRadius" Value="{StaticResource ShapeSmall}" />
     <Setter Property="Padding" Value="{StaticResource TagPadding}" />
     <Setter Property="VerticalAlignment" Value="Center" />
-    <Setter Property="Margin" Value="8,0,0,0" />
+    <Setter Property="Margin" Value="12,0,0,0" />
     <Style.Triggers>
       <DataTrigger Binding="{Binding Mode}" Value="">
         <Setter Property="Visibility" Value="Collapsed" />
@@ -238,16 +219,58 @@
   <Style x:Key="ModeTextStyle"
          BasedOn="{StaticResource {x:Type TextBlock}}"
          TargetType="TextBlock">
-    <Setter Property="Foreground" Value="{StaticResource ColorWarningBrush}" />
-    <Setter Property="FontSize" Value="{StaticResource FontSizeSM}" />
-    <Setter Property="LineHeight" Value="{StaticResource LineHeightSM}" />
+    <Setter Property="Foreground" Value="{DynamicResource OnTertiaryContainerBrush}" />
+    <Setter Property="FontSize" Value="{StaticResource FontSizeBodySmall}" />
+    <Setter Property="LineHeight" Value="{StaticResource LineHeight}" />
+    <Setter Property="FontWeight" Value="Medium" />
   </Style>
 
-  <!--  Table の空表示（Empty の PRESENTED_IMAGE_SIMPLE）。表の見出し・セル余白・Empty の余白の下に置く。  -->
-  <Style x:Key="EmptyStateStyle" TargetType="StackPanel">
-    <Setter Property="Margin" Value="8,78,8,0" />
+  <!--  一覧の項目。先頭にタイトルの頭文字の円、続けてタイトル（body large）と更新日時（body medium）の 2 行。  -->
+  <v:InitialConverter x:Key="InitialConverter" />
+  <Style x:Key="AvatarStyle" TargetType="Border">
+    <Setter Property="Width" Value="{StaticResource AvatarSize}" />
+    <Setter Property="Height" Value="{StaticResource AvatarSize}" />
+    <Setter Property="CornerRadius" Value="{StaticResource ShapeFull}" />
+    <Setter Property="Background" Value="{DynamicResource PrimaryContainerBrush}" />
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource OnPrimaryContainerBrush}" />
+    <Style.Triggers>
+      <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+        <Setter Property="Background" Value="{DynamicResource PrimaryBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource OnPrimaryBrush}" />
+      </DataTrigger>
+    </Style.Triggers>
+  </Style>
+  <Style x:Key="AvatarTextStyle"
+         BasedOn="{StaticResource {x:Type TextBlock}}"
+         TargetType="TextBlock">
+    <Setter Property="FontSize" Value="{StaticResource FontSizeBodyLarge}" />
+    <Setter Property="FontWeight" Value="Medium" />
     <Setter Property="HorizontalAlignment" Value="Center" />
-    <Setter Property="VerticalAlignment" Value="Top" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style x:Key="ListItemTextStyle" TargetType="StackPanel">
+    <Setter Property="Margin" Value="16,0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style x:Key="ListHeadlineTextStyle"
+         BasedOn="{StaticResource {x:Type TextBlock}}"
+         TargetType="TextBlock">
+    <Setter Property="FontSize" Value="{StaticResource FontSizeBodyLarge}" />
+    <Setter Property="LineHeight" Value="{StaticResource LineHeightBodyLarge}" />
+    <Setter Property="TextWrapping" Value="NoWrap" />
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+  </Style>
+  <Style x:Key="ListSupportingTextStyle"
+         BasedOn="{StaticResource {x:Type TextBlock}}"
+         TargetType="TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource OnSurfaceVariantBrush}" />
+    <Setter Property="TextWrapping" Value="NoWrap" />
+  </Style>
+
+  <!--  一覧の空表示。傾けた角丸の色面にノートの形を置き、見出しと次の操作を示す。  -->
+  <Style x:Key="EmptyStateStyle" TargetType="StackPanel">
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
     <Setter Property="IsHitTestVisible" Value="False" />
     <Setter Property="Visibility" Value="Collapsed" />
     <Style.Triggers>
@@ -256,62 +279,136 @@
       </DataTrigger>
     </Style.Triggers>
   </Style>
-  <Style x:Key="EmptyImageStyle" TargetType="Control">
-    <Setter Property="Height" Value="{StaticResource ControlHeightLG}" />
-    <Setter Property="Margin" Value="0,0,0,8" />
-    <Setter Property="Focusable" Value="False" />
-    <Setter Property="IsTabStop" Value="False" />
-    <Setter Property="Template">
+  <Style x:Key="EmptyIllustrationStyle" TargetType="Border">
+    <Setter Property="Width" Value="112" />
+    <Setter Property="Height" Value="112" />
+    <Setter Property="Margin" Value="0,0,0,20" />
+    <Setter Property="CornerRadius" Value="36" />
+    <Setter Property="Background" Value="{DynamicResource PrimaryContainerBrush}" />
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource OnPrimaryContainerBrush}" />
+    <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+    <Setter Property="RenderTransform">
       <Setter.Value>
-        <ControlTemplate TargetType="Control">
-          <!--  antd 6.6.5 es/empty/simple.js（MIT License, Copyright (c) 2015-present Ant UED。全文は THIRD-PARTY-NOTICES.txt）  -->
-          <Viewbox>
-            <Canvas Width="64" Height="41">
-              <Canvas Canvas.Top="1">
-                <Ellipse Canvas.Top="26"
-                         Width="64"
-                         Height="14"
-                         Fill="{StaticResource EmptyShadowBrush}" />
-                <Path Data="M55 12.8 44.9 1.3Q44 0 42.9 0H21.1q-1.2 0-2 1.3L9 12.8V22h46z" Stroke="{StaticResource EmptyBorderBrush}" />
-                <Path Data="M41.6 16c0-1.7 1-3 2.2-3H55v18.1c0 2.2-1.3 3.9-3 3.9H12c-1.7 0-3-1.7-3-3.9V13h11.2c1.2 0 2.2 1.3 2.2 3s1 2.9 2.2 2.9h14.8c1.2 0 2.2-1.4 2.2-3"
-                      Fill="{StaticResource EmptyContentBrush}"
-                      Stroke="{StaticResource EmptyBorderBrush}" />
-              </Canvas>
-            </Canvas>
-          </Viewbox>
-        </ControlTemplate>
+        <RotateTransform Angle="-6" />
       </Setter.Value>
     </Setter>
   </Style>
-  <Style x:Key="EmptyStateTextStyle"
+  <Style x:Key="EmptyIconStyle"
+         BasedOn="{StaticResource IconStyle}"
+         TargetType="Control">
+    <Setter Property="v:Icon.Data" Value="{StaticResource IconNote}" />
+    <Setter Property="Width" Value="48" />
+    <Setter Property="Height" Value="48" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+    <Setter Property="RenderTransform">
+      <Setter.Value>
+        <RotateTransform Angle="6" />
+      </Setter.Value>
+    </Setter>
+  </Style>
+  <Style x:Key="EmptyTitleTextStyle"
          BasedOn="{StaticResource {x:Type TextBlock}}"
          TargetType="TextBlock">
-    <Setter Property="Foreground" Value="{StaticResource ColorTextTertiaryBrush}" />
+    <Setter Property="FontSize" Value="{StaticResource FontSizeTitleLarge}" />
+    <Setter Property="LineHeight" Value="{StaticResource LineHeightTitleLarge}" />
+    <Setter Property="TextAlignment" Value="Center" />
+  </Style>
+  <Style x:Key="EmptyBodyTextStyle"
+         BasedOn="{StaticResource {x:Type TextBlock}}"
+         TargetType="TextBlock">
+    <Setter Property="Margin" Value="0,8,0,0" />
+    <Setter Property="Foreground" Value="{DynamicResource OnSurfaceVariantBrush}" />
     <Setter Property="TextAlignment" Value="Center" />
   </Style>
 
-  <!--  Form（vertical）  -->
-  <Style x:Key="FormItemStyle" TargetType="StackPanel">
-    <Setter Property="Margin" Value="{StaticResource FormItemSpacing}" />
+  <!--  詳細の更新日時（assist chip 相当の色面）と本文（body large、行高 28）。  -->
+  <Style x:Key="MetaChipStyle" TargetType="Border">
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="Margin" Value="0,0,0,20" />
+    <Setter Property="Padding" Value="12,6" />
+    <Setter Property="CornerRadius" Value="{StaticResource ShapeSmall}" />
+    <Setter Property="Background" Value="{DynamicResource SurfaceContainerBrush}" />
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource OnSurfaceVariantBrush}" />
+    <Style.Triggers>
+      <DataTrigger Binding="{Binding Note}" Value="{x:Null}">
+        <Setter Property="Visibility" Value="Collapsed" />
+      </DataTrigger>
+    </Style.Triggers>
   </Style>
-  <Style x:Key="RequiredLabelStyle"
+  <Style x:Key="MetaIconStyle"
+         BasedOn="{StaticResource IconStyle}"
+         TargetType="Control">
+    <Setter Property="v:Icon.Data" Value="{StaticResource IconClock}" />
+    <Setter Property="Width" Value="14" />
+    <Setter Property="Height" Value="14" />
+    <Setter Property="Margin" Value="0,0,8,0" />
+  </Style>
+  <Style x:Key="MetaTextStyle"
+         BasedOn="{StaticResource {x:Type TextBlock}}"
+         TargetType="TextBlock">
+    <Setter Property="FontSize" Value="{StaticResource FontSizeBodySmall}" />
+    <Setter Property="LineHeight" Value="{StaticResource LineHeightBodySmall}" />
+    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style x:Key="ReadingTextStyle"
+         BasedOn="{StaticResource {x:Type TextBlock}}"
+         TargetType="TextBlock">
+    <Setter Property="FontSize" Value="{StaticResource FontSizeBodyLarge}" />
+    <Setter Property="LineHeight" Value="{StaticResource LineHeightReading}" />
+  </Style>
+
+  <!--  Filled text field。上側だけ角丸の色面に、ラベルと入力を重ね、下辺の線でフォーカスを示す（1 → 3）。  -->
+  <Style x:Key="FilledFieldStyle" TargetType="Border">
+    <Setter Property="Background" Value="{DynamicResource SurfaceContainerHighestBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource OnSurfaceVariantBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+    <Setter Property="CornerRadius" Value="{StaticResource ShapeExtraSmallTop}" />
+    <Setter Property="Padding" Value="{StaticResource FieldPadding}" />
+    <Style.Triggers>
+      <Trigger Property="IsKeyboardFocusWithin" Value="True">
+        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+        <Setter Property="BorderThickness" Value="0,0,0,3" />
+        <Setter Property="Padding" Value="{StaticResource FieldFocusedPadding}" />
+      </Trigger>
+      <Trigger Property="IsEnabled" Value="False">
+        <Setter Property="Background" Value="{DynamicResource DisabledContainerBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DisabledContentBrush}" />
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+  <Style x:Key="FieldLabelStyle"
          BasedOn="{StaticResource {x:Type Label}}"
+         TargetType="Label">
+    <Style.Triggers>
+      <DataTrigger Binding="{Binding IsKeyboardFocusWithin, RelativeSource={RelativeSource AncestorType=Border}}" Value="True">
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
+      </DataTrigger>
+    </Style.Triggers>
+  </Style>
+  <!--  必須の入力欄はラベルの後ろに * を付ける。  -->
+  <Style x:Key="RequiredFieldLabelStyle"
+         BasedOn="{StaticResource FieldLabelStyle}"
          TargetType="Label">
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="Label">
           <StackPanel Margin="{TemplateBinding Padding}" Orientation="Horizontal">
-            <TextBlock Margin="0,0,4,0"
-                       VerticalAlignment="Center"
-                       FontFamily="Arial"
-                       Foreground="{StaticResource ColorErrorBrush}"
-                       LineHeight="{StaticResource FontSize}"
-                       Text="*" />
-            <ContentPresenter VerticalAlignment="Center" RecognizesAccessKey="True" />
+            <ContentPresenter RecognizesAccessKey="True" />
+            <TextBlock Text=" *" />
           </StackPanel>
         </ControlTemplate>
       </Setter.Value>
     </Setter>
+  </Style>
+  <Style x:Key="FieldHelpTextStyle"
+         BasedOn="{StaticResource {x:Type TextBlock}}"
+         TargetType="TextBlock">
+    <Setter Property="Margin" Value="16,4,16,0" />
+    <Setter Property="Foreground" Value="{DynamicResource OnSurfaceVariantBrush}" />
+    <Setter Property="FontSize" Value="{StaticResource FontSizeBodySmall}" />
+    <Setter Property="LineHeight" Value="{StaticResource LineHeightBodySmall}" />
   </Style>
   <Style x:Key="TextAreaStyle"
          BasedOn="{StaticResource {x:Type TextBox}}"
@@ -319,31 +416,33 @@
     <Setter Property="VerticalContentAlignment" Value="Top" />
   </Style>
 
-  <!--  Modal.confirm  -->
+  <!--  Basic dialog。上から中央揃えのアイコン、見出し（headline small）、本文、右寄せの text ボタンを並べる。  -->
   <Style x:Key="ConfirmIconStyle"
          BasedOn="{StaticResource IconStyle}"
          TargetType="Control">
-    <Setter Property="Width" Value="22" />
-    <Setter Property="Height" Value="22" />
-    <Setter Property="Foreground" Value="{StaticResource ColorWarningBrush}" />
-    <Setter Property="Margin" Value="0,1,12,0" />
-    <Setter Property="VerticalAlignment" Value="Top" />
+    <Setter Property="v:Icon.Data" Value="{StaticResource IconExclamationCircleFilled}" />
+    <Setter Property="Width" Value="{StaticResource IconSizeLarge}" />
+    <Setter Property="Height" Value="{StaticResource IconSizeLarge}" />
+    <Setter Property="Foreground" Value="{DynamicResource ErrorBrush}" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="Margin" Value="0,0,0,16" />
   </Style>
-  <Style x:Key="ModalTitleTextStyle"
+  <Style x:Key="DialogTitleTextStyle"
          BasedOn="{StaticResource {x:Type TextBlock}}"
          TargetType="TextBlock">
-    <Setter Property="FontSize" Value="{StaticResource FontSizeHeading5}" />
-    <Setter Property="LineHeight" Value="{StaticResource LineHeightHeading5}" />
-    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="FontSize" Value="{StaticResource FontSizeHeadlineSmall}" />
+    <Setter Property="LineHeight" Value="{StaticResource LineHeightHeadlineSmall}" />
+    <Setter Property="TextAlignment" Value="Center" />
   </Style>
-  <Style x:Key="ModalContentTextStyle"
+  <Style x:Key="DialogContentTextStyle"
          BasedOn="{StaticResource {x:Type TextBlock}}"
          TargetType="TextBlock">
-    <Setter Property="Margin" Value="0,8,0,0" />
+    <Setter Property="Margin" Value="0,16,0,0" />
+    <Setter Property="Foreground" Value="{DynamicResource OnSurfaceVariantBrush}" />
   </Style>
-  <Style x:Key="ModalFooterStyle" TargetType="StackPanel">
+  <Style x:Key="DialogFooterStyle" TargetType="StackPanel">
     <Setter Property="Orientation" Value="Horizontal" />
     <Setter Property="HorizontalAlignment" Value="Right" />
-    <Setter Property="Margin" Value="0,12,0,0" />
+    <Setter Property="Margin" Value="0,24,0,0" />
   </Style>
 </ResourceDictionary>

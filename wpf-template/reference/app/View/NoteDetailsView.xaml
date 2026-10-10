@@ -14,38 +14,51 @@
                 v:Icon.Data="{StaticResource IconArrowLeft}"
                 AutomationProperties.Name="一覧へ戻る"
                 Command="{Binding BackCommand}"
-                Style="{StaticResource BackButtonStyle}"
+                Style="{StaticResource IconButtonStyle}"
                 ToolTip="一覧へ戻る" />
         <TextBlock x:Name="TitleText"
                    Grid.Column="1"
                    Style="{StaticResource PageTitleTextStyle}"
                    Text="{Binding NoteTitle}" />
         <StackPanel Grid.Column="2" Style="{StaticResource PageActionsStyle}">
-          <Button x:Name="EditButton"
-                  v:Icon.Data="{StaticResource IconEdit}"
-                  Command="{Binding EditNoteCommand}"
-                  Content="編集" />
           <Button x:Name="DeleteButton"
-                  Margin="{StaticResource ItemGap}"
                   v:Icon.Data="{StaticResource IconDelete}"
                   Command="{Binding DeleteNoteCommand}"
                   Content="削除"
-                  Style="{StaticResource DangerButtonStyle}" />
+                  Style="{StaticResource ErrorOutlinedButtonStyle}" />
+          <Button x:Name="EditButton"
+                  Margin="{StaticResource ItemGap}"
+                  v:Icon.Data="{StaticResource IconEdit}"
+                  Command="{Binding EditNoteCommand}"
+                  Content="編集"
+                  Style="{StaticResource TonalButtonStyle}" />
         </StackPanel>
       </Grid>
-      <Border Style="{StaticResource ErrorAlertStyle}">
+      <Border Style="{StaticResource ErrorBannerStyle}">
         <DockPanel>
-          <Control Style="{StaticResource ErrorAlertIconStyle}" />
+          <Control Style="{StaticResource ErrorBannerIconStyle}" />
           <TextBlock x:Name="ErrorText"
-                     Style="{StaticResource AlertTextStyle}"
+                     Style="{StaticResource BannerTextStyle}"
                      Text="{Binding ErrorMessage}" />
         </DockPanel>
       </Border>
     </StackPanel>
-    <Border Style="{StaticResource CardStyle}">
-      <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <TextBlock x:Name="BodyText" Text="{Binding Body}" />
-      </ScrollViewer>
+    <Border Style="{StaticResource PaperStyle}">
+      <DockPanel>
+        <Border DockPanel.Dock="Top" Style="{StaticResource MetaChipStyle}">
+          <StackPanel Orientation="Horizontal">
+            <Control Style="{StaticResource MetaIconStyle}" />
+            <TextBlock x:Name="UpdatedText"
+                       Style="{StaticResource MetaTextStyle}"
+                       Text="{Binding Note.UpdatedAt, StringFormat='{}{0:yyyy-MM-dd HH:mm}（UTC）'}" />
+          </StackPanel>
+        </Border>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+          <TextBlock x:Name="BodyText"
+                     Style="{StaticResource ReadingTextStyle}"
+                     Text="{Binding Body}" />
+        </ScrollViewer>
+      </DockPanel>
     </Border>
   </DockPanel>
 </UserControl>

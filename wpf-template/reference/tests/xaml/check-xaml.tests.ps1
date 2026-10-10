@@ -17,9 +17,26 @@ function New-Fixture([string]$Name, [hashtable]$Files) {
     return $appRoot
 }
 
+# 日本語の診断を OS のコードページに依存せず比較するため、子プロセスに UTF-8 で出力させて UTF-8 で読む。
 function Invoke-Checker([string]$AppRoot) {
-    $output = @(& $powershellPath -NoProfile -ExecutionPolicy Bypass -File $checkerPath -AppRoot $AppRoot 2>&1)
-    return [PSCustomObject]@{ ExitCode = $LASTEXITCODE; Output = ($output -join "`n") }
+    $command = "[Console]::OutputEncoding = [Text.UTF8Encoding]::new(`$false); " +
+        "& '$($checkerPath.Replace("'", "''"))' -AppRoot '$($AppRoot.Replace("'", "''"))'; exit `$LASTEXITCODE"
+    $start = [Diagnostics.ProcessStartInfo]::new($powershellPath)
+    $start.Arguments = '-NoProfile -ExecutionPolicy Bypass -Command "' + $command + '"'
+    $start.UseShellExecute = $false
+    $start.CreateNoWindow = $true
+    $start.RedirectStandardOutput = $true
+    $start.RedirectStandardError = $true
+    $start.StandardOutputEncoding = [Text.UTF8Encoding]::new($false)
+    $start.StandardErrorEncoding = [Text.UTF8Encoding]::new($false)
+    $process = [Diagnostics.Process]::Start($start)
+    try {
+        $errorRead = $process.StandardError.ReadToEndAsync()
+        $output = $process.StandardOutput.ReadToEnd() + $errorRead.Result
+        $process.WaitForExit()
+        return [PSCustomObject]@{ ExitCode = $process.ExitCode; Output = $output.Replace("`r`n", "`n").TrimEnd("`n") }
+    }
+    finally { $process.Dispose() }
 }
 
 function Assert-Result($Result, [int]$ExitCode, [string[]]$Diagnostics = @()) {

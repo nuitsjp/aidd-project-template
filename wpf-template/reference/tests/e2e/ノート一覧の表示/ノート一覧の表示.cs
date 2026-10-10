@@ -37,7 +37,7 @@ public sealed class ListNotesScenarioTests
         list.Error.Text.ShouldBeEmpty();
         if (mode != "empty")
         {
-            list.Notes.GetCellText(0, 1).ShouldBe("2026-01-02 00:00");
+            list.UpdatedAt(0).ShouldBe("更新 2026-01-02 00:00（UTC）");
         }
 
         if (mode == "refresh")

@@ -11,7 +11,7 @@ Windows のネイティブな WPF 画面から実 SQLite の確定までを通�
 
 編集内容は保存まで下書きとして保持し、失敗や未保存の離脱取り消しで消失させません。保存・削除の版検査、入力値の制約、保存場所は [データ設計](design/data.md) に従います。画面の確認待ちは DB トランザクションに含めません。
 
-画面は Ant Design 6.6.5 の既定のライトテーマに準拠し、WPF の共通テーマ・標準スタイル・用途別スタイルとアプリ側で描くウィンドウ枠で構成します。画面内で Style・ControlTemplate を定義せず、`app/View/Styles/` の定義を使います。適用範囲と構成は [WPF 固有設計](architecture-wpf.md#style-boundary)、定義場所の検査は [XAML の静的検査](architecture-wpf.md#xaml-boundary) に従います。
+画面は Material Design 3 に準拠してライトとダークのテーマを持ち、WPF の共通テーマ・標準スタイル・用途別スタイルとアプリ側で描くウィンドウ枠で構成します。画面内で Style・ControlTemplate を定義せず、`app/View/Styles/` の定義を使います。適用範囲と構成は [WPF 固有設計](architecture-wpf.md#style-boundary)、定義場所の検査は [XAML の静的検査](architecture-wpf.md#xaml-boundary) に従います。
 
 <a id="usecases"></a>
 ## 3. ユースケース一覧
