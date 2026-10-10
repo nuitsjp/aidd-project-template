@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "WpfNotesSample": {
+      "commandName": "Project",
+      "commandLineArgs": "--data-dir \"$(ProjectDir)../dev-data\""
+    }
+  }
+}

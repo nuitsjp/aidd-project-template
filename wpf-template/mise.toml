@@ -1,0 +1,14 @@
+[tools]
+dotnet = "10.0"
+python = "3.13"
+
+[env]
+PYTHONIOENCODING = "utf-8"
+
+[tasks.setup]
+description = "WPF 開発用のツールを導入する"
+run = "mise install"
+
+[tasks."check:docs"]
+description = "製品文書と参照文書を一時生成先で検査する"
+run = "powershell -NoProfile -ExecutionPolicy Bypass -File reference/scripts/check-docs.ps1"

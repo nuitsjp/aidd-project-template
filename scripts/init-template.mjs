@@ -6,6 +6,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const dotnetGeneratedNames = new Set([
   '.vs', 'bin', 'obj', 'TestResults', 'node_modules', 'dist', 'data', 'release',
   'coverage', '.e2e-results', 'playwright-report', '.env', 'mise.local.props',
+  'mocks-bin', 'mocks-obj', 'mise.local.toml', '.mise.local.toml', 'dbml-error.log',
 ]);
 const productFiles = [
   '.vscode',
@@ -27,11 +28,55 @@ const csharpKeywords = new Set([
 ]);
 
 // 参照実装の仕様・案内文書は reference/ だけに残し、製品ルートは共通版の文書で始める。
-function copyApp(reference, destination) {
+function copyApp(reference, destination, excludeDotnetGenerated = false) {
   for (const name of readdirSync(reference)) {
     if (name !== 'README.md' && name !== 'docs')
-      cpSync(resolve(reference, name), resolve(destination, name), { recursive: true });
+      cpSync(resolve(reference, name), resolve(destination, name), {
+        recursive: true,
+        filter: path => !excludeDotnetGenerated || !dotnetGeneratedNames.has(basename(path)),
+      });
   }
+}
+
+function renameWpfProduct(destination, namespace) {
+  const replacements = [
+    ['WpfNotesSample', namespace],
+    ['UnitTests.csproj', `${namespace}.UnitTests.csproj`],
+    ['IntegrationTests.csproj', `${namespace}.IntegrationTests.csproj`],
+    ['E2eTests.csproj', `${namespace}.E2eTests.csproj`],
+    ['App.slnx', `${namespace}.slnx`],
+    ['App.csproj', `${namespace}.csproj`],
+    ['App.dll', `${namespace}.dll`],
+    ['App.exe', `${namespace}.exe`],
+    ['<AssemblyName>App</AssemblyName>', `<AssemblyName>${namespace}</AssemblyName>`],
+    ['<AssemblyName>UnitTests</AssemblyName>', `<AssemblyName>${namespace}.UnitTests</AssemblyName>`],
+    ['<AssemblyName>IntegrationTests</AssemblyName>', `<AssemblyName>${namespace}.IntegrationTests</AssemblyName>`],
+    ['<AssemblyName>E2eTests</AssemblyName>', `<AssemblyName>${namespace}.E2eTests</AssemblyName>`],
+  ];
+  const textExtensions = new Set(['.cs', '.xaml', '.csproj', '.json', '.toml', '.config', '.ps1', '.slnx']);
+  function replaceNames(directory) {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const path = resolve(directory, entry.name);
+      if (entry.isDirectory()) {
+        if (path !== resolve(destination, 'reference')) replaceNames(path);
+      } else if (textExtensions.has(entry.name.slice(entry.name.lastIndexOf('.')))) {
+        const original = readFileSync(path, 'utf8');
+        let updated = original;
+        for (const [before, after] of replacements) updated = updated.replaceAll(before, after);
+        if (entry.name === 'packages.lock.json')
+          updated = updated.replaceAll('"app": {', `"${namespace.toLowerCase()}": {`);
+        if (updated !== original) writeFileSync(path, updated);
+      }
+    }
+  }
+  replaceNames(destination);
+  for (const [before, after] of [
+    ['App.slnx', `${namespace}.slnx`],
+    ['app/App.csproj', `app/${namespace}.csproj`],
+    ['tests/unit/UnitTests.csproj', `tests/unit/${namespace}.UnitTests.csproj`],
+    ['tests/integration/IntegrationTests.csproj', `tests/integration/${namespace}.IntegrationTests.csproj`],
+    ['tests/e2e/E2eTests.csproj', `tests/e2e/${namespace}.E2eTests.csproj`],
+  ]) renameSync(resolve(destination, before), resolve(destination, after));
 }
 
 function copyProduct(reference, destination, namespace) {
@@ -138,13 +183,13 @@ function renameWailsProduct(destination, name) {
 
 try {
   const kind = process.argv[2];
-  const named = kind === 'react-dotnet' || kind === 'wails';
-  if (!['wails', 'react', 'react-dotnet'].includes(kind)
+  const named = kind === 'react-dotnet' || kind === 'wails' || kind === 'wpf';
+  if (!['wails', 'react', 'react-dotnet', 'wpf'].includes(kind)
     || (named ? process.argv.length !== 6 || process.argv[4] !== '--name' : process.argv.length !== 4)) {
-    throw new Error('使い方: mise run init:react <新しい出力先> / mise run init:wails|init:react-dotnet <新しい出力先> --name Company.Product');
+    throw new Error('使い方: mise run init:react <新しい出力先> / mise run init:wails|init:react-dotnet|init:wpf <新しい出力先> --name Company.Product');
   }
   const namespace = named ? process.argv[5] : undefined;
-  if (kind === 'react-dotnet' && !namespace.split('.').every(part => /^[A-Za-z_][A-Za-z0-9_]*$/.test(part) && !csharpKeywords.has(part))) {
+  if (['react-dotnet', 'wpf'].includes(kind) && !namespace.split('.').every(part => /^[A-Za-z_][A-Za-z0-9_]*$/.test(part) && !csharpKeywords.has(part))) {
     throw new Error('プロジェクト名は、予約語を除くASCII英数字とアンダースコアのドット区切りC#名前空間で指定してください。');
   }
   if (kind === 'wails' && !namespace.split('.').every(part => /^[A-Za-z][A-Za-z0-9_]*$/.test(part))) {
@@ -152,25 +197,26 @@ try {
   }
   const destination = resolve(process.argv[3]);
   const sources = ['template', `${kind}-template`].map(name => resolve(root, name));
-  for (const source of ['template', 'wails-template', 'react-template', 'react-dotnet-template'].map(name => resolve(root, name))) {
+  for (const source of ['template', 'wails-template', 'react-template', 'react-dotnet-template', 'wpf-template'].map(name => resolve(root, name))) {
     const path = relative(source, destination);
     if (path === '' || (!isAbsolute(path) && path !== '..' && !path.startsWith(`..${sep}`))) {
-      throw new Error('出力先はtemplate/・wails-template/・react-template/・react-dotnet-template/の外に指定してください。');
+      throw new Error('出力先はtemplate/・wails-template/・react-template/・react-dotnet-template/・wpf-template/の外に指定してください。');
     }
   }
   // mkdir fails for an existing destination, before any files are copied.
   mkdirSync(destination);
   for (const source of sources) cpSync(source, destination, {
     recursive: true,
-    filter: path => basename(path) !== '.vs' && (basename(source) !== 'react-dotnet-template' ||
+    filter: path => basename(path) !== '.vs' && (!['react-dotnet-template', 'wpf-template'].includes(basename(source)) ||
       (!dotnetGeneratedNames.has(basename(path)) &&
         relative(source, path).split(sep).join('/') !== 'reference/frontend/src/routeTree.gen.ts')),
   });
   copyFileSync(resolve(root, 'LICENSE'), resolve(destination, 'LICENSE'));
   if (kind === 'react-dotnet')
     copyProduct(resolve(root, 'react-dotnet-template/reference'), destination, namespace);
-  else copyApp(resolve(root, `${kind}-template/reference`), destination);
+  else copyApp(resolve(root, `${kind}-template/reference`), destination, kind === 'wpf');
   if (kind === 'wails') renameWailsProduct(destination, namespace);
+  if (kind === 'wpf') renameWpfProduct(destination, namespace);
   console.log(`${kind}の初期状態を生成しました: ${destination}`);
 } catch (error) {
   console.error(error.code === 'EEXIST' ? '出力先が既に存在します。新しい名前を指定してください。' : error.message);

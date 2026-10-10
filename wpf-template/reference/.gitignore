@@ -1,0 +1,10 @@
+.vs/
+**/bin/
+**/obj/
+TestResults/
+release/
+data/
+*.user
+mise.local.toml
+.mise.local.toml
+dbml-error.log

@@ -1,0 +1,14 @@
+{
+  "IndentSize": 2,
+  "IndentWithTabs": false,
+  "AttributesTolerance": 2,
+  "KeepFirstAttributeOnSameLine": true,
+  "MaxAttributeCharactersPerLine": 0,
+  "MaxAttributesPerLine": 1,
+  "PutEndingBracketOnNewLine": false,
+  "RemoveEndingTagOfEmptyElement": true,
+  "SpaceBeforeClosingSlash": true,
+  "EnableAttributeReordering": true,
+  "FormatMarkupExtension": true,
+  "SeparateByGroups": false
+}

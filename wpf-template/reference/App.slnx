@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="app/App.csproj" />
+  <Project Path="analyzers/ArchitectureAnalyzer/ArchitectureAnalyzer.csproj" />
+  <Folder Name="/tests/">
+    <Project Path="tests/unit/UnitTests.csproj" />
+    <Project Path="tests/integration/IntegrationTests.csproj" />
+    <Project Path="tests/e2e/E2eTests.csproj" />
+  </Folder>
+</Solution>

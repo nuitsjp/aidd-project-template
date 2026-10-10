@@ -1,0 +1,51 @@
+﻿<UserControl x:Class="WpfNotesSample.View.NoteDetailsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:v="clr-namespace:WpfNotesSample.View">
+  <DockPanel>
+    <StackPanel DockPanel.Dock="Top">
+      <Grid IsEnabled="{Binding CanInteract}" Style="{StaticResource PageBarStyle}">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <Button x:Name="BackButton"
+                v:Icon.Data="{StaticResource IconArrowLeft}"
+                AutomationProperties.Name="一覧へ戻る"
+                Command="{Binding BackCommand}"
+                Style="{StaticResource BackButtonStyle}"
+                ToolTip="一覧へ戻る" />
+        <TextBlock x:Name="TitleText"
+                   Grid.Column="1"
+                   Style="{StaticResource PageTitleTextStyle}"
+                   Text="{Binding NoteTitle}" />
+        <StackPanel Grid.Column="2" Style="{StaticResource PageActionsStyle}">
+          <Button x:Name="EditButton"
+                  v:Icon.Data="{StaticResource IconEdit}"
+                  Command="{Binding EditNoteCommand}"
+                  Content="編集" />
+          <Button x:Name="DeleteButton"
+                  Margin="{StaticResource ItemGap}"
+                  v:Icon.Data="{StaticResource IconDelete}"
+                  Command="{Binding DeleteNoteCommand}"
+                  Content="削除"
+                  Style="{StaticResource DangerButtonStyle}" />
+        </StackPanel>
+      </Grid>
+      <Border Style="{StaticResource ErrorAlertStyle}">
+        <DockPanel>
+          <Control Style="{StaticResource ErrorAlertIconStyle}" />
+          <TextBlock x:Name="ErrorText"
+                     Style="{StaticResource AlertTextStyle}"
+                     Text="{Binding ErrorMessage}" />
+        </DockPanel>
+      </Border>
+    </StackPanel>
+    <Border Style="{StaticResource CardStyle}">
+      <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <TextBlock x:Name="BodyText" Text="{Binding Body}" />
+      </ScrollViewer>
+    </Border>
+  </DockPanel>
+</UserControl>

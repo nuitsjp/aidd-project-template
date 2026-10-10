@@ -1,0 +1,17 @@
+﻿<Application x:Class="WpfNotesSample.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:styles="clr-namespace:WpfNotesSample.View.Styles"
+             ShutdownMode="OnMainWindowClose">
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="View/Styles/Theme.xaml" />
+        <ResourceDictionary Source="View/Styles/Icons.xaml" />
+        <ResourceDictionary Source="View/Styles/Controls.xaml" />
+        <ResourceDictionary Source="View/Styles/Roles.xaml" />
+        <styles:WindowStyles />
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
+</Application>
