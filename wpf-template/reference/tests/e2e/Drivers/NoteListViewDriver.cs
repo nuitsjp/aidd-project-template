@@ -14,18 +14,24 @@ public sealed class NoteListViewDriver : IAppVarOwner
     public WPFButtonBase NewNote => new(AppVar.Dynamic().NewNoteButton);
     public WPFButtonBase Refresh => new(AppVar.Dynamic().RefreshButton);
     public WPFTextBlock Error => new(AppVar.Dynamic().ErrorText);
-    public WPFDataGrid Notes => new(AppVar.Dynamic().NotesGrid);
+    public WPFListBox Notes => new(AppVar.Dynamic().NotesList);
 
     public NoteListViewDriver(AppVar appVar) => AppVar = appVar;
 
-    public WPFButtonBase ShowDetails(int index) => new(Notes.GetCell(index, 2).VisualTree().ByType<Button>().Single());
+    public WPFButtonBase ShowDetails(int index) => new(Notes.GetItem(index).VisualTree().ByType<Button>().Single());
+
+    public string UpdatedAt(int index) => ItemText(Notes, index, "UpdatedText");
 
     public string[] Titles
     {
         get
         {
-            var grid = Notes;
-            return Enumerable.Range(0, grid.ItemCount).Select(index => grid.GetCellText(index, 0)).ToArray();
+            var list = Notes;
+            return Enumerable.Range(0, list.ItemCount).Select(index => ItemText(list, index, "TitleText")).ToArray();
         }
     }
+
+    // 項目のテンプレート内で名前を付けた TextBlock の表示文字列を読む。
+    private static string ItemText(WPFListBox list, int index, string name)
+        => new WPFTextBlock(list.GetItem(index).VisualTree().ByType<TextBlock>().ByName(name).Single()).Text;
 }

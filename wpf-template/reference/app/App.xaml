@@ -6,6 +6,8 @@
   <Application.Resources>
     <ResourceDictionary>
       <ResourceDictionary.MergedDictionaries>
+        <!--  配色は先頭に置く。テーマの切り替えでこの位置の辞書を差し替える（View/Styles/Window.xaml.cs）。  -->
+        <ResourceDictionary Source="View/Styles/Colors.Light.xaml" />
         <ResourceDictionary Source="View/Styles/Theme.xaml" />
         <ResourceDictionary Source="View/Styles/Icons.xaml" />
         <ResourceDictionary Source="View/Styles/Controls.xaml" />

@@ -1,11 +1,11 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:primitives="clr-namespace:System.Windows.Controls.Primitives;assembly=PresentationFramework"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib"
                     xmlns:v="clr-namespace:WpfNotesSample.View">
-  <!--  Ant Design Icons の形状を viewBox "64 64 896 896" のまま、要素の大きさへ拡大縮小して前景色で塗る。  -->
+  <!--  アイコンの形状を viewBox "64 64 896 896" のまま、要素の大きさへ拡大縮小して前景色で塗る。  -->
   <Style x:Key="IconStyle" TargetType="Control">
-    <Setter Property="Width" Value="{StaticResource FontSize}" />
-    <Setter Property="Height" Value="{StaticResource FontSize}" />
+    <Setter Property="Width" Value="{StaticResource IconSize}" />
+    <Setter Property="Height" Value="{StaticResource IconSize}" />
     <Setter Property="Focusable" Value="False" />
     <Setter Property="IsTabStop" Value="False" />
     <Setter Property="VerticalAlignment" Value="Center" />
@@ -24,35 +24,36 @@
     </Setter>
   </Style>
 
-  <!--  :focus-visible の outline（3px、colorPrimaryBorder、offset 1px）。  -->
+  <!--  フォーカス表示。部品の外側 3 の位置に、primary の 2 の線を描く。  -->
   <Style x:Key="FocusOutlineStyle" TargetType="Control">
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="Control">
-          <Border Margin="-4"
-                  BorderBrush="{StaticResource ColorPrimaryBorderBrush}"
-                  BorderThickness="3"
-                  CornerRadius="10" />
+          <Border Margin="-3"
+                  BorderBrush="{DynamicResource PrimaryBrush}"
+                  BorderThickness="2"
+                  CornerRadius="22" />
         </ControlTemplate>
       </Setter.Value>
     </Setter>
   </Style>
 
   <!--
-    Button の default。Style.Resources の ButtonShadowBrush が 0 2px 0 の影の色、ButtonCornerRadius が角丸を決める。
-    アイコンの大きさは Ant Design と同じく文字サイズに合わせる。
+    Button の outlined。Style.Resources の ButtonCornerRadius が角丸、ButtonIconSize がアイコンの大きさを決める。
+    状態は内容色の層の不透明度で示す（hover 8%、pressed 10%）。アイコンの左に 16、文字の右に 24 の余白を置く。
   -->
   <Style x:Key="BaseButtonStyle" TargetType="Button">
     <Style.Resources>
-      <SolidColorBrush x:Key="ButtonShadowBrush" Color="#05000000" />
-      <CornerRadius x:Key="ButtonCornerRadius">6</CornerRadius>
+      <CornerRadius x:Key="ButtonCornerRadius">20</CornerRadius>
+      <sys:Double x:Key="ButtonIconSize">18</sys:Double>
     </Style.Resources>
     <Setter Property="Height" Value="{StaticResource ControlHeight}" />
     <Setter Property="Padding" Value="{StaticResource ButtonPadding}" />
-    <Setter Property="Background" Value="{StaticResource ColorBgContainerBrush}" />
-    <Setter Property="Foreground" Value="{StaticResource ColorTextBrush}" />
-    <Setter Property="BorderBrush" Value="{StaticResource ColorBorderBrush}" />
-    <Setter Property="BorderThickness" Value="{StaticResource LineWidth}" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource OutlineBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="FontWeight" Value="Medium" />
     <Setter Property="v:Icon.Data" Value="{x:Null}" />
     <Setter Property="HorizontalContentAlignment" Value="Center" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
@@ -61,23 +62,23 @@
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="Button">
-          <Grid>
-            <Border x:Name="Shadow"
-                    Margin="0,2,0,-2"
-                    Background="{DynamicResource ButtonShadowBrush}"
-                    CornerRadius="{DynamicResource ButtonCornerRadius}" />
-            <Border x:Name="Chrome"
-                    Background="{TemplateBinding Background}"
-                    BorderBrush="{TemplateBinding BorderBrush}"
-                    BorderThickness="{TemplateBinding BorderThickness}"
-                    CornerRadius="{DynamicResource ButtonCornerRadius}">
+          <Border x:Name="Chrome"
+                  Background="{TemplateBinding Background}"
+                  BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}"
+                  CornerRadius="{DynamicResource ButtonCornerRadius}">
+            <Grid>
+              <Border x:Name="StateLayer"
+                      Background="{TemplateBinding Foreground}"
+                      CornerRadius="{DynamicResource ButtonCornerRadius}"
+                      Opacity="0" />
               <StackPanel Margin="{TemplateBinding Padding}"
                           HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                           Orientation="Horizontal">
                 <Control x:Name="Glyph"
-                         Width="{TemplateBinding FontSize}"
-                         Height="{TemplateBinding FontSize}"
+                         Width="{DynamicResource ButtonIconSize}"
+                         Height="{DynamicResource ButtonIconSize}"
                          Margin="{StaticResource IconGap}"
                          v:Icon.Data="{TemplateBinding v:Icon.Data}"
                          Foreground="{TemplateBinding Foreground}"
@@ -86,8 +87,8 @@
                                   VerticalAlignment="Center"
                                   RecognizesAccessKey="True" />
               </StackPanel>
-            </Border>
-          </Grid>
+            </Grid>
+          </Border>
           <ControlTemplate.Triggers>
             <Trigger Property="v:Icon.Data" Value="{x:Null}">
               <Setter TargetName="Glyph" Property="Visibility" Value="Collapsed" />
@@ -96,80 +97,55 @@
               <Setter TargetName="Label" Property="Visibility" Value="Collapsed" />
               <Setter TargetName="Glyph" Property="Margin" Value="0" />
             </Trigger>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="StateLayer" Property="Opacity" Value="0.08" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+              <Setter TargetName="StateLayer" Property="Opacity" Value="0.1" />
+            </Trigger>
             <Trigger Property="IsEnabled" Value="False">
-              <Setter TargetName="Shadow" Property="Visibility" Value="Collapsed" />
+              <Setter TargetName="StateLayer" Property="Opacity" Value="0" />
             </Trigger>
           </ControlTemplate.Triggers>
         </ControlTemplate>
       </Setter.Value>
     </Setter>
     <Style.Triggers>
-      <Trigger Property="IsMouseOver" Value="True">
-        <Setter Property="BorderBrush" Value="{StaticResource ColorPrimaryHoverBrush}" />
-        <Setter Property="Foreground" Value="{StaticResource ColorPrimaryHoverBrush}" />
-      </Trigger>
-      <Trigger Property="IsPressed" Value="True">
-        <Setter Property="BorderBrush" Value="{StaticResource ColorPrimaryActiveBrush}" />
-        <Setter Property="Foreground" Value="{StaticResource ColorPrimaryActiveBrush}" />
-      </Trigger>
       <Trigger Property="IsEnabled" Value="False">
-        <Setter Property="Background" Value="{StaticResource ColorBgContainerDisabledBrush}" />
-        <Setter Property="BorderBrush" Value="{StaticResource ColorBorderBrush}" />
-        <Setter Property="Foreground" Value="{StaticResource ColorTextDisabledBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DisabledContainerBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DisabledContentBrush}" />
       </Trigger>
     </Style.Triggers>
   </Style>
   <Style BasedOn="{StaticResource BaseButtonStyle}" TargetType="Button" />
 
-  <!--  Input と TextArea。focus 時は枠の外側に 2px の activeShadow を描く。  -->
+  <!--  入力欄の本体。枠と背景は FilledFieldStyle の容器が描く。  -->
   <Style TargetType="TextBox">
-    <Setter Property="MinHeight" Value="{StaticResource ControlHeight}" />
-    <Setter Property="Padding" Value="{StaticResource InputPadding}" />
-    <Setter Property="Background" Value="{StaticResource ColorBgContainerBrush}" />
-    <Setter Property="Foreground" Value="{StaticResource ColorTextBrush}" />
-    <Setter Property="BorderBrush" Value="{StaticResource ColorBorderBrush}" />
-    <Setter Property="BorderThickness" Value="{StaticResource LineWidth}" />
-    <Setter Property="CaretBrush" Value="{StaticResource ColorTextBrush}" />
-    <Setter Property="SelectionBrush" Value="{StaticResource ColorPrimaryBrush}" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource OnSurfaceBrush}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CaretBrush" Value="{DynamicResource PrimaryBrush}" />
+    <Setter Property="SelectionBrush" Value="{DynamicResource PrimaryBrush}" />
     <Setter Property="SelectionOpacity" Value="0.3" />
+    <Setter Property="FontSize" Value="{StaticResource FontSizeBodyLarge}" />
+    <Setter Property="MinHeight" Value="{StaticResource LineHeightBodyLarge}" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
     <Setter Property="FocusVisualStyle" Value="{x:Null}" />
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="TextBox">
-          <Grid>
-            <Border x:Name="FocusRing"
-                    Margin="-2"
-                    BorderBrush="{StaticResource ControlOutlineBrush}"
-                    BorderThickness="2"
-                    CornerRadius="{StaticResource BorderRadiusLG}"
-                    Visibility="Hidden" />
-            <Border x:Name="InputBorder"
-                    Background="{TemplateBinding Background}"
-                    BorderBrush="{TemplateBinding BorderBrush}"
-                    BorderThickness="{TemplateBinding BorderThickness}"
-                    CornerRadius="{StaticResource BorderRadius}">
-              <ScrollViewer x:Name="PART_ContentHost" />
-            </Border>
-          </Grid>
-          <ControlTemplate.Triggers>
-            <Trigger Property="IsMouseOver" Value="True">
-              <Setter TargetName="InputBorder" Property="BorderBrush" Value="{StaticResource ColorPrimaryHoverBrush}" />
-            </Trigger>
-            <Trigger Property="IsKeyboardFocusWithin" Value="True">
-              <Setter TargetName="InputBorder" Property="BorderBrush" Value="{StaticResource ColorPrimaryBrush}" />
-              <Setter TargetName="FocusRing" Property="Visibility" Value="Visible" />
-            </Trigger>
-            <Trigger Property="IsEnabled" Value="False">
-              <Setter TargetName="InputBorder" Property="Background" Value="{StaticResource ColorBgContainerDisabledBrush}" />
-              <Setter TargetName="InputBorder" Property="BorderBrush" Value="{StaticResource ColorBorderBrush}" />
-              <Setter TargetName="FocusRing" Property="Visibility" Value="Hidden" />
-              <Setter Property="Foreground" Value="{StaticResource ColorTextDisabledBrush}" />
-            </Trigger>
-          </ControlTemplate.Triggers>
+          <ScrollViewer x:Name="PART_ContentHost"
+                        Padding="{TemplateBinding Padding}"
+                        Background="{TemplateBinding Background}" />
         </ControlTemplate>
       </Setter.Value>
     </Setter>
+    <Style.Triggers>
+      <Trigger Property="IsEnabled" Value="False">
+        <Setter Property="Foreground" Value="{DynamicResource DisabledContentBrush}" />
+      </Trigger>
+    </Style.Triggers>
   </Style>
 
   <Style TargetType="TextBlock">
@@ -177,10 +153,11 @@
     <Setter Property="LineHeight" Value="{StaticResource LineHeight}" />
   </Style>
 
-  <!--  Form（vertical）のラベル。  -->
+  <!--  入力欄のラベル（body small）。  -->
   <Style TargetType="Label">
-    <Setter Property="Padding" Value="{StaticResource FormLabelPadding}" />
-    <Setter Property="Foreground" Value="{StaticResource ColorTextBrush}" />
+    <Setter Property="Padding" Value="0,0,0,2" />
+    <Setter Property="Foreground" Value="{DynamicResource OnSurfaceVariantBrush}" />
+    <Setter Property="FontSize" Value="{StaticResource FontSizeBodySmall}" />
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="Label">
@@ -190,21 +167,21 @@
     </Setter>
   </Style>
 
+  <!--  Plain tooltip  -->
   <Style TargetType="ToolTip">
-    <Setter Property="Background" Value="{StaticResource ColorBgSpotlightBrush}" />
-    <Setter Property="Foreground" Value="{StaticResource ColorTextLightSolidBrush}" />
-    <Setter Property="FontSize" Value="{StaticResource FontSize}" />
+    <Setter Property="Background" Value="{DynamicResource InverseSurfaceBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource InverseOnSurfaceBrush}" />
+    <Setter Property="FontSize" Value="{StaticResource FontSizeBodySmall}" />
     <Setter Property="Padding" Value="{StaticResource TooltipPadding}" />
     <Setter Property="HasDropShadow" Value="False" />
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="ToolTip">
-          <Border MinWidth="28"
-                  MinHeight="{StaticResource ControlHeight}"
+          <Border MinHeight="24"
                   MaxWidth="250"
                   Padding="{TemplateBinding Padding}"
                   Background="{TemplateBinding Background}"
-                  CornerRadius="{StaticResource BorderRadius}">
+                  CornerRadius="{StaticResource ShapeExtraSmall}">
             <ContentPresenter VerticalAlignment="Center" />
           </Border>
         </ControlTemplate>
@@ -212,153 +189,124 @@
     </Setter>
   </Style>
 
-  <!--  Table（size small、bordered なし）。ヘッダーは上側の角丸 8 と背景・下線を表全体で描く。  -->
-  <Style TargetType="DataGrid">
-    <Setter Property="Background" Value="{StaticResource ColorBgContainerBrush}" />
-    <Setter Property="Foreground" Value="{StaticResource ColorTextBrush}" />
+  <!--  List。項目は高さ 72・角丸 16 で、選択中は secondary container の色面で示す。  -->
+  <Style TargetType="ListBox">
+    <Setter Property="Background" Value="Transparent" />
     <Setter Property="BorderThickness" Value="0" />
-    <Setter Property="GridLinesVisibility" Value="Horizontal" />
-    <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource ColorBorderSecondaryBrush}" />
-    <Setter Property="HeadersVisibility" Value="Column" />
-    <Setter Property="RowBackground" Value="{StaticResource ColorBgContainerBrush}" />
-    <Setter Property="CanUserResizeRows" Value="False" />
-    <Setter Property="CanUserResizeColumns" Value="False" />
-    <Setter Property="CanUserSortColumns" Value="False" />
-    <Setter Property="CanUserReorderColumns" Value="False" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
     <Setter Property="FocusVisualStyle" Value="{x:Null}" />
     <Setter Property="Template">
       <Setter.Value>
-        <ControlTemplate TargetType="DataGrid">
-          <Border Padding="{TemplateBinding Padding}"
-                  Background="{TemplateBinding Background}"
-                  BorderBrush="{TemplateBinding BorderBrush}"
-                  BorderThickness="{TemplateBinding BorderThickness}">
-            <ScrollViewer x:Name="DG_ScrollViewer" Focusable="False">
-              <ScrollViewer.Template>
-                <ControlTemplate TargetType="ScrollViewer">
-                  <Grid>
-                    <Grid.ColumnDefinitions>
-                      <ColumnDefinition />
-                      <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                      <RowDefinition Height="Auto" />
-                      <RowDefinition />
-                      <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <Border Grid.ColumnSpan="2"
-                            Background="{StaticResource TableHeaderBgBrush}"
-                            BorderBrush="{StaticResource ColorBorderSecondaryBrush}"
-                            BorderThickness="0,0,0,1"
-                            CornerRadius="8,8,0,0" />
-                    <primitives:DataGridColumnHeadersPresenter x:Name="PART_ColumnHeadersPresenter" />
-                    <ScrollContentPresenter x:Name="PART_ScrollContentPresenter"
-                                            Grid.Row="1"
-                                            CanContentScroll="{TemplateBinding CanContentScroll}" />
-                    <ScrollBar x:Name="PART_VerticalScrollBar"
-                               Grid.Row="1"
-                               Grid.Column="1"
-                               Maximum="{TemplateBinding ScrollableHeight}"
-                               Orientation="Vertical"
-                               ViewportSize="{TemplateBinding ViewportHeight}"
-                               Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
-                               Value="{Binding VerticalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}" />
-                    <ScrollBar x:Name="PART_HorizontalScrollBar"
-                               Grid.Row="2"
-                               Maximum="{TemplateBinding ScrollableWidth}"
-                               Orientation="Horizontal"
-                               ViewportSize="{TemplateBinding ViewportWidth}"
-                               Visibility="{TemplateBinding ComputedHorizontalScrollBarVisibility}"
-                               Value="{Binding HorizontalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}" />
-                  </Grid>
-                </ControlTemplate>
-              </ScrollViewer.Template>
-              <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-            </ScrollViewer>
-          </Border>
+        <ControlTemplate TargetType="ListBox">
+          <ScrollViewer Padding="{TemplateBinding Padding}"
+                        Background="{TemplateBinding Background}"
+                        Focusable="False">
+            <ItemsPresenter />
+          </ScrollViewer>
         </ControlTemplate>
       </Setter.Value>
     </Setter>
   </Style>
-  <Style TargetType="DataGridRow">
-    <Setter Property="Background" Value="{StaticResource ColorBgContainerBrush}" />
-    <Setter Property="Foreground" Value="{StaticResource ColorTextBrush}" />
-    <Style.Triggers>
-      <Trigger Property="IsMouseOver" Value="True">
-        <Setter Property="Background" Value="{StaticResource TableHeaderBgBrush}" />
-      </Trigger>
-      <Trigger Property="IsSelected" Value="True">
-        <Setter Property="Background" Value="{StaticResource ColorPrimaryBgBrush}" />
-      </Trigger>
-      <MultiTrigger>
-        <MultiTrigger.Conditions>
-          <Condition Property="IsSelected" Value="True" />
-          <Condition Property="IsMouseOver" Value="True" />
-        </MultiTrigger.Conditions>
-        <Setter Property="Background" Value="{StaticResource ColorPrimaryBgHoverBrush}" />
-      </MultiTrigger>
-      <Trigger Property="IsEnabled" Value="False">
-        <Setter Property="Foreground" Value="{StaticResource ColorTextDisabledBrush}" />
-      </Trigger>
-    </Style.Triggers>
-  </Style>
-  <Style TargetType="DataGridCell">
-    <Setter Property="Padding" Value="{StaticResource TableCellPaddingSM}" />
+  <Style TargetType="ListBoxItem">
+    <Setter Property="Height" Value="{StaticResource ListItemHeight}" />
+    <Setter Property="Padding" Value="{StaticResource ListItemPadding}" />
     <Setter Property="Background" Value="Transparent" />
-    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Foreground" Value="{DynamicResource OnSurfaceBrush}" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
     <Setter Property="FocusVisualStyle" Value="{x:Null}" />
     <Setter Property="Template">
       <Setter.Value>
-        <ControlTemplate TargetType="DataGridCell">
-          <Border Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}">
-            <ContentPresenter VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
-          </Border>
-        </ControlTemplate>
-      </Setter.Value>
-    </Setter>
-    <Style.Triggers>
-      <Trigger Property="IsSelected" Value="True">
-        <Setter Property="Foreground" Value="{StaticResource ColorTextBrush}" />
-      </Trigger>
-      <Trigger Property="IsEnabled" Value="False">
-        <Setter Property="Foreground" Value="{StaticResource ColorTextDisabledBrush}" />
-      </Trigger>
-    </Style.Triggers>
-  </Style>
-  <!--  列見出し。列の間には高さ 1.6em の区切り線を描き、先頭列と表の右余白には描かない。  -->
-  <Style TargetType="primitives:DataGridColumnHeader">
-    <Setter Property="Background" Value="Transparent" />
-    <Setter Property="Foreground" Value="{StaticResource ColorTextBrush}" />
-    <Setter Property="FontWeight" Value="SemiBold" />
-    <Setter Property="Padding" Value="{StaticResource TableCellPaddingSM}" />
-    <Setter Property="HorizontalContentAlignment" Value="Left" />
-    <Setter Property="VerticalContentAlignment" Value="Center" />
-    <Setter Property="Template">
-      <Setter.Value>
-        <ControlTemplate TargetType="primitives:DataGridColumnHeader">
-          <Grid Background="{TemplateBinding Background}">
+        <ControlTemplate TargetType="ListBoxItem">
+          <Grid>
+            <Border Background="{TemplateBinding Background}" CornerRadius="{StaticResource ShapeLarge}" />
+            <Border x:Name="StateLayer"
+                    Background="{TemplateBinding Foreground}"
+                    CornerRadius="{StaticResource ShapeLarge}"
+                    Opacity="0" />
+            <Border x:Name="FocusRing"
+                    BorderBrush="{DynamicResource PrimaryBrush}"
+                    BorderThickness="2"
+                    CornerRadius="{StaticResource ShapeLarge}"
+                    Visibility="Hidden" />
             <ContentPresenter Margin="{TemplateBinding Padding}"
                               HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                              RecognizesAccessKey="True" />
-            <Rectangle x:Name="Split"
-                       Width="1"
-                       Height="22.4"
-                       HorizontalAlignment="Left"
-                       VerticalAlignment="Center"
-                       Fill="{StaticResource ColorBorderSecondaryBrush}" />
+                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
           </Grid>
           <ControlTemplate.Triggers>
-            <DataTrigger Binding="{Binding Column.DisplayIndex, RelativeSource={RelativeSource TemplatedParent}}" Value="0">
-              <Setter TargetName="Split" Property="Visibility" Value="Collapsed" />
-            </DataTrigger>
-            <DataTrigger Binding="{Binding Column, RelativeSource={RelativeSource TemplatedParent}}" Value="{x:Null}">
-              <Setter TargetName="Split" Property="Visibility" Value="Collapsed" />
-            </DataTrigger>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="StateLayer" Property="Opacity" Value="0.08" />
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+              <Setter TargetName="FocusRing" Property="Visibility" Value="Visible" />
+            </Trigger>
           </ControlTemplate.Triggers>
         </ControlTemplate>
       </Setter.Value>
     </Setter>
+    <Style.Triggers>
+      <Trigger Property="IsSelected" Value="True">
+        <Setter Property="Background" Value="{DynamicResource SecondaryContainerBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource OnSecondaryContainerBrush}" />
+      </Trigger>
+      <Trigger Property="IsEnabled" Value="False">
+        <Setter Property="Foreground" Value="{DynamicResource DisabledContentBrush}" />
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
+  <!--  スクロールバー。幅 8 の角丸のつまみだけを描き、両端の矢印と溝は置かない。  -->
+  <Style x:Key="ScrollThumbStyle" TargetType="Thumb">
+    <Setter Property="Background" Value="{DynamicResource OutlineVariantBrush}" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Thumb">
+          <Border Margin="2"
+                  Background="{TemplateBinding Background}"
+                  CornerRadius="2" />
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+    <Style.Triggers>
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter Property="Background" Value="{DynamicResource OutlineBrush}" />
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+  <Style TargetType="ScrollBar">
+    <Setter Property="Width" Value="8" />
+    <Setter Property="MinWidth" Value="8" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ScrollBar">
+          <Track x:Name="PART_Track" IsDirectionReversed="True">
+            <Track.Thumb>
+              <Thumb Style="{StaticResource ScrollThumbStyle}" />
+            </Track.Thumb>
+          </Track>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+    <Style.Triggers>
+      <Trigger Property="Orientation" Value="Horizontal">
+        <Setter Property="Width" Value="Auto" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="Height" Value="8" />
+        <Setter Property="MinHeight" Value="8" />
+        <Setter Property="Template">
+          <Setter.Value>
+            <ControlTemplate TargetType="ScrollBar">
+              <Track x:Name="PART_Track">
+                <Track.Thumb>
+                  <Thumb Style="{StaticResource ScrollThumbStyle}" />
+                </Track.Thumb>
+              </Track>
+            </ControlTemplate>
+          </Setter.Value>
+        </Setter>
+      </Trigger>
+    </Style.Triggers>
   </Style>
 </ResourceDictionary>

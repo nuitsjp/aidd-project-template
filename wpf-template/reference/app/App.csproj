@@ -21,6 +21,7 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.12" />
     <PackageReference Include="WpfAnalyzers" Version="4.1.1" PrivateAssets="all" />
+    <Resource Include="Fonts/*.ttf" />
     <EmbeddedResource Include="Infrastructure/Sqlite/Migrations/*.sql" LogicalName="App.Migrations.%(Filename)%(Extension)" />
     <ProjectReference Include="../analyzers/ArchitectureAnalyzer/ArchitectureAnalyzer.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
