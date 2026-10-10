@@ -39,14 +39,18 @@ function Test-Report([string]$Name, [string]$Xml, [int]$ExpectedExit,
     if (-not $MissingFile) { [IO.File]::WriteAllText($path, $Xml, $utf8) }
     $start = New-Object Diagnostics.ProcessStartInfo
     $start.FileName = Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe'
-    $start.Arguments = '-NoProfile -ExecutionPolicy Bypass -File "{0}" -ReportPath "{1}" -AssemblyName "{2}"' -f $scriptPath, $path, $Assembly
-    if (-not $WithoutCheck) { $start.Arguments += ' -Check' }
+    # 日本語の出力を OS のコードページに依存せず比較するため、子プロセスに UTF-8 で出力させて UTF-8 で読む。
+    $command = "[Console]::OutputEncoding = [Text.UTF8Encoding]::new(`$false); & '{0}' -ReportPath '{1}' -AssemblyName '{2}'" -f
+        $scriptPath.Replace("'", "''"), $path.Replace("'", "''"), $Assembly.Replace("'", "''")
+    if (-not $WithoutCheck) { $command += ' -Check' }
+    $command += '; exit $LASTEXITCODE'
+    $start.Arguments = '-NoProfile -ExecutionPolicy Bypass -Command "' + $command + '"'
     $start.UseShellExecute = $false
     $start.CreateNoWindow = $true
     $start.RedirectStandardOutput = $true
     $start.RedirectStandardError = $true
-    $start.StandardOutputEncoding = [Text.Encoding]::Default
-    $start.StandardErrorEncoding = [Text.Encoding]::Default
+    $start.StandardOutputEncoding = $utf8
+    $start.StandardErrorEncoding = $utf8
     $process = New-Object Diagnostics.Process
     $process.StartInfo = $start
     try {
