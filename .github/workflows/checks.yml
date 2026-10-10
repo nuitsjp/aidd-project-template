@@ -44,6 +44,8 @@ jobs:
             os: ubuntu-latest
           - kind: react-dotnet
             os: windows-latest
+          - kind: wpf
+            os: windows-latest
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     env:
@@ -80,7 +82,7 @@ jobs:
           mise trust
           if ('${{ matrix.kind }}' -eq 'react') { npm run setup } else { mise run setup }
       - name: Install browser and platform libraries
-        if: github.event_name != 'schedule'
+        if: github.event_name != 'schedule' && matrix.kind != 'wpf'
         working-directory: ${{ env.VALIDATION_ROOT }}
         run: |
           if ('${{ matrix.kind }}' -eq 'react-dotnet') {
@@ -103,12 +105,12 @@ jobs:
         run: |
           if ('${{ matrix.kind }}' -eq 'react') { npm run verify } else { mise run verify }
       - name: Audit product dependencies
-        if: success() || failure()
+        if: (success() || failure()) && matrix.kind != 'wpf'
         working-directory: ${{ env.VALIDATION_ROOT }}
         run: |
           if ('${{ matrix.kind }}' -eq 'react') { npm run audit } else { mise run audit }
       - name: Audit reference dependencies
-        if: success() || failure()
+        if: (success() || failure()) && matrix.kind != 'wpf'
         working-directory: ${{ env.VALIDATION_ROOT }}/reference
         run: |
           if ('${{ matrix.kind }}' -eq 'react') { npm run audit } else { mise run audit }
@@ -122,4 +124,5 @@ jobs:
             ${{ env.VALIDATION_ROOT }}/**/test-results/
             ${{ env.VALIDATION_ROOT }}/**/.e2e-results/
             ${{ env.VALIDATION_ROOT }}/**/e2e-results-*/
+            ${{ env.VALIDATION_ROOT }}/**/TestResults/
           if-no-files-found: ignore
