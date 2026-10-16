@@ -105,12 +105,12 @@ jobs:
         run: |
           if ('${{ matrix.kind }}' -eq 'react') { npm run verify } else { mise run verify }
       - name: Audit product dependencies
-        if: (success() || failure()) && matrix.kind != 'wpf'
+        if: success() || failure()
         working-directory: ${{ env.VALIDATION_ROOT }}
         run: |
           if ('${{ matrix.kind }}' -eq 'react') { npm run audit } else { mise run audit }
       - name: Audit reference dependencies
-        if: (success() || failure()) && matrix.kind != 'wpf'
+        if: success() || failure()
         working-directory: ${{ env.VALIDATION_ROOT }}/reference
         run: |
           if ('${{ matrix.kind }}' -eq 'react') { npm run audit } else { mise run audit }

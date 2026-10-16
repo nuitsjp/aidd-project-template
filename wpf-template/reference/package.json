@@ -1,0 +1,12 @@
+{
+  "name": "aidd-wpf-template",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.21.0"
+  },
+  "devDependencies": {
+    "@dbml/core": "10.2.0"
+  }
+}
