@@ -82,7 +82,7 @@ Domain は変更可能な業務状態を保持しません。参照型は `seale
 
 UI テストは Friendly の `WindowsAppFriend` で実アプリに接続します。`Drivers/` にメインウィンドウ、一覧、詳細、編集、確認ダイアログの専用ドライバーを置き、シナリオは型付き操作と表示値で検証します。WPF の部品は XAML の `x:Name` で宣言したフィールドを `dynamic` から参照し、画面は `VisualTree().ByType<画面型>()` で取得します。確認ダイアログは `ConfirmDialog` の `x:Name` で操作します。
 
-`verify` は文書・整形・コード規約・XAML の検査を順に実行した後、XAML・coverage・runner の回帰検証を独立した PowerShell プロセスで並列に起動します。回帰検証は製品の Release・Mock ビルドと並走し、ビルド後に単体・統合・E2E の 3 グループを並列に実行します。dotnet-coverage 18.12.0 の同一 collect セッションで、Friendly が起動する子アプリも含め、製品の全 C# 実行可能行のヒットを合算します。Mock 構成、`obj/` 配下、`[GeneratedCode]` は計測から除きます。`[CompilerGenerated]` は除外せず、自動プロパティも対象です。
+`verify` は文書・DBML・整形・コード規約・XAML の検査を順に実行した後、XAML・coverage・runner の回帰検証を独立した PowerShell プロセスで並列に起動します。回帰検証は製品の Release・Mock ビルドと並走し、ビルド後に単体・統合・E2E の 3 グループを並列に実行します。dotnet-coverage 18.12.0 の同一 collect セッションで、Friendly が起動する子アプリも含め、製品の全 C# 実行可能行のヒットを合算します。Mock 構成、`obj/` 配下、`[GeneratedCode]` は計測から除きます。`[CompilerGenerated]` は除外せず、自動プロパティも対象です。
 
 統合レポートを実行ごとの `TestResults/<UUID>/coverage.cobertura.xml` に保存し、製品全体の行網羅率を表示します。閾値は全テストを合算した `Domain/` と `ViewModel/` の 75%、`Infrastructure/` の 95% で、テスト種類ごとには判定しません。個別の `test:*` も同じ方式で単独レポートを保存しますが、閾値は判定しません。網羅率を上げることだけを目的にテストを追加しません。
 

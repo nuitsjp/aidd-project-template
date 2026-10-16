@@ -1,6 +1,6 @@
 # アーキテクチャ
 
-Wails 参照アプリの構成、実現パターン、設計上の制約、保存設計を記録します。Wails 共通方針は [Wails補足](architecture-wails.md)、系列と受け入れ条件は [UC一覧](project.md#usecases) を参照します。
+Wails 参照アプリの構成、実現パターン、設計上の制約を記録します。Wails 共通方針は [Wails補足](architecture-wails.md)、系列と受け入れ条件は [UC一覧](project.md#usecases) を参照します。
 
 ## 1. システムコンテキスト
 
@@ -38,8 +38,3 @@ flowchart LR
 ## 4. 設計上の制約
 
 - 本番 UI は同梱アセットを使用し、外部コンテンツにアプリの権限を与えません。
-
-<a id="tables"></a>
-## 5. 保存設計
-
-データベーステーブルや ORM は使用しません。保存方式とデータ定義は [データ設計](design/data.md) に集約します。

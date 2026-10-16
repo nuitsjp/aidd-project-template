@@ -70,6 +70,7 @@ function Format-Code([switch]$Check) {
 
 function Verify {
     & (Join-Path $PSScriptRoot 'check-docs.ps1')
+    Invoke-Native 'node' @((Join-Path $PSScriptRoot 'check-dbml.mjs'))
     Format-Code -Check
     Invoke-Native 'powershell' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $PSScriptRoot 'check-xaml.ps1'))
     $checksResults = Join-Path $projectRoot ('TestResults/' + [Guid]::NewGuid().ToString('N'))
@@ -116,6 +117,7 @@ switch ($Task) {
         Invoke-Native 'mise' @('install')
         Invoke-Native 'dotnet' @('restore', $solution, '--locked-mode')
         Invoke-Native 'dotnet' @('tool', 'restore')
+        Invoke-Native 'npm' @('ci', '--no-audit', '--no-fund')
     }
     'dev' {
         Build-App 'Debug'

@@ -8,3 +8,4 @@ data/
 mise.local.toml
 .mise.local.toml
 dbml-error.log
+node_modules/
