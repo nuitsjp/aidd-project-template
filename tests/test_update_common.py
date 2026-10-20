@@ -11,6 +11,7 @@ MANAGED = (
     "AGENTS.md",
     "docs/standards/design-and-documentation.md",
     "docs/standards/mock-driven-development.md",
+    "docs/standards/testing.md",
     "scripts/doc_check.py",
 )
 SKILL_FILES = (

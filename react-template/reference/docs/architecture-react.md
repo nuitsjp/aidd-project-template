@@ -39,11 +39,9 @@ React・TypeScript・Vite、TanStack Router/Query、Mantine・CSS Modules を用
 <a id="test-boundary"></a>
 ## 4. 並列E2E
 
-E2E は `tests/e2e/fixtures.ts` を利用し、1テストごとにブラウザ Context、本番 Node.js プロセス、OS 自動割当ポート、一時 SQLite ファイル、Cookie、セッション、SSE 購読を分離します。全 worker は同一ビルド成果物を使用します。シナリオの E2E は `tests/e2e/usecases/<ユースケース名>/<シナリオ名>.spec.ts` に置き、[モック標準](../../docs/standards/mock-driven-development.md#discussion) の区切りを `test.step` のラベルにします。シナリオ以外の E2E は `tests/e2e/` 直下に置きます。
+E2E は `tests/e2e/fixtures.ts` を利用し、1テストごとにブラウザ Context、本番 Node.js プロセス、OS 自動割当ポート、一時 SQLite ファイル、Cookie、セッション、SSE 購読を分離します。全 worker は同一ビルド成果物を使用します。シナリオの E2E は `tests/e2e/usecases/<ユースケース名>/<シナリオ名>.spec.ts` に置き、[テスト標準](../../docs/standards/testing.md#scenario-tests) の区切りを `test.step` のラベルにします。シナリオ以外の E2E は `tests/e2e/` 直下に置きます。
 
-マイグレーションと業務処理は本番と同じコードを実行し、UI 操作後は独立した読取専用 DB 接続でコミット済みデータを確認します。fixture は成否を問わずサーバー停止、接続解放、一時領域削除を行います。共有 DB の全削除、テスト用リセット API、外側トランザクションは使用しません。
-
-テスト間分離と同一 DB 競合の検証は区別します。同一 DB の競合は1テスト内で複数 Page または Context を作成して検証します。
+マイグレーションと業務処理は本番と同じコードを実行し、確定済みデータは独立した読取専用の `node:sqlite` 接続で確認します。fixture は成否を問わずサーバー停止、接続解放、一時領域削除を行います。分離と競合検証の原則は [テスト標準](../../docs/standards/testing.md#isolation) に従い、同一 DB の競合は1テスト内で複数 Page または Context を作成して検証します。
 
 <a id="deployment"></a>
 ## 5. 配備・認証

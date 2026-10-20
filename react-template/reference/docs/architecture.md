@@ -25,7 +25,7 @@ flowchart LR
 | サーバー | Node.js / Fastify / tRPC | 認証境界、機能、結果確定 | backend |
 | 永続化 | SQLite / node:sqlite | 所有者別データと制約 | backend/db、backend/features/notes |
 
-UI→API の差し替え境界は Vite の `@notes-access` 参照先1箇所です。本配布では実処理へ接続しており、モックは必要な期間のみ作成します。
+UI→API の差し替え境界は Vite の `@notes-access` 参照先1箇所です。画面からサーバーへの tRPC / HTTP と SSE は公開境界で、契約の正本は `contracts/schemas.ts` の Zod 定義です。サーバーから SQLite への接続は公開境界ではありません。本配布では実処理へ接続しており、モックは必要な期間のみ作成します。
 
 <a id="patterns"></a>
 ## 3. 実現パターンの適用条件

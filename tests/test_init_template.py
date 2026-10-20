@@ -208,6 +208,7 @@ class InitTemplateTests(unittest.TestCase):
                 for name in ("AGENTS.md", "scripts/doc_check.py",
                              "docs/standards/design-and-documentation.md",
                              "docs/standards/mock-driven-development.md",
+                             "docs/standards/testing.md",
                              ".agents/skills/usecase-docs/SKILL.md",
                              ".agents/skills/usecase-docs/assets/usecase.md",
                              ".agents/skills/usecase-docs/assets/scenario.md"):
