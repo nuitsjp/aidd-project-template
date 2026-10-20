@@ -58,7 +58,24 @@ Query は機能・取得条件ごとに定義し、ユースケース間で共�
 
 `features/<name>/queries.ts` は `@<name>-service` からのみ Service を import します。実処理へ切り替えた後は固定データを削除または移動し、alias の分岐だけを残します。同梱の `tests/fixtures/notes.ts` はこの機構を示す試験用データです。
 
-検証は Playwright による実処理 E2E を中心とします。シナリオの E2E は `frontend/tests/e2e/usecases/<ユースケース名>/<シナリオ名>.spec.ts` に置き、`test.step` の区切りをシナリオの条件・手順・受け入れ条件に合わせます。各テストは `frontend/tests/e2e/fixtures.ts` の `app` により専用のデータ領域・空きポートで server build を起動し、`app.restart()` で再起動後の保存内容を確認します。ブラウザ確認は Wails server build、ネイティブ操作や環境依存動作は Windows 実機で確認します。Vitest・React Testing Library・Go 標準テストは必要なリスクを補います。
+<a id="testing"></a>
+### テスト設計
+
+テストの根拠、検証レベル、シナリオテストの区切り、分離の原則は製品ルートの [テスト標準](../../docs/standards/testing.md) に従います。本節は検証レベルごとの手段と配置、分離の仕組み、実行構成ごとの範囲を定めます。
+
+| 検証レベル | 対象 | 手段と配置 | 実行 |
+| --- | --- | --- | --- |
+| システム全体 | シナリオテスト（更新ユースケースを除く） | Playwright。Wails server build を起動する。`frontend/tests/e2e/usecases/<ユースケース名>/<シナリオ名>.spec.ts` | `mise run verify`（server build 後に E2E を実行） |
+| システム全体 | ネイティブ操作と環境依存の動作 | Windows 実機での確認 | `mise run dev`、`mise run package` で作成したインストーラー |
+| 公開境界 | 配布元から取得する更新情報とインストーラー | Go 標準テスト。`internal/updates/` | `mise run test:core` |
+| 部品 | Go の機能 Service、保存、共有部品、更新情報の作成 | Go 標準テスト。`internal/<機能領域>/`、`cmd/release/` | `mise run test:core` |
+| 部品 | React の共有部品とアプリ全体の終了確認 | Vitest と React Testing Library。`frontend/tests/unit/` | `mise run verify`（単独では `frontend/` で `npm run test`） |
+
+E2E は `frontend/tests/e2e/fixtures.ts` の `app` により、テストごとに専用の一時データ領域と空きポートで server build を起動し、並列に実行します。保存結果は `app.restart()` で Go プロセスを再起動し、保存先から読み直した内容を画面で確認することで、操作に使った経路とは別の経路からの確認とします。Go 標準テストは保存先、更新元、一時保存領域を `t.TempDir()` でテストごとに用意します。
+
+公開境界のテストは、署名のない更新情報、壊れた JSON、上限を超える更新情報とインストーラー、別 OS・別 CPU 向けの更新情報、宣言より大きいインストーラー、HTTPS 更新元の 200 以外の応答・HTTP への転送・到達不能を拒否し、拒否時に検証済みの状態と一時保存領域を変更しないことを確認します。HTTPS 更新元は `net/http/httptest` の TLS サーバーで確認します。
+
+server build は更新機能を無効にするため、更新ユースケースは E2E の対象外とし、インストーラーへの引き渡しと適用は Windows 実機で確認します。Windows 実機では、保存後の再起動、未保存状態からの終了、多重起動、CSV 処理中の終了、インストール・更新・アンインストール後のデータ保持を確認します。
 
 ## 5. 実行とデータ保護
 

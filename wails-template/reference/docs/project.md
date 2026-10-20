@@ -73,7 +73,7 @@ $env:PLAYWRIGHT_IGNORE_DISABLE_EXTENSIONS = '1'
 mise run verify
 ```
 
-E2E はテストごとに専用の一時データ領域と空きポートで実 Go サービスを起動し、並列に実行します。失敗時の記録は `frontend/playwright-report/` と `frontend/test-results/` に出力します。更新ユースケースは server build で更新機能を無効にするため E2E の対象外とし、Windows 実機で確認します。このディレクトリで `python ../scripts/doc_check.py .` を実行すると文書リンク・UC 対応・標準ハッシュ等を確認できます。Windows 実機確認では、保存後の再起動、未保存状態からの終了、多重起動、CSV 処理中の終了、インストール・更新・アンインストール後のデータ保持を確認します。変更後は `mise run verify` を実行し、生成・型検査・Lint・整形・テスト・文書・server E2E が合格した状態を維持します。
+E2E の失敗時の記録は `frontend/playwright-report/` と `frontend/test-results/` に出力します。テストの配置と分離、server build と Windows 実機で確認する範囲（更新ユースケースを E2E の対象外とすることを含む）は [Wails補足のテスト設計](architecture-wails.md#testing) に従います。このディレクトリで `python ../scripts/doc_check.py .` を実行すると文書リンク・UC 対応・標準ハッシュ等を確認できます。変更後は `mise run verify` を実行し、生成・型検査・Lint・整形・テスト・文書・server E2E が合格した状態を維持します。
 
 <a id="release"></a>
 ### 更新元と署名
