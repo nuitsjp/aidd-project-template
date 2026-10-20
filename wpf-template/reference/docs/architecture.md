@@ -16,7 +16,7 @@ flowchart LR
   app[WPF アプリ / .NET Framework 4.8.1] --> sqlite[(利用者の SQLite ファイル)]
 ```
 
-画面、Domain、Infrastructure は単一の WPF 実行ファイル内でプロセス内の機能呼出しを行います。
+画面、Domain、Infrastructure は単一の WPF 実行ファイル内でプロセス内の機能呼出しを行います。システム外から入力を受ける公開境界はありません（扱うデータは利用者の SQLite ファイルだけです）。
 
 | 領域 | 責務 | 実装パス |
 | --- | --- | --- |

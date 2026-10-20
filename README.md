@@ -18,6 +18,7 @@
 | [docs/design/data.md](template/docs/design/data.md) | 保存形式と型の対応（テーブル設計は DB 使用時に `docs/design/data.dbml` へ DBML で記載） |
 | [docs/standards/design-and-documentation.md](template/docs/standards/design-and-documentation.md) | 設計と文書化の基準、先行成果物の範囲、完了基準、変更手続き |
 | [docs/standards/mock-driven-development.md](template/docs/standards/mock-driven-development.md) | 系列ごとのフェーズと確認内容、仕掛かり上限、モックの境界 |
+| [docs/standards/testing.md](template/docs/standards/testing.md) | テストの根拠と検証レベル、シナリオテスト、公開境界・部品のテスト、テストの分離 |
 | [scripts/doc_check.py](template/scripts/doc_check.py) | 文書整合の判定6件（リンク、絶対パス、禁止記録・重複本文、ユースケース・シナリオ構造、標準ハッシュ、証跡・行数報告）。Python 3 標準ライブラリのみ |
 
 正本の役割は [文書方針](template/docs/document-policy.md#sources) で定め、他の箇所には参照を置きます。現在の仕様・制約・手順のみを維持し、決定経緯・承認履歴・検証実績は配布文書へ保存しません。`docs/standards/` は配布元からの輸入物として編集せず、固有差分は `docs/document-policy.md` 第1節に記載します。
@@ -165,18 +166,18 @@ mise run verify
 
 | 対象 | 更新方法 |
 | --- | --- |
-| `AGENTS.md`、`docs/standards/` の2標準、`scripts/doc_check.py`、`.agents/skills/usecase-docs/` のスキルと雛形2件 | 配布元が管理する7ファイル。同じ固定コミットから一組で差し替える。固有規則は `docs/document-policy.md` の差分欄で管理する。 |
+| `AGENTS.md`、`docs/standards/` の3標準、`scripts/doc_check.py`、`.agents/skills/usecase-docs/` のスキルと雛形2件 | 配布元が管理する8ファイル。同じ固定コミットから一組で差し替える。固有規則は `docs/document-policy.md` の差分欄で管理する。 |
 | `README.md`、`docs/project.md`、`docs/architecture.md`、`docs/document-policy.md`、`docs/design/`・ユースケース／シナリオ本文・技術固有文書 | 初回生成後は採用先が管理する。雛形の全文は同期せず、コミット間の差分にある必須項目の移行だけを適用する。現在の仕様と検証手順を維持する。 |
 | React/Wails/React・.NET/WPFの実装・設定・DB移行履歴 | 初回生成後は採用先が管理する。参照実装の差分は個別に評価する。現在、継続同期する共通コードパッケージは提供しない。 |
 | 外部依存と生成コード | 各プロジェクトで依存定義とロックを更新し、既存の生成・検証コマンドを実行する。生成コードは手でマージしない。最低対応版と検証に使ったツール版は区別する。 |
 
-共通7ファイルは、配布元リポジトリで次を実行して更新できます（Node.jsとGitが必要です）。`OLD_COMMIT_SHA` は文書方針の更新前コミット、`NEW_COMMIT_SHA` は採用する更新後コミットの40桁SHAに置き換え、両コミットを配布元のローカルGitで参照できる状態にします。
+共通8ファイルは、配布元リポジトリで次を実行して更新できます（Node.jsとGitが必要です）。`OLD_COMMIT_SHA` は文書方針の更新前コミット、`NEW_COMMIT_SHA` は採用する更新後コミットの40桁SHAに置き換え、両コミットを配布元のローカルGitで参照できる状態にします。
 
 ```sh
 node scripts/update-common.mjs ../my-project OLD_COMMIT_SHA NEW_COMMIT_SHA
 ```
 
-コマンドは既存資材が更新前の原本と一致することを確認してから差し替えます（LFとCRLFの差は許容）。更新前コミットに存在しない追加資材は、採用先にも同名ファイルがないことを確認して配置します。全7件を確認し、ローカル変更・既存資材の欠落・追加先の競合・不正なコミットがあれば書き込まず停止します。固有文書・コード・文書方針には触れません。採用元が不明な場合は履歴から特定し、原本との差分を確認してから利用します。変更済みファイルを強制上書きする機能はありません。
+コマンドは既存資材が更新前の原本と一致することを確認してから差し替えます（LFとCRLFの差は許容）。更新前コミットに存在しない追加資材は、採用先にも同名ファイルがないことを確認して配置します。全8件を確認し、ローカル変更・既存資材の欠落・追加先の競合・不正なコミットがあれば書き込まず停止します。固有文書・コード・文書方針には触れません。採用元が不明な場合は履歴から特定し、原本との差分を確認してから利用します。変更済みファイルを強制上書きする機能はありません。
 
 差し替え後は採用先で `python scripts/doc_check.py .` を実行し、必要な書式移行を完了してから `docs/document-policy.md` の採用元固定コミットを更新します。文書の見出し・表・記録欄が変更される場合は、その移行手順も必要です。競合しないことだけで仕様や合意の維持を保証したとは扱いません。
 

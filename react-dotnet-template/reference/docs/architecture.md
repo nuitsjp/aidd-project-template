@@ -25,7 +25,7 @@ flowchart LR
 | サーバー | ASP.NET Core / .NET 10 | 認証境界、HTTP JSON、SSE、機能、結果確定、静的 UI 配信 | `backend` |
 | 永続化 | SQLite / Microsoft.Data.Sqlite / Dapper | 所有者別データと制約 | `backend/Infrastructure/Persistence/`、`backend/Features/Notes/` |
 
-UI→API のモック差し替え境界は、Vite の `@notes-access` 参照先です。実処理では HTTP JSON の公開エンドポイントへ接続します。C# の入出力型から OpenAPI と `contracts/api.gen.ts` を生成し、ブラウザは `contracts/notes.ts` の別名を通して利用します。生成結果の一致と HTTP 境界テストで契約を検証します。
+UI→API のモック差し替え境界は、Vite の `@notes-access` 参照先です。実処理では HTTP JSON の公開エンドポイントへ接続します。C# の入出力型から OpenAPI と `contracts/api.gen.ts` を生成し、ブラウザは `contracts/notes.ts` の別名を通して利用します。画面からサーバーへの HTTP JSON と SSE は公開境界で、契約の正本は C# の入出力型です。サーバーから SQLite への接続は公開境界ではありません。型の一致は生成結果の一致検査で、公開境界の受け入れと拒否は HTTP 境界テストで検証します。
 
 ## 3. 実現パターンの適用条件
 

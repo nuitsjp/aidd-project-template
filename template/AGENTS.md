@@ -20,9 +20,9 @@
 ## 作業原則
 
 - **ユースケースの検討**: 新規・変更とも、案の全文をユースケース・シナリオ文書へ書いてコミットし、変更ファイルの一覧と論点を示して停止します。会話での明示的な承認なしに次のフェーズへ進まず、質問や修正指示を承認とみなしません。詳細は [モック標準の記載と確認](docs/standards/mock-driven-development.md#discussion) に従います。
-- **テストコード**: 追加・更新の時点と既存テストの維持は [設計・実装の原則](docs/standards/design-and-documentation.md#implementation-principles) に従います。
+- **テストコード**: [テスト標準](docs/standards/testing.md) に従います。
 - **画面確認の準備と依頼**: モック確認・実装の各フェーズで利用者に確認を依頼する前に、アプリケーションを起動し、依頼対象の手順を自動実行して（Web UI では Playwright CLI）想定どおり動作することを確認し、起動したまま依頼します。事前確認が失敗した状態で依頼せず、依頼文に確認目的、簡潔な操作手順、期待結果、Web UI では対象画面の URL を記載します。
-- **停止点**: 人の確認を待つ停止点は、全体設計の合意と、系列ごとの各フェーズの終わりです。確認は全体設計を含めて [モック標準第2節](docs/standards/mock-driven-development.md#workflow) の形式で依頼し、実装フェーズで承認を得るまで E2E テスト実装には着手しません。停止点では作業を中断して会話で応答を待ちます。質問は未確定事項に絞り、会話で確認できる合意済み事項の再確認は行いません（確認待ち中の許容作業は [モック標準第2節](docs/standards/mock-driven-development.md#workflow) 参照）。
+- **停止点**: 人の確認を待つ停止点は、全体設計の合意と、系列ごとの各フェーズの終わりです。確認は全体設計を含めて [モック標準第2節](docs/standards/mock-driven-development.md#workflow) の形式で依頼し、実装フェーズで承認を得るまで新規テストの実装には着手しません。停止点では作業を中断して会話で応答を待ちます。質問は未確定事項に絞り、会話で確認できる合意済み事項の再確認は行いません（確認待ち中の許容作業は [モック標準第2節](docs/standards/mock-driven-development.md#workflow) 参照）。
 - **スコープの遵守**: 依頼範囲に必要な作業のみを進め、推測による機能追加や無関係なリファクタリングは行いません。調査・評価の依頼では所見を成果物とし、実装は変更しません。
-- **文書管理**: 配布元管理の本書・標準2件・`scripts/doc_check.py`・`.agents/skills/usecase-docs/` のスキルと雛形は採用先で改変せず、同じ固定コミットから一組で更新します。文書の更新・整理は [文書と記録の基準](docs/standards/design-and-documentation.md#document-roles) に従い、変更した事実の重複と古い説明を完了前に確認します。規約・標準・文書方針の改訂は実装作業から分離します。
+- **文書管理**: 配布元管理の資材は採用先で改変せず、[文書方針第1節](docs/document-policy.md#adoption) に従って一組で更新します。文書の更新・整理は [文書と記録の基準](docs/standards/design-and-documentation.md#document-roles) に従います。規約・標準・文書方針の改訂は実装作業から分離します。
 - **完了基準と報告**: 完了前に必要なテストと `scripts/doc_check.py` を実行して会話で出力を報告し、[完了基準](docs/standards/design-and-documentation.md#completion) に照らして確認します。未実施の検証は報告に「未検証」と明記し、フェーズを進めません。エラー発生時は出力をそのまま提示します。

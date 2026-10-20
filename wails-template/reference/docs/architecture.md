@@ -19,7 +19,7 @@ flowchart LR
 | デスクトップアプリ | Go が業務機能・保存・ライフサイクルを管理し、WebView 内の React が対話を実行 | `main.go`、`internal/`、`frontend/` |
 | 更新インストーラー | Go 終了後にアプリファイルと登録情報を更新する外部プロセス | `build/windows/nsis/` |
 
-検証時は同一 Go サービスを Wails server build から利用します（独自 REST API や別バックエンドは設けません）。
+検証時は同一 Go サービスを Wails server build から利用します（独自 REST API や別バックエンドは設けません）。同梱 UI から Go Service への呼び出しは公開境界ではありません。配布元から更新 Service が取得する更新情報とインストーラーは公開境界で、契約の正本は [配布とアプリ内更新](architecture-wails.md#updates) の署名・ハッシュ検証です。
 
 起動時は設定読込 → Logger・状態管理・機能 Service 生成 → Wails 登録 → ウィンドウ作成の順に行います。終了時は React の未保存確認 → Go の稼働処理確認・終了許可 → 応答受信後の runtime Application.Quit → Service 停止・Logger 解放の順に行います。Go は終了許可後の新規処理を拒否し、WindowClosing と ShouldQuit を同じ確認経路へ接続します。更新適用も、Go が NSIS 起動に成功して終了を許可した応答をフロントエンドが受け取ってから終了を要求します。
 
