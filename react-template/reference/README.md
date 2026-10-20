@@ -13,7 +13,7 @@ Reactの対話制御からNode.jsの機能、SQLiteへの確定までを通す�
 | [architecture.md](docs/architecture.md) | 全体構成、実現パターンの適用条件、設計上の制約 |
 | [UCP-1](docs/design/UCP-1.md)・[UCP-2](docs/design/UCP-2.md) | 実現パターンごとの具体設計と結果確定点 |
 | [data.md](docs/design/data.md) | 保存方式、テーブル、データ制約 |
-| [architecture-react.md](docs/architecture-react.md) | React・Node.js の責務、依存方向、並列 E2E |
+| [architecture-react.md](docs/architecture-react.md) | React・Node.js の責務、依存方向、テスト設計 |
 | [project.md](docs/project.md) | 目的、制約、外部事実、認証・配備・DB運用、実行手順 |
 
 サンプルのUIやタイトル一意制約、文字数制限は参照用仕様です。製品開発時は製品ルートの `backend/features/notes/`・`frontend/src/usecases/` とE2Eを製品のユースケースに置き換えます。テンプレート名が残る `package.json`、`frontend/index.html`、`frontend/src/app/Shell.tsx`、`backend/http/auth.ts`、`.github/workflows/react-template.yml` も製品名へ置き換えます。

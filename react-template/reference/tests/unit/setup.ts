@@ -17,3 +17,4 @@ Object.defineProperty(window, 'matchMedia', {
     },
   }),
 });
+Object.defineProperty(window, 'scrollTo', { writable: true, value: () => {} });

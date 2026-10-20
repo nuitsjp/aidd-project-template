@@ -7,13 +7,14 @@ export function ImportInput() {
   const state = useImportDialogue();
   const preview = usePreviewMany();
   const navigate = useNavigate();
-  async function submit() {
-    try {
-      state.setPreview(await preview.mutateAsync(state.input));
-      await navigate({ to: '/import/confirm' });
-    } catch {
-      /* 入力を保持する。 */
-    }
+  // 画面を離れた後の応答では移動しない。失敗時は入力を保持し、表示はErrorNoticeが担う。
+  function submit() {
+    preview.mutate(state.input, {
+      onSuccess: (result) => {
+        state.setPreview(result);
+        navigate({ to: '/import/confirm' }).catch(console.error);
+      },
+    });
   }
   return (
     <section className="panel">
@@ -23,7 +24,7 @@ export function ImportInput() {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          submit().catch(console.error);
+          submit();
         }}
       >
         <Stack>

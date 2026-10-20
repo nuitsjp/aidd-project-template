@@ -72,7 +72,7 @@ $env:PLAYWRIGHT_IGNORE_DISABLE_EXTENSIONS = '1'
 npm run test:e2e
 ```
 
-既定は4 workerです。テストごとの分離、UI 操作後の DB 確認、同一 DB の競合境界は [並列E2E](architecture-react.md#test-boundary) に従います。反復、全体検証、実 SQLite の機能・プロセス分離は次で実行します。
+既定は4 workerです。検証レベルごとのテストの配置、テストごとの分離、UI 操作後の DB 確認、同一 DB の競合境界は [テスト設計](architecture-react.md#test-boundary) に従います。反復、全体検証、実 SQLite の機能・プロセス分離と公開境界は次で実行します。
 
 ```sh
 npm run test:e2e:repeat

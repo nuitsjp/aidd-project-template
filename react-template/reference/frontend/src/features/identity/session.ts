@@ -1,6 +1,5 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Principal } from '../../../../contracts/notes.ts';
-import { queryClient } from '../query-client.ts';
 export interface Session {
   user: Principal | null;
   mode: 'demo' | 'proxy';
@@ -25,8 +24,9 @@ export const useSession = () =>
     queryFn: () => request<Session>('/api/session'),
     staleTime: Infinity,
   });
-export const useSignIn = () =>
-  useMutation({
+export function useSignIn() {
+  const queryClient = useQueryClient();
+  return useMutation({
     mutationFn: (user: string) =>
       request<{
         user: Principal;
@@ -37,8 +37,10 @@ export const useSignIn = () =>
       queryClient.setQueryData(['session'], { user, mode: 'demo' });
     },
   });
-export const useSignOut = () =>
-  useMutation({
+}
+export function useSignOut() {
+  const queryClient = useQueryClient();
+  return useMutation({
     mutationFn: () => request('/api/demo/sign-out', {}),
     onSuccess: async () => {
       await queryClient.cancelQueries({ queryKey: ['notes'] });
@@ -46,3 +48,4 @@ export const useSignOut = () =>
       queryClient.setQueryData(['session'], { user: null, mode: 'demo' });
     },
   });
+}

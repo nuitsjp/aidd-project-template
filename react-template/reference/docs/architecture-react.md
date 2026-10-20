@@ -37,11 +37,25 @@ React・TypeScript・Vite、TanStack Router/Query、Mantine・CSS Modules を用
 ドライバーには Node 標準の `node:sqlite` を使用し、実行する Node.js は `.nvmrc` と `package.json` の同一版に固定します。保存時の設定とトランザクション条件は [データ設計](design/data.md) に従います。汎用 DB 抽象化層は設けません。
 
 <a id="test-boundary"></a>
-## 4. 並列E2E
+## 4. テスト設計
 
-E2E は `tests/e2e/fixtures.ts` を利用し、1テストごとにブラウザ Context、本番 Node.js プロセス、OS 自動割当ポート、一時 SQLite ファイル、Cookie、セッション、SSE 購読を分離します。全 worker は同一ビルド成果物を使用します。シナリオの E2E は `tests/e2e/usecases/<ユースケース名>/<シナリオ名>.spec.ts` に置き、[テスト標準](../../docs/standards/testing.md#scenario-tests) の区切りを `test.step` のラベルにします。シナリオ以外の E2E は `tests/e2e/` 直下に置きます。
+テストの根拠、検証レベル、分離の原則は製品ルートの [テスト標準](../../docs/standards/testing.md) に従います。本節は検証レベルごとの手段と配置を定めます。
 
-マイグレーションと業務処理は本番と同じコードを実行し、確定済みデータは独立した読取専用の `node:sqlite` 接続で確認します。fixture は成否を問わずサーバー停止、接続解放、一時領域削除を行います。分離と競合検証の原則は [テスト標準](../../docs/standards/testing.md#isolation) に従い、同一 DB の競合は1テスト内で複数 Page または Context を作成して検証します。
+| 検証レベル | 対象 | 手段と配置 | 実行 |
+| --- | --- | --- | --- |
+| システム全体 | シナリオテスト | Playwright。`tests/e2e/usecases/<ユースケース名>/<シナリオ名>.spec.ts` | `npm run test:e2e` |
+| システム全体 | 並列実行時の分離 | Playwright。`tests/e2e/system/` | 同上 |
+| 公開境界 | 画面からサーバーへの tRPC / HTTP と SSE | `node:test`。`createApp` を空きポートで起動する。`tests/core/http/` | `npm run test:core` |
+| 部品 | 機能 Service、DB、起動設定、複数プロセスの分離 | `node:test`。`tests/core/` 直下 | `npm run test:core` |
+| 部品 | React の共有モジュールと、E2E で検証しにくいリスクを持つ画面・機能 | Vitest と Testing Library。`tests/unit/` | `npm run test:unit` |
+
+シナリオテストは [テスト標準](../../docs/standards/testing.md#scenario-tests) の区切りを `test.step` のラベルにします。
+
+公開境界のテストは `tests/core/http/server.ts` で本番と同じ `createApp` を 127.0.0.1 の空きポートで待ち受け、`node:http` で Host・Origin・Cookie・認証プロキシのヘッダーを組み立てて送ります。要求本文の上限、Origin と接続先名の検査、認証、Zod の形の検証、`appError` の公開エラー形式、他者のメモの指定を確認します。proxy 構成は同じ仕組みを `authMode: 'proxy'` で起動します。
+
+React のテストは `tests/unit/` に `frontend/src/` と同じ相対パスで配置します。画面・機能のテストは、確定後の再取得失敗、変更通知の接続と切断、同じブラウザー内での利用者切替、応答待ち中の画面移動のように E2E で検証しにくいリスクに限り、テスト名と冒頭のコメントで確認するリスクを示します。`tests/unit/render.tsx` がテストごとの QueryClient と実物の Router を用意し、API 呼び出しは `@notes-access` を `vi.mock` で差し替えます。
+
+E2E は `tests/e2e/fixtures.ts` を利用し、1テストごとにブラウザ Context、本番 Node.js プロセス、OS 自動割当ポート、一時 SQLite ファイル、Cookie、セッション、SSE 購読を分離します。全 worker は同一ビルド成果物を使用します。公開境界と機能のテストもテストごとに一時 SQLite ファイルを作ります。E2E と公開境界のテストは確定済みデータを読取専用の `node:sqlite` 接続で確認し、いずれも成否を問わずサーバー停止、接続解放、一時領域削除を行います。同一 DB の競合は E2E では1テスト内で複数 Page または Context を作成して検証します。
 
 <a id="deployment"></a>
 ## 5. 配備・認証

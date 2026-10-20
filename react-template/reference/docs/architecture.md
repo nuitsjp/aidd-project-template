@@ -40,5 +40,5 @@ UI→API の差し替え境界は Vite の `@notes-access` 参照先1箇所で�
 
 - 保存方式、テーブル、値の制約は [データ設計](design/data.md) に従います。
 - React・Node.js の責務、状態更新、起動単位は [React補足](architecture-react.md) に従います。
-- E2E の分離条件と同一 DB の競合境界は [並列E2E](architecture-react.md#test-boundary) に従います。
+- 検証レベルごとのテストの手段・配置と、E2E の分離条件・同一 DB の競合境界は [テスト設計](architecture-react.md#test-boundary) に従います。
 - 共有環境の認証境界は [配備・認証](architecture-react.md#deployment) に従います。
