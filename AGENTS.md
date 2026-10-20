@@ -8,6 +8,8 @@
 
 `template/` を技術中立な共通正本、`wails-template/`・`react-template/`・`react-dotnet-template/`・`wpf-template/` を各技術固有の差分とします。初期状態はルートの `mise run init:wails <出力先> --name <製品名>`、`mise run init:react <出力先>`、`mise run init:react-dotnet <出力先> --name <製品名>` または `mise run init:wpf <出力先> --name <製品名>` で、`template/`、選択した拡張ディレクトリ、ルートの `LICENSE` の順に配置し、拡張の `reference/` にあるアプリ一式を製品ルートへコピーします。同名ファイルは拡張側で全体を上書きし、部分マージは行いません。Wails の製品側のみ、`build/app.json` のアプリ ID・表示名・実行ファイル名、Go モジュール名 `wailstemplate`、npm パッケージ名を指定した製品名に合わせます。React・.NET の製品側のみ、参照実装の C# 名前空間 `NotesSample` とソリューション・プロジェクト・アセンブリ名、npm パッケージ名を指定した製品名に合わせます。WPF の製品側のみ、参照実装の C# 名前空間 `WpfNotesSample` とソリューション・プロジェクト・アセンブリ名を指定した製品名に合わせ、保存領域と多重起動判定を参照アプリと分離します（新規ディレクトリへの出力のみを対象とします）。
 
+採用先の新規プロジェクトは、対象技術の `init:*` を必ず配布元ルートから新しい空のディレクトリへ実行して作成します。既存リポジトリへ導入する場合も、まず空の一時ディレクトリへ同じコマンドを実行し、生成結果を確認してから、生成された製品ルートの必要な全構成を既存の製品ルートへ移します。`reference/` だけをコピーして製品コードを新規実装する手順は採用しません。生成後は、製品側の名前置換済みソリューション・プロジェクト・設定・テスト、`reference/` の元の名前と内容、共通資材と `LICENSE`、生成物の除外を確認し、製品側で `python scripts/doc_check.py .` と対象技術に定めた検証コマンドを実行します。
+
 | 対象 | 管理ルール |
 | --- | --- |
 | `AGENTS.md`、`docs/standards/`、`scripts/doc_check.py`、`.agents/skills/usecase-docs/` | `template/` だけで管理し、拡張側に上書き用ファイルを置かない。採用先では同じ固定コミットから一組で更新する。技術固有の注意は既存の固有文書に記載する。 |
