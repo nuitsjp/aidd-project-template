@@ -62,15 +62,27 @@ C# 内の SQL が1行なら `"BEGIN IMMEDIATE;"` のような通常の文字列�
 新規メモの ID と更新日時は永続化レイヤーが発行し、日時には SQLite の UTC 時刻を使います。INSERT・UPDATE は `RETURNING` で保存後の `Note` を返し、保存後の読み直しを行いません。書込みは利用者の確認待ちを含まない短いトランザクションで確定します。
 
 <a id="test-boundary"></a>
-## 5. テストの分担と並列実行
+## 5. テスト設計
 
-.NET の単体テストは `tests/dotnet-unit/` に対象クラスの名前空間に沿って配置し、機能間で共有するクラスを対象に1クラスにつき1テストクラスを作ります。単一メンバーのテストはメンバー名の内部クラスに、メンバー間の連携テストはテストクラス直下に置きます。関数実行後のプロパティ確認は連携テストに含めません。各テストケースは Arrange・Act・Assert のコメントで区切ります。
+テストの根拠、検証レベル、分離の原則は製品ルートの `docs/standards/testing.md` に従います。本節は検証レベルごとの手段と配置を定めます。
 
-.NET の統合テストは `tests/dotnet-integration/` に API 担当クラスごとに置き、必要なレイヤーを横断する振る舞いを確認します。DB を使うテストケースはそれぞれ専用の一時 SQLite ファイルで `Database` を作り、並列実行時の干渉を防ぎます。
+| 検証レベル | 対象 | 手段と配置 | 実行 |
+| --- | --- | --- | --- |
+| システム全体 | シナリオテスト | Playwright。`tests/e2e/usecases/<ユースケース名>/<シナリオ名>.spec.ts` | `mise run test:e2e:dev`、`mise run test:e2e:hosted` |
+| システム全体 | 実行構成（SPA 配信、並列実行時の分離） | Playwright。`tests/e2e/system/` | 同上 |
+| 公開境界 | 画面からサーバーへの HTTP JSON | xUnit。実 Kestrel を同じプロセスで起動する。`tests/dotnet-integration/Http/` | `mise run test:backend` |
+| 部品 | .NET の共有クラスと API 担当クラス | xUnit。`tests/dotnet-unit/`、`tests/dotnet-integration/` | `mise run test:backend` |
+| 部品 | React の共有モジュールと、E2E で検証しにくいリスクを持つ画面・機能 | Vitest と Testing Library。`tests/frontend-unit/` | `mise run test:frontend` |
 
-React の単体テストは `tests/frontend-unit/` に `frontend/src/` と同じ相対パスで配置し、機能間で共有するモジュール（`shared/`、`features/client.ts`）を対象に1モジュールにつき1テストファイルを作ります。単一メンバーのテストはメンバー名の `describe` に、メンバー間の連携テストとコンポーネントのテストはファイル直下に置き、各テストケースは Arrange・Act・Assert のコメントで区切ります。ユースケース固有の画面と API 呼び出しは E2E で確認します。
+各テストケースは Arrange・Act・Assert のコメントで区切ります。シナリオテストは `test.step` のラベルで区切ります。
 
-シナリオの E2E は `docs/usecases/` と同じ名称で `tests/e2e/usecases/<ユースケース名>/<シナリオ名>.spec.ts` に1シナリオにつき1テストファイルを作り、そのシナリオの受け入れ条件とユースケースの共通の受け入れ条件を検証します。シナリオ以外の E2E は、HTTP 契約を `tests/e2e/http/`、並列実行時の分離を `tests/e2e/isolation/` に置きます。シナリオの E2E は共通標準（`docs/standards/testing.md` のシナリオテスト）に従い、`test.step` のラベルで開始条件または分岐条件、`手順1`〜`手順N`、受け入れ条件に区切ります。シナリオ以外の E2E の各テストケースは Arrange・Act・Assert のコメントで区切ります。E2E は Vite と .NET を分離する `dev`、UI を .NET に同梱する `hosted` の両方で同じシナリオを実行します。各テストは .NET プロセスと一時 SQLite ファイルを分離し、UI 操作後は別接続から確定済みデータを確認します。HTTP 契約テストは両モードとも .NET に直接接続します。同一 DB の競合は一つのテスト内で複数の対話を動かして確認します。
+.NET の単体テストは `tests/dotnet-unit/` に対象クラスの名前空間に沿って配置し、機能間で共有するクラスを対象に1クラスにつき1テストクラスを作ります。単一メンバーのテストはメンバー名の内部クラスに、メンバー間の連携テストはテストクラス直下に置きます。関数実行後のプロパティ確認は連携テストに含めません。
+
+.NET の統合テストは `tests/dotnet-integration/` に API 担当クラスごとに置き、必要なレイヤーを横断する振る舞いを確認します。公開境界のテストは `tests/dotnet-integration/Http/` に置き、`AppHost.BuildAppAsync` で本番と同じ HTTP 処理と Kestrel の上限設定を空きポートで起動して、JSON の読み取り、属性検証、認証、Origin と接続先名の検査、リクエストの上限、Problem Details の形式を確認します。DB を使うテストケースはそれぞれ専用の一時 SQLite ファイルを使います。
+
+React のテストは `tests/frontend-unit/` に `frontend/src/` と同じ相対パスで配置します。共有モジュール（`shared/`、`features/client.ts`）は1モジュールにつき1テストファイルを作ります。画面・機能のテストは、確定後の再取得失敗、変更通知の接続と切断、同じブラウザー内での利用者切替、応答待ち中の画面移動のように E2E で検証しにくいリスクに限り、テスト名と冒頭のコメントで確認するリスクを示します。`tests/frontend-unit/render.tsx` がテストごとの QueryClient と実物の Router を用意し、API 呼び出しは `@notes-access` を `vi.mock` で差し替えます。
+
+E2E は Vite と .NET を分離する `dev`、UI を .NET に同梱する `hosted` の両方で同じシナリオを実行し、SPA 配信は `hosted` だけで確認します。各テストは .NET プロセスと一時 SQLite ファイルを持ち、確定済みデータは読取専用の `node:sqlite` 接続で確認します。
 
 <a id="deployment"></a>
 ## 6. 配備・認証

@@ -93,7 +93,7 @@ mise run test:e2e:dev
 mise run test:e2e:hosted
 ```
 
-既定は 4 worker です。テストごとの分離、UI 操作後の DB 確認、同一 DB の競合境界は [並列 E2E](architecture-react-dotnet.md#test-boundary) に従います。両モードとも実 HTTP API と実 DB を使用し、テスト失敗時のアーティファクトは `dist/e2e-results-dev/`・`dist/e2e-results-hosted/` と `dist/playwright-report-dev/`・`dist/playwright-report-hosted/` に配置されます。試験 DB は fixture が自動削除します。実データや診断ログはリポジトリへ含めません。
+既定は 4 worker です。テストの配置と分離は [テスト設計](architecture-react-dotnet.md#test-boundary) に従います。両モードとも実 HTTP API と実 DB を使用し、テスト失敗時のアーティファクトは `dist/e2e-results-dev/`・`dist/e2e-results-hosted/` と `dist/playwright-report-dev/`・`dist/playwright-report-hosted/` に配置されます。試験 DB は fixture が自動削除します。実データや診断ログはリポジトリへ含めません。
 
 仕様確認用モックが必要な期間のみ、既存のモック標準に従って作成します。本番ビルドでモックを使用せず、実処理へ切り替えた後は固定データを削除し、E2E は実 HTTP API で検証します。
 
