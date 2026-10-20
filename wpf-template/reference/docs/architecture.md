@@ -40,4 +40,4 @@ flowchart LR
 - 4 領域の依存方向と、状態の保持先・Domain の不変な値・純粋関数の基準は [状態の分担と Domain](architecture-wpf.md#state-domain) に従います。自動検査の対象範囲は [層の依存検査](architecture-wpf.md#layer-analysis) を参照します。
 - 永続化とトランザクションは Infrastructure が所有します。UI は COMMIT 成功を保存成功として扱い、後続の表示取得の失敗と分けます。
 - 単一インスタンス・通常 1 ウィンドウ・画面遷移・未保存確認・モックの合成点は [WPF 固有設計](architecture-wpf.md) に従います。
-- データ領域・値・版・SQL 移行は [データ設計](design/data.md)、自動テストの分離は [テスト境界](architecture-wpf.md#test-boundary) に従います。
+- データ領域・値・版・SQL 移行は [データ設計](design/data.md)、テストの手段と配置は [テスト設計](architecture-wpf.md#test-boundary) に従います。

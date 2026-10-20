@@ -76,28 +76,36 @@ Domain は変更可能な業務状態を保持しません。参照型は `seale
 固定データの実装は Mock 構成にだけ含めます。Debug / Release のアセンブリと配布 ZIP に固定データを含めず、実処理の失敗をモックで補いません。
 
 <a id="test-boundary"></a>
-## 5. テストの分担
+## 5. テスト設計
 
-単体テストは入力規則、ViewModel の下書き・実行状態・取得失敗を対象にします。統合テストは実 SQLite を通し、最新取得・保存・削除の版検査とロールバックを確認します。各テストに専用の一時 DB を用意します。
+テストの根拠、検証レベル、分離の原則は製品ルートの `docs/standards/testing.md` に従います。本節は検証レベルごとの手段と配置を定めます。システム外から入力を受ける公開境界はないため（[アーキテクチャ](architecture.md) 第2節）、公開境界のテストはありません。
+
+| 検証レベル | 対象 | 手段と配置 | 実行 |
+| --- | --- | --- | --- |
+| システム全体 | シナリオテスト（5 ユースケース） | xUnit と Friendly で Release 構成の実アプリを操作する。`tests/e2e/<ユースケース名>/<同名シナリオ>.cs` | `mise run test:e2e` |
+| システム全体 | 実行構成（Mock 構成の起動・再起動） | xUnit と Friendly で Mock 構成の実アプリを操作する。`tests/e2e/Runtime/` | `mise run test:e2e` |
+| 部品 | 入力規則の境界値、保存・再保存・破棄での ID・版の引継ぎ | xUnit。`tests/unit/` | `mise run test:unit` |
+| 部品 | DB 書込み失敗時に確定済みの内容と版が変わらないこと | xUnit と実 SQLite。`tests/integration/` | `mise run test:integration` |
+| 検査ツール | 層の依存検査、XAML 検査、網羅率の集計とテスト実行のスクリプト | xUnit（`tests/unit/Architecture/`）と PowerShell（`tests/xaml/`、`tests/runner/`） | `mise run verify` の回帰検証 |
 
 UI テストは Friendly の `WindowsAppFriend` で実アプリに接続します。`Drivers/` にメインウィンドウ、一覧、詳細、編集、確認ダイアログの専用ドライバーを置き、シナリオは型付き操作と表示値で検証します。WPF の部品は XAML の `x:Name` で宣言したフィールドを `dynamic` から参照し、画面は `VisualTree().ByType<画面型>()` で取得します。確認ダイアログは `ConfirmDialog` の `x:Name` で操作します。
 
+シナリオテストは、エラー・競合・未保存確認・再起動の条件違いを該当シナリオの Theory のケースとして並べます。`Support/AppSession` は起動・終了と `--data-dir` による一時 DB の分離を、`NoteDatabase` は別接続による保存結果の確認を担当し、ケースごとにアプリプロセスと一時 DB を作ります。テストクラスごとに xUnit の collection を構成して collection 間を最大 2 並列で実行し、同一 collection 内のケースは直列に実行してシナリオ内の手順順序を維持します。終了後に一時データを片付けます。
+
 `verify` は文書・DBML・整形・コード規約・XAML の検査を順に実行した後、XAML・coverage・runner の回帰検証を独立した PowerShell プロセスで並列に起動します。回帰検証は製品の Release・Mock ビルドと並走し、ビルド後に単体・統合・E2E の 3 グループを並列に実行します。dotnet-coverage 18.12.0 の同一 collect セッションで、Friendly が起動する子アプリも含め、製品の全 C# 実行可能行のヒットを合算します。Mock 構成、`obj/` 配下、`[GeneratedCode]` は計測から除きます。`[CompilerGenerated]` は除外せず、自動プロパティも対象です。
 
-統合レポートを実行ごとの `TestResults/<UUID>/coverage.cobertura.xml` に保存し、製品全体の行網羅率を表示します。閾値は全テストを合算した `Domain/` と `ViewModel/` の 75%、`Infrastructure/` の 95% で、テスト種類ごとには判定しません。個別の `test:*` も同じ方式で単独レポートを保存しますが、閾値は判定しません。網羅率を上げることだけを目的にテストを追加しません。
+統合レポートを実行ごとの `TestResults/<UUID>/coverage.cobertura.xml` に保存し、製品全体の行網羅率を表示します。網羅率は合否の判定に使いません。個別の `test:*` も同じ方式で単独レポートを保存します。
 
 回帰ログは網羅率の計測とは別の UUID による `TestResults/<UUID>/` に保存します。各グループの `xaml-checks.stdout.log`、`coverage-checks.stdout.log`、`runner-checks.stdout.log` と対応する `.stderr.log`、親の集約ログ `checks.stdout.log`・`checks.stderr.log` を出力します。テストと回帰検証の全グループの終了、レポートとログの保存を待って結果を判定し、回帰検証だけが失敗した場合も `verify` と `package` は失敗します。
 
-`Support/AppSession` は起動・終了と `--data-dir` による一時 DB の分離、`NoteDatabase` は別接続による保存結果の検証を担当します。各ケースに専用のアプリプロセスと一時 DB を用意します。5 ユースケースとモック構成の起動確認は、テストクラスごとに xUnit の collection を構成し、collection 間を最大 2 並列で実行します。同一 collection 内のケースは直列に実行し、シナリオ内の手順順序を維持します。終了後に一時データを片付けます。
-
-5 ユースケースの UI テストは `tests/e2e/<ユースケース名>/<同名シナリオ>.cs` に配置し、開始条件、手順、受け入れ条件を文書と同じ番号で区切ります。エラー・競合・未保存確認・再起動の条件違いも該当するシナリオ内で検証します。モック構成の起動・再起動確認は `tests/e2e/Runtime/` に分離します。実行コマンドと実機確認の条件は [プロジェクト定義](project.md#commands) に記載します。
+実行コマンドと実機確認の条件は [プロジェクト定義](project.md#commands) に記載します。
 
 <a id="xaml-boundary"></a>
 ### XAML の静的検査
 
 `scripts/check-xaml.ps1` は Windows PowerShell 5.1 と .NET の `XmlReader`・`IXmlLineInfo` を使い、追加パッケージなしで XAML の定義場所と XML 構文を検査します。`-AppRoot` の既定値は `app` です。その配下の XAML を名前空間付きで解析し、`View/Styles/` 以外にある WPF の Style を `WPFXAML001`、ControlTemplate を `WPFXAML002`、不正な XML を `WPFXAML003` として報告します。共通スタイルへの参照は許可します。
 
-診断形式は `ファイル(行,列): error コード: 説明`、終了コードは成功時 0、違反・解析失敗時 1 です。`mise run check:xaml` を実行入口とし、`test:xaml` で検査用 XAML に対する診断を確認します。`verify` は `check:xaml` をビルド前に実行します。回帰検証の実行順は [テストの分担](#test-boundary) に従い、`package` もこの検査を通します。将来ネイティブ実装へ変更する場合も、この入口と診断・終了コードを維持します。
+診断形式は `ファイル(行,列): error コード: 説明`、終了コードは成功時 0、違反・解析失敗時 1 です。`mise run check:xaml` を実行入口とし、`test:xaml` で検査用 XAML に対する診断を確認します。`verify` は `check:xaml` をビルド前に実行します。回帰検証の実行順は [テスト設計](#test-boundary) に従い、`package` もこの検査を通します。将来ネイティブ実装へ変更する場合も、この入口と診断・終了コードを維持します。
 
 <a id="code-quality"></a>
 ### 静的解析と整形

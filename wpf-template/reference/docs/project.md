@@ -55,17 +55,17 @@ mise run dev
 | `mise run build` | Release の実処理アプリをビルドし、層の依存違反を検査 |
 | `mise run format` | C# を dotnet format、XAML を XamlStyler で整形 |
 | `mise run check:format` | 変更せずに C#・XAML の整形漏れとコード規約の違反を検査 |
-| `mise run test:unit` | 単体テストを実行し、製品の行網羅率を単独レポートへ保存（閾値判定なし） |
-| `mise run test:integration` | 実 SQLite を使う統合テストを実行し、製品の行網羅率を単独レポートへ保存（閾値判定なし） |
-| `mise run test:e2e` | Friendly で実アプリを操作し、子アプリを含む製品の行網羅率を単独レポートへ保存（閾値判定なし） |
+| `mise run test:unit` | 単体テストを実行し、製品の行網羅率を単独レポートへ保存 |
+| `mise run test:integration` | 実 SQLite を使う統合テストを実行し、製品の行網羅率を単独レポートへ保存 |
+| `mise run test:e2e` | Friendly で実アプリを操作し、子アプリを含む製品の行網羅率を単独レポートへ保存 |
 | `mise run check:docs` | 製品文書と参照文書のリンク・構造・共通規則と、`docs/design/data.dbml` の構文（`node scripts/check-dbml.mjs`）を検査 |
 | `mise run check:xaml` | PowerShell で共通領域外の Style・ControlTemplate 定義と XML 構文を検査 |
 | `mise run test:xaml` | 検査用 XAML に対する許可・違反・解析失敗の診断を確認 |
-| `mise run verify` | 文書・DBML・整形・コード規約・XAML を順に検査し、検査スクリプトの回帰検証と並走して層の依存検査を含む Release・Mock ビルドを実行後、アナライザーの回帰を含む単体・統合・E2E を並列実行して統合した行網羅率を判定 |
+| `mise run verify` | 文書・DBML・整形・コード規約・XAML を順に検査し、検査スクリプトの回帰検証と並走して層の依存検査を含む Release・Mock ビルドを実行後、アナライザーの回帰を含む単体・統合・E2E を並列実行し、統合した行網羅率を表示 |
 | `mise run audit` | npm 依存の既知脆弱性を監査 |
 | `mise run package` | 検証後に exe・DLL・config・SQLite の実行資材・LICENSE・第三者ライセンスを ZIP 化 |
 
-網羅率の出力先は実行ごとの `TestResults/<UUID>/coverage.cobertura.xml` です。`verify` は全テストのヒットを合算し、製品全体の網羅率を表示したうえで Domain・ViewModel の 75%、Infrastructure の 95% を判定します。グループの失敗があっても、全グループの終了とレポート保存を待って失敗します。計測範囲とテスト追加の方針は [テストの分担](architecture-wpf.md#test-boundary) に従います。
+網羅率の出力先は実行ごとの `TestResults/<UUID>/coverage.cobertura.xml` です。`verify` は全テストのヒットを合算し、製品全体の網羅率を表示します（合否の判定には使いません）。グループの失敗があっても、全グループの終了とレポート保存を待って失敗します。計測範囲は [テスト設計](architecture-wpf.md#test-boundary) に従います。
 
 DBML の構文は `package.json` で固定した `@dbml/core` の dbmlv2 解析器で検証します。製品アプリのビルド・テストは .NET SDK で実行し、Node.js はテンプレート生成とこの DBML 検査だけに使用します。
 

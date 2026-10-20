@@ -178,7 +178,7 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 function Format-Code([switch]$Check) {}
 function Invoke-Native([string]$Command, [string[]]$Arguments) {}
-function Test-Projects([string]$Suite, [switch]$CheckCoverage) {
+function Test-Projects([string]$Suite) {
     $stdout = Join-Path $checksResults 'product.stdout.log'
     $stderr = Join-Path $checksResults 'product.stderr.log'
     $process = Start-Process -FilePath (Join-Path $PSScriptRoot 'product.exe') -WindowStyle Hidden `

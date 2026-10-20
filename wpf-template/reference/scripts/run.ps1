@@ -16,7 +16,7 @@ function Build-App([string]$Configuration) {
 }
 
 # ビルドを完了してから、動的計測の同一セッションでテストとその子アプリを収集する。
-function Test-Projects([string]$Suite, [switch]$CheckCoverage) {
+function Test-Projects([string]$Suite) {
     if ($Suite -eq 'all') {
         Invoke-Native 'dotnet' @('build', $solution, '-c', 'Release', '-p:RestoreLockedMode=true')
     } else {
@@ -49,8 +49,7 @@ function Test-Projects([string]$Suite, [switch]$CheckCoverage) {
         powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'run-tests.ps1') -Suite $Suite -ResultsPath $results
     $testExitCode = $LASTEXITCODE
     $checkArguments = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $PSScriptRoot 'check-coverage.ps1'),
-        '-ReportPath', $reportPath, '-AssemblyName', $assemblyName)
-    if ($CheckCoverage) { $checkArguments += '-Check' }
+        '-ReportPath', $reportPath)
     & powershell @checkArguments
     $coverageExitCode = $LASTEXITCODE
     if ($testExitCode -ne 0) { throw "Test collection exited with code $testExitCode. Results: $results" }
@@ -88,7 +87,7 @@ function Verify {
             -WindowStyle Hidden -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru
         $null = $checksProcess.Handle
         # 回帰検証は専用の一時領域だけを使い、製品のビルド・テストと並走する。
-        Test-Projects 'all' -CheckCoverage
+        Test-Projects 'all'
     } catch {
         $testFailure = $_
     } finally {
